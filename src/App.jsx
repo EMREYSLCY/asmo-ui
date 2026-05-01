@@ -9,17 +9,16 @@ function App() {
     const ws = new WebSocket('wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev/');
 
     ws.onopen = () => {
-      console.log('🟢 Connected to A.S.M.O. Engine');
       setIsConnected(true);
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('📡 Radar Signal Received:', data);
       
       setTransactions((prev) => [
         {
           time: new Date().toLocaleTimeString(),
+          project: 'A.S.M.O.',
           ...data
         },
         ...prev
@@ -27,7 +26,6 @@ function App() {
     };
 
     ws.onclose = () => {
-      console.log('🔴 Disconnected from A.S.M.O. Engine');
       setIsConnected(false);
     };
 
@@ -51,7 +49,7 @@ function App() {
         <div className="panel">
           <div className="panel-header">
             <h2>Live P&L Accounting</h2>
-            <button className="export-btn">Backup Data</button>
+            <button className="export-btn">Backup / Restore</button>
           </div>
           
           <div className="table-container">
@@ -59,6 +57,7 @@ function App() {
               <thead>
                 <tr>
                   <th>Time</th>
+                  <th>Project</th>
                   <th>Type</th>
                   <th>Transaction Hash</th>
                   <th>Asset</th>
@@ -68,7 +67,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="empty-state">
+                    <td colSpan="6" className="empty-state">
                       Waiting for blockchain radar signals...
                     </td>
                   </tr>
@@ -76,6 +75,9 @@ function App() {
                   transactions.map((tx, index) => (
                     <tr key={index} className="tx-row">
                       <td className="tx-time">{tx.time}</td>
+                      <td className="tx-project">
+                         <span className="badge badge-project">{tx.project}</span>
+                      </td>
                       <td>
                          <span className={`badge ${tx.type === 'TOKEN' ? 'badge-token' : 'badge-native'}`}>
                            {tx.type}
@@ -87,7 +89,9 @@ function App() {
                         </a>
                       </td>
                       <td className="tx-asset">{tx.asset.length > 10 ? `${tx.asset.substring(0,6)}...` : tx.asset}</td>
-                      <td className="tx-amount">{tx.amount}</td>
+                      <td className="tx-amount">
+                        {typeof tx.amount === 'number' ? tx.amount.toFixed(4) : tx.amount}
+                      </td>
                     </tr>
                   ))
                 )}

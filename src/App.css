@@ -118,3 +118,43 @@ body {
   font-style: italic;
   padding: 40px !important;
 }
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.badge-native {
+  background-color: #1f6feb;
+  color: white;
+}
+
+.badge-token {
+  background-color: #a371f7;
+  color: white;
+}
+
+.badge-project {
+  background-color: #2ea043;
+  color: white;
+}
+
+.tx-row {
+  animation: highlightFade 1.5s ease-out;
+}
+
+@keyframes highlightFade {
+  0% { background-color: rgba(63, 185, 80, 0.3); }
+  100% { background-color: transparent; }
+}
+
+.tx-hash a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.tx-hash a:hover {
+  text-decoration: underline;
+}
