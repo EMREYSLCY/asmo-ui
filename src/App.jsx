@@ -62,12 +62,13 @@ function App() {
                   <th>Transaction Hash</th>
                   <th>Asset</th>
                   <th>Amount</th>
+                  <th>Value ($)</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="empty-state">
+                    <td colSpan="7" className="empty-state">
                       Waiting for blockchain radar signals...
                     </td>
                   </tr>
@@ -91,6 +92,11 @@ function App() {
                       <td className="tx-asset">{tx.asset.length > 10 ? `${tx.asset.substring(0,6)}...` : tx.asset}</td>
                       <td className="tx-amount">
                         {typeof tx.amount === 'number' ? tx.amount.toFixed(4) : tx.amount}
+                      </td>
+                      <td className="tx-value">
+                        {typeof tx.amount === 'number' && tx.price_usd ? 
+                          `$${(tx.amount * tx.price_usd).toFixed(2)}` : 
+                          '---'}
                       </td>
                     </tr>
                   ))
