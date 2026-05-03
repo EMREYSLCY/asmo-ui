@@ -32,6 +32,36 @@ function App() {
     return () => ws.close();
   }, []);
 
+  const exportToCSV = () => {
+    if (transactions.length === 0) return;
+
+    const headers = ["Time", "Project", "Type", "Hash", "Asset", "Amount", "Value_USD"];
+    const rows = transactions.map(tx => [
+      tx.time,
+      tx.project,
+      tx.type,
+      tx.tx_hash,
+      tx.asset,
+      tx.amount,
+      tx.amount * (tx.price_usd || 0)
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `ASMO_Backup_${new Date().getTime()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="dashboard-container">
       <header className="header">
@@ -49,7 +79,7 @@ function App() {
         <div className="panel">
           <div className="panel-header">
             <h2>Live P&L Accounting</h2>
-            <button className="export-btn">Backup / Restore</button>
+            <button className="export-btn" onClick={exportToCSV}>Backup Data</button>
           </div>
           
           <div className="table-container">
