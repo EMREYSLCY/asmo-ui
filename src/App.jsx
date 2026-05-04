@@ -1,35 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 function App() {
   const [transactions, setTransactions] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const wsRef = useRef(null);
 
   useEffect(() => {
-    const ws = new WebSocket('wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev/');
+    const connect = () => {
+      const ws = new WebSocket('wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev/');
 
-    ws.onopen = () => {
-      setIsConnected(true);
+      ws.onopen = () => {
+        setIsConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        setTransactions((prev) => [
+          {
+            time: new Date().toLocaleTimeString(),
+            project: 'A.S.M.O.',
+            ...data
+          },
+          ...prev
+        ].slice(0, 50));
+      };
+
+      ws.onclose = () => {
+        setIsConnected(false);
+        setTimeout(connect, 3000);
+      };
+
+      wsRef.current = ws;
     };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      setTransactions((prev) => [
-        {
-          time: new Date().toLocaleTimeString(),
-          project: 'A.S.M.O.',
-          ...data
-        },
-        ...prev
-      ].slice(0, 50));
-    };
+    connect();
 
-    ws.onclose = () => {
-      setIsConnected(false);
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-
-    return () => ws.close();
   }, []);
 
   const exportToCSV = () => {
