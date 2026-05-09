@@ -47,11 +47,12 @@ function App() {
   const exportToCSV = () => {
     if (transactions.length === 0) return;
 
-    const headers = ["Time", "Project", "Type", "Hash", "Asset", "Amount", "Value_USD"];
+    const headers = ["Time", "Project", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD"];
     const rows = transactions.map(tx => [
       tx.time,
       tx.project,
       tx.type,
+      tx.flag || "STANDARD",
       tx.tx_hash,
       tx.asset,
       tx.amount,
@@ -67,7 +68,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `ASMO_Backup_${new Date().getTime()}.csv`);
+    link.setAttribute("download", `ASMO_SmartMoney_Backup_${new Date().getTime()}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -116,7 +117,11 @@ function App() {
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
-                    <tr key={index} className="tx-row">
+                    <tr 
+                      key={index} 
+                      className="tx-row" 
+                      style={tx.flag === 'WHALE' ? { backgroundColor: 'rgba(248, 81, 73, 0.12)' } : {}}
+                    >
                       <td className="tx-time">{tx.time}</td>
                       <td className="tx-project">
                          <span className="badge badge-project">{tx.project}</span>
@@ -125,6 +130,22 @@ function App() {
                          <span className={`badge ${tx.type === 'TOKEN' ? 'badge-token' : 'badge-native'}`}>
                            {tx.type}
                          </span>
+                         {tx.flag === 'WHALE' && (
+                           <span 
+                             className="badge" 
+                             style={{ 
+                               marginLeft: '8px', 
+                               backgroundColor: '#f85149', 
+                               color: '#fff', 
+                               fontWeight: 'bold', 
+                               padding: '2px 6px', 
+                               borderRadius: '4px',
+                               boxShadow: '0 0 8px rgba(248,81,73,0.5)'
+                             }}
+                           >
+                             🚨 WHALE
+                           </span>
+                         )}
                       </td>
                       <td className="tx-hash">
                         <a href={`https://testnet.arcscan.app/tx/${tx.tx_hash}`} target="_blank" rel="noreferrer">
