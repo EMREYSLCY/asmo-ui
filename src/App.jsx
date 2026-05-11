@@ -47,7 +47,7 @@ function App() {
   const exportToCSV = () => {
     if (transactions.length === 0) return;
 
-    const headers = ["Time", "Project", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD"];
+    const headers = ["Time", "Project", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From", "To"];
     const rows = transactions.map(tx => [
       tx.time,
       tx.project,
@@ -56,7 +56,9 @@ function App() {
       tx.tx_hash,
       tx.asset,
       tx.amount,
-      tx.amount * (tx.price_usd || 0)
+      tx.amount * (tx.price_usd || 0),
+      tx.from_addr || "N/A",
+      tx.to_addr || "N/A"
     ]);
 
     const csvContent = [
@@ -68,11 +70,16 @@ function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `ASMO_SmartMoney_Backup_${new Date().getTime()}.csv`);
+    link.setAttribute("download", `ASMO_SmartMoney_Accounting_${new Date().getTime()}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const formatAddress = (addr) => {
+    if (!addr || addr === '0x0000000000000000000000000000000000000000') return 'System / Genesis';
+    return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
 
   return (
@@ -80,7 +87,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Smart Money Oracle</span>
+          <span className="subtitle">Smart Money Oracle & Intelligence Terminal</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -91,8 +98,8 @@ function App() {
       <main className="main-content">
         <div className="panel">
           <div className="panel-header">
-            <h2>Live P&L Accounting</h2>
-            <button className="export-btn" onClick={exportToCSV}>Backup Data</button>
+            <h2>Live Flow & Intelligence Accounting</h2>
+            <button className="export-btn" onClick={exportToCSV}>Backup Flow Data</button>
           </div>
           
           <div className="table-container">
@@ -101,17 +108,19 @@ function App() {
                 <tr>
                   <th>Time</th>
                   <th>Project</th>
-                  <th>Type</th>
+                  <th>Intelligence Flag</th>
                   <th>Transaction Hash</th>
                   <th>Asset</th>
                   <th>Amount</th>
                   <th>Value ($)</th>
+                  <th>From Wallet</th>
+                  <th>To Wallet</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="empty-state">
+                    <td colSpan="9" className="empty-state">
                       Waiting for blockchain radar signals...
                     </td>
                   </tr>
@@ -160,6 +169,26 @@ function App() {
                         {typeof tx.amount === 'number' && tx.price_usd ? 
                           `$${(tx.amount * tx.price_usd).toFixed(2)}` : 
                           '---'}
+                      </td>
+                      <td className="tx-wallet">
+                        <a 
+                          href={`https://testnet.arcscan.app/address/${tx.from_addr}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          style={tx.flag === 'WHALE' ? { color: '#ff7b72', fontWeight: 'bold' } : {}}
+                        >
+                          {formatAddress(tx.from_addr)}
+                        </a>
+                      </td>
+                      <td className="tx-wallet">
+                        <a 
+                          href={`https://testnet.arcscan.app/address/${tx.to_addr}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          style={tx.flag === 'WHALE' ? { color: '#ff7b72', fontWeight: 'bold' } : {}}
+                        >
+                          {formatAddress(tx.to_addr)}
+                        </a>
                       </td>
                     </tr>
                   ))
