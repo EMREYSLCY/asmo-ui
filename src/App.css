@@ -182,3 +182,22 @@ body {
   border-radius: 4px;
   box-shadow: 0 0 8px rgba(163,113,247,0.6);
 }
+.badge-dex-swap {
+  background-color: #db2777;
+  color: #ffffff;
+}
+
+.badge-dex-liquidity {
+  background-color: #0284c7;
+  color: #ffffff;
+}
+
+.badge-dex-activity {
+  margin-left: 8px;
+  background-color: #ec4899;
+  color: #fff;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(219,39,119,0.6);
+}

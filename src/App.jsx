@@ -70,7 +70,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `ASMO_AgenticEconomy_Accounting_${new Date().getTime()}.csv`);
+    link.setAttribute("download", `ASMO_Omniscience_Accounting_${new Date().getTime()}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -86,10 +86,23 @@ function App() {
     if (type === 'AI_AGENT' || flag === 'AGENT_FLOW') {
       return { backgroundColor: 'rgba(163, 113, 247, 0.12)', borderLeft: '3px solid #a371f7' };
     }
+    if (type === 'DEX_SWAP' || type === 'DEX_LIQUIDITY' || flag === 'DEX_ACTIVITY') {
+      return { backgroundColor: 'rgba(219, 39, 119, 0.12)', borderLeft: '3px solid #db2777' };
+    }
     if (flag === 'WHALE') {
       return { backgroundColor: 'rgba(248, 81, 73, 0.12)' };
     }
     return {};
+  };
+
+  const renderTypeBadge = (type) => {
+    switch(type) {
+      case 'AI_AGENT': return <span className="badge badge-agent">AI AGENT</span>;
+      case 'DEX_SWAP': return <span className="badge badge-dex-swap">🦄 SWAP</span>;
+      case 'DEX_LIQUIDITY': return <span className="badge badge-dex-liquidity">🌊 POOL LP</span>;
+      case 'TOKEN': return <span className="badge badge-token">TOKEN</span>;
+      default: return <span className="badge badge-native">NATIVE</span>;
+    }
   };
 
   return (
@@ -97,7 +110,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Smart Money Oracle & Agentic Intelligence Terminal</span>
+          <span className="subtitle">Omniscience Intelligence Terminal (DeFi & AI Matrix)</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -108,8 +121,8 @@ function App() {
       <main className="main-content">
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow & Agentic Intelligence Accounting</h2>
-            <button className="export-btn" onClick={exportToCSV}>Backup Flow Data</button>
+            <h2>Live Flow Matrix & Omniscience Accounting</h2>
+            <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
           <div className="table-container">
@@ -118,20 +131,20 @@ function App() {
                 <tr>
                   <th>Time</th>
                   <th>Project</th>
-                  <th>Intelligence Flag</th>
+                  <th>Action Protocol</th>
                   <th>Transaction Hash</th>
-                  <th>Asset</th>
-                  <th>Amount</th>
-                  <th>Value ($)</th>
-                  <th>From Wallet</th>
-                  <th>To Wallet</th>
+                  <th>Target Asset / Contract</th>
+                  <th>Base Vol.</th>
+                  <th>Est. Value ($)</th>
+                  <th>Initiator (From)</th>
+                  <th>Receiver (To / Pool)</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
                     <td colSpan="9" className="empty-state">
-                      Waiting for blockchain radar & AI Agent signals...
+                      Scanning Arc Matrix for Native, DEX, and Agentic AI flows...
                     </td>
                   </tr>
                 ) : (
@@ -146,12 +159,7 @@ function App() {
                          <span className="badge badge-project">{tx.project}</span>
                       </td>
                       <td>
-                         <span className={`badge ${
-                           tx.type === 'AI_AGENT' ? 'badge-agent' : 
-                           tx.type === 'TOKEN' ? 'badge-token' : 'badge-native'
-                         }`}>
-                           {tx.type}
-                         </span>
+                         {renderTypeBadge(tx.type)}
                          
                          {tx.flag === 'WHALE' && (
                            <span className="badge badge-whale-alert">🚨 WHALE</span>
@@ -160,13 +168,17 @@ function App() {
                          {tx.flag === 'AGENT_FLOW' && (
                            <span className="badge badge-agent-flow">🤖 AI FLOW</span>
                          )}
+
+                         {tx.flag === 'DEX_ACTIVITY' && (
+                           <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>
+                         )}
                       </td>
                       <td className="tx-hash">
                         <a href={`https://testnet.arcscan.app/tx/${tx.tx_hash}`} target="_blank" rel="noreferrer">
                           {tx.tx_hash.substring(0, 10)}...{tx.tx_hash.substring(tx.tx_hash.length - 8)}
                         </a>
                       </td>
-                      <td className="tx-asset">{tx.asset.length > 18 ? `${tx.asset.substring(0,15)}...` : tx.asset}</td>
+                      <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0,17)}...` : tx.asset}</td>
                       <td className="tx-amount">
                         {typeof tx.amount === 'number' ? tx.amount.toFixed(4) : tx.amount}
                       </td>
