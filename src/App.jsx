@@ -70,7 +70,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `ASMO_SmartMoney_Accounting_${new Date().getTime()}.csv`);
+    link.setAttribute("download", `ASMO_AgenticEconomy_Accounting_${new Date().getTime()}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -82,12 +82,22 @@ function App() {
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
 
+  const getRowStyle = (type, flag) => {
+    if (type === 'AI_AGENT' || flag === 'AGENT_FLOW') {
+      return { backgroundColor: 'rgba(163, 113, 247, 0.12)', borderLeft: '3px solid #a371f7' };
+    }
+    if (flag === 'WHALE') {
+      return { backgroundColor: 'rgba(248, 81, 73, 0.12)' };
+    }
+    return {};
+  };
+
   return (
     <div className="dashboard-container">
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Smart Money Oracle & Intelligence Terminal</span>
+          <span className="subtitle">Smart Money Oracle & Agentic Intelligence Terminal</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -98,7 +108,7 @@ function App() {
       <main className="main-content">
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow & Intelligence Accounting</h2>
+            <h2>Live Flow & Agentic Intelligence Accounting</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Flow Data</button>
           </div>
           
@@ -121,7 +131,7 @@ function App() {
                 {transactions.length === 0 ? (
                   <tr>
                     <td colSpan="9" className="empty-state">
-                      Waiting for blockchain radar signals...
+                      Waiting for blockchain radar & AI Agent signals...
                     </td>
                   </tr>
                 ) : (
@@ -129,31 +139,26 @@ function App() {
                     <tr 
                       key={index} 
                       className="tx-row" 
-                      style={tx.flag === 'WHALE' ? { backgroundColor: 'rgba(248, 81, 73, 0.12)' } : {}}
+                      style={getRowStyle(tx.type, tx.flag)}
                     >
                       <td className="tx-time">{tx.time}</td>
                       <td className="tx-project">
                          <span className="badge badge-project">{tx.project}</span>
                       </td>
                       <td>
-                         <span className={`badge ${tx.type === 'TOKEN' ? 'badge-token' : 'badge-native'}`}>
+                         <span className={`badge ${
+                           tx.type === 'AI_AGENT' ? 'badge-agent' : 
+                           tx.type === 'TOKEN' ? 'badge-token' : 'badge-native'
+                         }`}>
                            {tx.type}
                          </span>
+                         
                          {tx.flag === 'WHALE' && (
-                           <span 
-                             className="badge" 
-                             style={{ 
-                               marginLeft: '8px', 
-                               backgroundColor: '#f85149', 
-                               color: '#fff', 
-                               fontWeight: 'bold', 
-                               padding: '2px 6px', 
-                               borderRadius: '4px',
-                               boxShadow: '0 0 8px rgba(248,81,73,0.5)'
-                             }}
-                           >
-                             🚨 WHALE
-                           </span>
+                           <span className="badge badge-whale-alert">🚨 WHALE</span>
+                         )}
+                         
+                         {tx.flag === 'AGENT_FLOW' && (
+                           <span className="badge badge-agent-flow">🤖 AI FLOW</span>
                          )}
                       </td>
                       <td className="tx-hash">
@@ -161,12 +166,12 @@ function App() {
                           {tx.tx_hash.substring(0, 10)}...{tx.tx_hash.substring(tx.tx_hash.length - 8)}
                         </a>
                       </td>
-                      <td className="tx-asset">{tx.asset.length > 10 ? `${tx.asset.substring(0,6)}...` : tx.asset}</td>
+                      <td className="tx-asset">{tx.asset.length > 18 ? `${tx.asset.substring(0,15)}...` : tx.asset}</td>
                       <td className="tx-amount">
                         {typeof tx.amount === 'number' ? tx.amount.toFixed(4) : tx.amount}
                       </td>
                       <td className="tx-value">
-                        {typeof tx.amount === 'number' && tx.price_usd ? 
+                        {typeof tx.amount === 'number' && tx.price_usd > 0 ? 
                           `$${(tx.amount * tx.price_usd).toFixed(2)}` : 
                           '---'}
                       </td>

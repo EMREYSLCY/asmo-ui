@@ -158,3 +158,27 @@ body {
 .tx-hash a:hover {
   text-decoration: underline;
 }
+.badge-agent {
+  background-color: #a371f7;
+  color: #ffffff;
+}
+
+.badge-whale-alert {
+  margin-left: 8px;
+  background-color: #f85149;
+  color: #fff;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(248,81,73,0.5);
+}
+
+.badge-agent-flow {
+  margin-left: 8px;
+  background-color: #8957e5;
+  color: #fff;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(163,113,247,0.6);
+}
