@@ -201,3 +201,28 @@ body {
   border-radius: 4px;
   box-shadow: 0 0 8px rgba(219,39,119,0.6);
 }
+.depth-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.depth-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #30363d;
+  transition: all 0.3s ease;
+}
+
+.depth-dot.active-depth-1 { background-color: #3fb950; box-shadow: 0 0 6px rgba(63,185,80,0.4); }
+.depth-dot.active-depth-2 { background-color: #fb8f44; box-shadow: 0 0 6px rgba(251,143,68,0.4); }
+.depth-dot.active-depth-3 { background-color: #db2777; box-shadow: 0 0 6px rgba(219,39,119,0.4); }
+.depth-dot.active-depth-4 { background-color: #a371f7; box-shadow: 0 0 8px rgba(163,113,247,0.6); }
+
+.depth-label {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #8b949e;
+  margin-left: 4px;
+}
