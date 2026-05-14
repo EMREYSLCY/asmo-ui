@@ -8,23 +8,30 @@ function App() {
 
   useEffect(() => {
     const connect = () => {
-      const ws = new WebSocket('wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev/');
+      const ws = new WebSocket('wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev');
 
-      ws.onopen = () => {
-        setIsConnected(true);
-      };
+      ws.onopen = () => setIsConnected(true);
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         
-        setTransactions((prev) => [
-          {
+        setTransactions((prev) => {
+          const existingIndex = prev.findIndex(t => t.tx_hash === data.tx_hash);
+          const newData = {
             time: new Date().toLocaleTimeString(),
             project: 'A.S.M.O.',
+            status: data.status || 'CONFIRMED',
             ...data
-          },
-          ...prev
-        ].slice(0, 50));
+          };
+
+          if (existingIndex !== -1) {
+             const updated = [...prev];
+             updated[existingIndex] = { ...updated[existingIndex], ...newData };
+             return updated;
+          } else {
+             return [newData, ...prev].slice(0, 50);
+          }
+        });
       };
 
       ws.onclose = () => {
@@ -36,44 +43,21 @@ function App() {
     };
 
     connect();
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
+    return () => { if (wsRef.current) wsRef.current.close(); };
   }, []);
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-
-    const headers = ["Time", "Project", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From", "To", "Gas_Used", "Exec_Depth"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From", "To", "Exec_Depth"];
     const rows = transactions.map(tx => [
-      tx.time,
-      tx.project,
-      tx.type,
-      tx.flag || "STANDARD",
-      tx.tx_hash,
-      tx.asset,
-      tx.amount,
-      tx.amount * (tx.price_usd || 0),
-      tx.from_addr || "N/A",
-      tx.to_addr || "N/A",
-      tx.gas_used || 0,
-      tx.execution_depth || 1
+      tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
+      tx.amount, tx.amount * (tx.price_usd || 0), tx.from_addr || "N/A", tx.to_addr || "N/A", tx.execution_depth || 1
     ]);
-
-    const csvContent = [
-      headers.join(","),
-      ...rows.map(row => row.join(","))
-    ].join("\n");
-
+    const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `ASMO_EVM_Trace_Accounting_${new Date().getTime()}.csv`);
-    link.style.visibility = 'hidden';
+    link.href = URL.createObjectURL(blob);
+    link.download = `ASMO_Mempool_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -84,16 +68,11 @@ function App() {
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
 
-  const getRowStyle = (type, flag) => {
-    if (type === 'AI_AGENT' || flag === 'AGENT_FLOW') {
-      return { backgroundColor: 'rgba(163, 113, 247, 0.12)', borderLeft: '3px solid #a371f7' };
-    }
-    if (type === 'DEX_SWAP' || type === 'DEX_LIQUIDITY' || flag === 'DEX_ACTIVITY') {
-      return { backgroundColor: 'rgba(219, 39, 119, 0.12)', borderLeft: '3px solid #db2777' };
-    }
-    if (flag === 'WHALE') {
-      return { backgroundColor: 'rgba(248, 81, 73, 0.12)' };
-    }
+  const getRowStyle = (status, type, flag) => {
+    if (status === 'PENDING') return { backgroundColor: 'rgba(234, 179, 8, 0.15)', borderLeft: '3px solid #eab308', opacity: 0.8 };
+    if (type === 'AI_AGENT' || flag === 'AGENT_FLOW') return { backgroundColor: 'rgba(163, 113, 247, 0.12)', borderLeft: '3px solid #a371f7' };
+    if (type === 'DEX_SWAP' || type === 'DEX_LIQUIDITY' || flag === 'DEX_ACTIVITY') return { backgroundColor: 'rgba(219, 39, 119, 0.12)', borderLeft: '3px solid #db2777' };
+    if (flag === 'WHALE') return { backgroundColor: 'rgba(248, 81, 73, 0.12)' };
     return {};
   };
 
@@ -107,23 +86,14 @@ function App() {
     }
   };
 
-  const renderDepthIndicators = (depth) => {
+  const renderDepthIndicators = (depth, status) => {
+    if (status === 'PENDING') return <span className="depth-label">⏳ Mempool</span>;
     const maxDepth = 4;
     let dots = [];
     for (let i = 1; i <= maxDepth; i++) {
-      dots.push(
-        <span 
-          key={i} 
-          className={`depth-dot ${i <= depth ? `active-depth-${depth}` : ''}`}
-        />
-      );
+      dots.push(<span key={i} className={`depth-dot ${i <= depth ? `active-depth-${depth}` : ''}`} />);
     }
-    return (
-      <div className="depth-container">
-        {dots}
-        <span className="depth-label">L{depth}</span>
-      </div>
-    );
+    return <div className="depth-container">{dots}<span className="depth-label">L{depth}</span></div>;
   };
 
   return (
@@ -131,7 +101,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">EVM Trace & Execution Depth Matrix Terminal</span>
+          <span className="subtitle">Mempool Radar & Execution Depth Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -142,19 +112,18 @@ function App() {
       <main className="main-content">
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow Matrix & EVM Depth Accounting</h2>
-            <button className="export-btn" onClick={exportToCSV}>Backup Trace Data</button>
+            <h2>Live Flow Matrix & Mempool Radar</h2>
+            <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
           <div className="table-container">
             <table className="accounting-table">
               <thead>
                 <tr>
-                  <th>Time</th>
-                  <th>Project</th>
+                  <th>Status</th>
                   <th>Action Protocol</th>
                   <th>Transaction Hash</th>
-                  <th>Target Asset / Contract</th>
+                  <th>Target Asset</th>
                   <th>Base Vol.</th>
                   <th>Est. Value ($)</th>
                   <th>Initiator (From)</th>
@@ -165,35 +134,22 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="10" className="empty-state">
-                      Simulating EVM execution traces for Native, DEX, and Agentic AI flows...
-                    </td>
+                    <td colSpan="9" className="empty-state">Scanning Mempool and Block Matrix...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
-                    <tr 
-                      key={index} 
-                      className="tx-row" 
-                      style={getRowStyle(tx.type, tx.flag)}
-                    >
-                      <td className="tx-time">{tx.time}</td>
-                      <td className="tx-project">
-                         <span className="badge badge-project">{tx.project}</span>
+                    <tr key={index} className="tx-row" style={getRowStyle(tx.status, tx.type, tx.flag)}>
+                      <td className="tx-status">
+                         <span className={`badge ${tx.status === 'PENDING' ? 'badge-pending' : 'badge-confirmed'}`}>
+                           {tx.status === 'PENDING' ? '⏳ PENDING' : '✓ CONFIRMED'}
+                         </span>
                       </td>
                       <td>
                          {renderTypeBadge(tx.type)}
-                         
-                         {tx.flag === 'WHALE' && (
-                           <span className="badge badge-whale-alert">🚨 WHALE</span>
-                         )}
-                         
-                         {tx.flag === 'AGENT_FLOW' && (
-                           <span className="badge badge-agent-flow">🤖 AI FLOW</span>
-                         )}
-
-                         {tx.flag === 'DEX_ACTIVITY' && (
-                           <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>
-                         )}
+                         {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
+                         {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
+                         {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
+                         {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
                       </td>
                       <td className="tx-hash">
                         <a href={`https://testnet.arcscan.app/tx/${tx.tx_hash}`} target="_blank" rel="noreferrer">
@@ -201,37 +157,19 @@ function App() {
                         </a>
                       </td>
                       <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0,17)}...` : tx.asset}</td>
-                      <td className="tx-amount">
-                        {typeof tx.amount === 'number' ? tx.amount.toFixed(4) : tx.amount}
-                      </td>
-                      <td className="tx-value">
-                        {typeof tx.amount === 'number' && tx.price_usd > 0 ? 
-                          `$${(tx.amount * tx.price_usd).toFixed(2)}` : 
-                          '---'}
-                      </td>
+                      <td className="tx-amount">{typeof tx.amount === 'number' ? tx.amount.toFixed(4) : tx.amount}</td>
+                      <td className="tx-value">{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
                       <td className="tx-wallet">
-                        <a 
-                          href={`https://testnet.arcscan.app/address/${tx.from_addr}`} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          style={tx.flag === 'WHALE' ? { color: '#ff7b72', fontWeight: 'bold' } : {}}
-                        >
+                        <a href={`https://testnet.arcscan.app/address/${tx.from_addr}`} target="_blank" rel="noreferrer">
                           {formatAddress(tx.from_addr)}
                         </a>
                       </td>
                       <td className="tx-wallet">
-                        <a 
-                          href={`https://testnet.arcscan.app/address/${tx.to_addr}`} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          style={tx.flag === 'WHALE' ? { color: '#ff7b72', fontWeight: 'bold' } : {}}
-                        >
+                        <a href={`https://testnet.arcscan.app/address/${tx.to_addr}`} target="_blank" rel="noreferrer">
                           {formatAddress(tx.to_addr)}
                         </a>
                       </td>
-                      <td className="tx-depth">
-                        {renderDepthIndicators(tx.execution_depth || 1)}
-                      </td>
+                      <td className="tx-depth">{renderDepthIndicators(tx.execution_depth || 1, tx.status)}</td>
                     </tr>
                   ))
                 )}
