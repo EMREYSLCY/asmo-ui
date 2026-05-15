@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import './App.css';
 
 function App() {
@@ -29,7 +30,7 @@ function App() {
              updated[existingIndex] = { ...updated[existingIndex], ...newData };
              return updated;
           } else {
-             return [newData, ...prev].slice(0, 50);
+             return [newData, ...prev].slice(0, 100);
           }
         });
       };
@@ -57,7 +58,7 @@ function App() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Mempool_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Live_Analytics_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -96,12 +97,49 @@ function App() {
     return <div className="depth-container">{dots}<span className="depth-label">L{depth}</span></div>;
   };
 
+  const chartData = useMemo(() => {
+    const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0 };
+    let whaleVol = 0, agentVol = 0, dexVol = 0, standardVol = 0;
+
+    transactions.forEach(tx => {
+      if (counts[tx.type] !== undefined) counts[tx.type]++;
+      const vol = (tx.amount || 0) * (tx.price_usd || 0);
+      if (tx.flag === 'WHALE' || tx.flag === 'PENDING_WHALE') whaleVol += vol;
+      else if (tx.flag === 'AGENT_FLOW') agentVol += vol;
+      else if (tx.flag === 'DEX_ACTIVITY') dexVol += vol;
+      else standardVol += vol;
+    });
+
+    const pie = Object.keys(counts).filter(k => counts[k] > 0).map(k => ({ name: k.replace('_', ' '), value: counts[k] }));
+    const bar = [
+      { name: 'Whale Vol', value: Math.round(whaleVol), fill: '#f85149' },
+      { name: 'AI Vol', value: Math.round(agentVol), fill: '#a371f7' },
+      { name: 'DEX Vol', value: Math.round(dexVol), fill: '#db2777' },
+      { name: 'Standard', value: Math.round(standardVol), fill: '#3fb950' }
+    ].filter(d => d.value > 0);
+
+    return { pie, bar };
+  }, [transactions]);
+
+  const PIE_COLORS = ['#a371f7', '#db2777', '#0284c7', '#3fb950', '#fb8f44'];
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip" style={{ backgroundColor: '#0d1117', padding: '10px', border: '1px solid #30363d', borderRadius: '6px' }}>
+          <p style={{ color: '#c9d1d9', margin: 0 }}>{`${payload[0].name}: ${payload[0].value.toLocaleString()}`}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="dashboard-container">
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Mempool Radar & Execution Depth Matrix</span>
+          <span className="subtitle">Mempool Radar & Visual Analytics Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -110,6 +148,43 @@ function App() {
       </header>
 
       <main className="main-content">
+        <div className="analytics-dashboard">
+          <div className="chart-box">
+            <h3>Protocol Activity Distribution</h3>
+            {chartData.pie.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={chartData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    {chartData.pie.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : <div className="empty-chart">Awaiting Network Data...</div>}
+          </div>
+
+          <div className="chart-box">
+            <h3>Intelligence Volume Metric ($)</h3>
+            {chartData.bar.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={chartData.bar} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <XAxis type="number" stroke="#8b949e" tickFormatter={(value) => `$${value}`} />
+                  <YAxis dataKey="name" type="category" stroke="#8b949e" width={80} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {chartData.bar.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : <div className="empty-chart">Awaiting Network Data...</div>}
+          </div>
+        </div>
+
         <div className="panel">
           <div className="panel-header">
             <h2>Live Flow Matrix & Mempool Radar</h2>

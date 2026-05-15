@@ -253,3 +253,40 @@ body {
   50% { opacity: 0.6; }
   100% { opacity: 1; }
 }
+.analytics-dashboard {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.chart-box {
+  flex: 1;
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-box h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.empty-chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  color: #484f58;
+  font-style: italic;
+}
+
+.recharts-default-legend .recharts-legend-item-text {
+  color: #c9d1d9 !important;
+}
