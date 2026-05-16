@@ -49,16 +49,16 @@ function App() {
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From", "To", "Exec_Depth"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From", "To", "Exec_Depth", "Realized_PnL"];
     const rows = transactions.map(tx => [
       tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
-      tx.amount, tx.amount * (tx.price_usd || 0), tx.from_addr || "N/A", tx.to_addr || "N/A", tx.execution_depth || 1
+      tx.amount, tx.amount * (tx.price_usd || 0), tx.from_addr || "N/A", tx.to_addr || "N/A", tx.execution_depth || 1, tx.pnl || 0.0
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Live_Analytics_${new Date().getTime()}.csv`;
+    link.download = `ASMO_PnL_Analytics_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -97,6 +97,12 @@ function App() {
     return <div className="depth-container">{dots}<span className="depth-label">L{depth}</span></div>;
   };
 
+  const renderPnL = (pnl) => {
+    if (!pnl || pnl === 0) return <span className="pnl-neutral">---</span>;
+    if (pnl > 0) return <span className="pnl-positive">+ ${pnl.toFixed(2)}</span>;
+    return <span className="pnl-negative">- ${Math.abs(pnl).toFixed(2)}</span>;
+  };
+
   const chartData = useMemo(() => {
     const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0 };
     let whaleVol = 0, agentVol = 0, dexVol = 0, standardVol = 0;
@@ -123,7 +129,7 @@ function App() {
 
   const PIE_COLORS = ['#a371f7', '#db2777', '#0284c7', '#3fb950', '#fb8f44'];
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
         <div className="custom-tooltip" style={{ backgroundColor: '#0d1117', padding: '10px', border: '1px solid #30363d', borderRadius: '6px' }}>
@@ -139,7 +145,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Mempool Radar & Visual Analytics Matrix</span>
+          <span className="subtitle">Wallet Detective & Visual P&L Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -187,7 +193,7 @@ function App() {
 
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow Matrix & Mempool Radar</h2>
+            <h2>Live Flow Matrix & P&L Intelligence</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
@@ -197,19 +203,18 @@ function App() {
                 <tr>
                   <th>Status</th>
                   <th>Action Protocol</th>
-                  <th>Transaction Hash</th>
                   <th>Target Asset</th>
                   <th>Base Vol.</th>
-                  <th>Est. Value ($)</th>
                   <th>Initiator (From)</th>
                   <th>Receiver (To / Pool)</th>
                   <th>Exec. Depth</th>
+                  <th>Realized P&L</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="empty-state">Scanning Mempool and Block Matrix...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Smart Money flows...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -226,13 +231,7 @@ function App() {
                          {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
                          {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
                       </td>
-                      <td className="tx-hash">
-                        <a href={`https://testnet.arcscan.app/tx/${tx.tx_hash}`} target="_blank" rel="noreferrer">
-                          {tx.tx_hash.substring(0, 10)}...{tx.tx_hash.substring(tx.tx_hash.length - 8)}
-                        </a>
-                      </td>
                       <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0,17)}...` : tx.asset}</td>
-                      <td className="tx-amount">{typeof tx.amount === 'number' ? tx.amount.toFixed(4) : tx.amount}</td>
                       <td className="tx-value">{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
                       <td className="tx-wallet">
                         <a href={`https://testnet.arcscan.app/address/${tx.from_addr}`} target="_blank" rel="noreferrer">
@@ -245,6 +244,7 @@ function App() {
                         </a>
                       </td>
                       <td className="tx-depth">{renderDepthIndicators(tx.execution_depth || 1, tx.status)}</td>
+                      <td className="tx-pnl">{renderPnL(tx.pnl)}</td>
                     </tr>
                   ))
                 )}

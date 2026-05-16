@@ -290,3 +290,24 @@ body {
 .recharts-default-legend .recharts-legend-item-text {
   color: #c9d1d9 !important;
 }
+.pnl-positive {
+  color: #3fb950;
+  font-weight: bold;
+  background-color: rgba(63, 185, 80, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-shadow: 0 0 5px rgba(63, 185, 80, 0.4);
+}
+
+.pnl-negative {
+  color: #f85149;
+  font-weight: bold;
+  background-color: rgba(248, 81, 73, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.pnl-neutral {
+  color: #484f58;
+  font-style: italic;
+}
