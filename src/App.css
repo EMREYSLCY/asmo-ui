@@ -311,3 +311,23 @@ body {
   color: #484f58;
   font-style: italic;
 }
+.entity-tag {
+  background-color: #1f2937;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #e5e7eb;
+  border: 1px solid #374151;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+.entity-tag:hover {
+  background-color: #374151;
+  border-color: #4b5563;
+  transform: translateY(-1px);
+}
