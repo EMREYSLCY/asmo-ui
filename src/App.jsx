@@ -49,16 +49,16 @@ function App() {
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Exec_Depth", "Realized_PnL"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Exec_Depth", "Realized_PnL", "Narrative"];
     const rows = transactions.map(tx => [
       tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
-      tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", tx.execution_depth || 1, tx.pnl || 0.0
+      tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || ""
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Entity_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Narrative_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -145,7 +145,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Entity Resolution & AI Clustering Matrix</span>
+          <span className="subtitle">Agentic Narrative Decoder & Intelligence Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -193,7 +193,7 @@ function App() {
 
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow Matrix & Entity Intelligence</h2>
+            <h2>Live Flow Matrix & Narrative Decoder</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
@@ -214,7 +214,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for Entities and Agents...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Agentic Flow Narratives...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -225,11 +225,18 @@ function App() {
                          </span>
                       </td>
                       <td>
-                         {renderTypeBadge(tx.type)}
-                         {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
-                         {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
-                         {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
-                         {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                             {renderTypeBadge(tx.type)}
+                             {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
+                             {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
+                             {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
+                             {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
+                           </div>
+                           {tx.narrative && (
+                             <span className="narrative-text">{tx.narrative}</span>
+                           )}
+                         </div>
                       </td>
                       <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0,17)}...` : tx.asset}</td>
                       <td className="tx-value">{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
