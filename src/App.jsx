@@ -49,16 +49,17 @@ function App() {
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Exec_Depth", "Realized_PnL", "Narrative"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
     const rows = transactions.map(tx => [
       tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
-      tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || ""
+      tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
+      tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Narrative_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Security_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -103,6 +104,13 @@ function App() {
     return <span className="pnl-negative">- ${Math.abs(pnl).toFixed(2)}</span>;
   };
 
+  const renderSecurityBadge = (score, label) => {
+    if (!label) return <span className="sec-safe">✅ VERIFIED SAFE</span>;
+    if (score < 25) return <span className="sec-danger">{label}</span>;
+    if (score < 50) return <span className="sec-warn">{label} ({score}/100)</span>;
+    return <span className="sec-safe">{label}</span>;
+  };
+
   const chartData = useMemo(() => {
     const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0 };
     let whaleVol = 0, agentVol = 0, dexVol = 0, standardVol = 0;
@@ -145,7 +153,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Agentic Narrative Decoder & Intelligence Matrix</span>
+          <span className="subtitle">Security Auditing & Intelligence Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -193,7 +201,7 @@ function App() {
 
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow Matrix & Narrative Decoder</h2>
+            <h2>Live Flow Matrix & Security Audit</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
@@ -204,17 +212,17 @@ function App() {
                   <th>Status</th>
                   <th>Action Protocol</th>
                   <th>Target Asset</th>
+                  <th>Risk Audit</th>
                   <th>Base Vol.</th>
                   <th>Initiator Entity</th>
                   <th>Receiver Entity</th>
-                  <th>Exec. Depth</th>
                   <th>Realized P&L</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for Agentic Flow Narratives...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Honeypots and Agentic Flows...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -239,6 +247,9 @@ function App() {
                          </div>
                       </td>
                       <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0,17)}...` : tx.asset}</td>
+                      <td className="tx-security">
+                        {renderSecurityBadge(tx.sec_score, tx.sec_label)}
+                      </td>
                       <td className="tx-value">{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
                       
                       <td className="tx-wallet">
@@ -253,7 +264,6 @@ function App() {
                         </a>
                       </td>
                       
-                      <td className="tx-depth">{renderDepthIndicators(tx.execution_depth || 1, tx.status)}</td>
                       <td className="tx-pnl">{renderPnL(tx.pnl)}</td>
                     </tr>
                   ))
