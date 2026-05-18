@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import ForceGraph2D from 'react-force-graph-2d';
 import './App.css';
 
 function App() {
   const [transactions, setTransactions] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [graphDimensions, setGraphDimensions] = useState({ width: 800, height: 400 });
   const wsRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const connect = () => {
@@ -15,22 +18,15 @@ function App() {
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        
         setTransactions((prev) => {
           const existingIndex = prev.findIndex(t => t.tx_hash === data.tx_hash);
-          const newData = {
-            time: new Date().toLocaleTimeString(),
-            project: 'A.S.M.O.',
-            status: data.status || 'CONFIRMED',
-            ...data
-          };
-
+          const newData = { time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: data.status || 'CONFIRMED', ...data };
           if (existingIndex !== -1) {
              const updated = [...prev];
              updated[existingIndex] = { ...updated[existingIndex], ...newData };
              return updated;
           } else {
-             return [newData, ...prev].slice(0, 100);
+             return [newData, ...prev].slice(0, 150);
           }
         });
       };
@@ -47,19 +43,28 @@ function App() {
     return () => { if (wsRef.current) wsRef.current.close(); };
   }, []);
 
+  useEffect(() => {
+    if (containerRef.current) {
+      setGraphDimensions({
+        width: containerRef.current.offsetWidth,
+        height: 400
+      });
+    }
+  }, []);
+
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
     const rows = transactions.map(tx => [
       tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
       tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
-      tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
+      tx.cluster || "Isolated", tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Security_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Cluster_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -86,16 +91,6 @@ function App() {
       case 'TOKEN': return <span className="badge badge-token">TOKEN</span>;
       default: return <span className="badge badge-native">NATIVE</span>;
     }
-  };
-
-  const renderDepthIndicators = (depth, status) => {
-    if (status === 'PENDING') return <span className="depth-label">⏳ Mempool</span>;
-    const maxDepth = 4;
-    let dots = [];
-    for (let i = 1; i <= maxDepth; i++) {
-      dots.push(<span key={i} className={`depth-dot ${i <= depth ? `active-depth-${depth}` : ''}`} />);
-    }
-    return <div className="depth-container">{dots}<span className="depth-label">L{depth}</span></div>;
   };
 
   const renderPnL = (pnl) => {
@@ -135,25 +130,54 @@ function App() {
     return { pie, bar };
   }, [transactions]);
 
-  const PIE_COLORS = ['#a371f7', '#db2777', '#0284c7', '#3fb950', '#fb8f44'];
+  const networkData = useMemo(() => {
+    const nodesMap = new Map();
+    const links = [];
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="custom-tooltip" style={{ backgroundColor: '#0d1117', padding: '10px', border: '1px solid #30363d', borderRadius: '6px' }}>
-          <p style={{ color: '#c9d1d9', margin: 0 }}>{`${payload[0].name}: ${payload[0].value.toLocaleString()}`}</p>
-        </div>
-      );
-    }
-    return null;
-  };
+    transactions.forEach(tx => {
+      if (!tx.from_addr || !tx.to_addr) return;
+      if (tx.from_addr === '0x00' || tx.to_addr === '0x00') return;
+
+      [ 
+        { id: tx.from_addr, label: tx.from_label, flag: tx.flag, cluster: tx.cluster }, 
+        { id: tx.to_addr, label: tx.to_label, flag: tx.flag, cluster: tx.cluster } 
+      ].forEach(ent => {
+        if (!nodesMap.has(ent.id)) {
+          let color = '#3fb950'; 
+          if (ent.label?.includes('Whale')) color = '#f85149';
+          if (ent.label?.includes('Agent') || ent.label?.includes('Registry')) color = '#a371f7';
+          if (ent.label?.includes('Pool')) color = '#db2777';
+
+          nodesMap.set(ent.id, {
+            id: ent.id,
+            name: ent.label || `${ent.id.substring(0, 6)}...`,
+            val: 2,
+            color: color,
+            cluster: ent.cluster
+          });
+        } else {
+          nodesMap.get(ent.id).val += 0.5; 
+        }
+      });
+
+      links.push({
+        source: tx.from_addr,
+        target: tx.to_addr,
+        color: tx.cluster ? '#ca8a04' : 'rgba(139, 148, 158, 0.3)'
+      });
+    });
+
+    return { nodes: Array.from(nodesMap.values()), links };
+  }, [transactions]);
+
+  const PIE_COLORS = ['#a371f7', '#db2777', '#0284c7', '#3fb950', '#fb8f44'];
 
   return (
     <div className="dashboard-container">
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Security Auditing & Intelligence Matrix</span>
+          <span className="subtitle">Wallet Cluster Graph & Sybil Network Topology</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -162,6 +186,31 @@ function App() {
       </header>
 
       <main className="main-content">
+        
+        <div className="panel" style={{ marginBottom: '24px' }}>
+          <div className="panel-header">
+            <h2>Force-Directed Wallet Network Graph</h2>
+            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Yellow Links indicate detected Sybil Clusters.</span>
+          </div>
+          <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
+             {networkData.nodes.length > 0 ? (
+                <ForceGraph2D
+                  width={graphDimensions.width}
+                  height={graphDimensions.height}
+                  graphData={networkData}
+                  nodeLabel="name"
+                  nodeColor="color"
+                  nodeRelSize={4}
+                  linkColor="color"
+                  linkWidth={link => link.color === '#ca8a04' ? 2 : 1}
+                  linkDirectionalArrowLength={3.5}
+                  linkDirectionalArrowRelPos={1}
+                  backgroundColor="#010409"
+                />
+             ) : <div className="empty-chart">Awaiting Node Connections...</div>}
+          </div>
+        </div>
+
         <div className="analytics-dashboard">
           <div className="chart-box">
             <h3>Protocol Activity Distribution</h3>
@@ -173,7 +222,7 @@ function App() {
                       <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0d1117', borderColor: '#30363d' }} itemStyle={{ color: '#c9d1d9' }}/>
                   <Legend verticalAlign="bottom" height={36} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
@@ -187,7 +236,7 @@ function App() {
                 <BarChart data={chartData.bar} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <XAxis type="number" stroke="#8b949e" tickFormatter={(value) => `$${value}`} />
                   <YAxis dataKey="name" type="category" stroke="#8b949e" width={80} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0d1117', borderColor: '#30363d' }} itemStyle={{ color: '#c9d1d9' }}/>
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {chartData.bar.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -222,7 +271,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for Honeypots and Agentic Flows...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Clusters and Agentic Flows...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -243,6 +292,9 @@ function App() {
                            </div>
                            {tx.narrative && (
                              <span className="narrative-text">{tx.narrative}</span>
+                           )}
+                           {tx.cluster && (
+                             <span className="cluster-badge">{tx.cluster}</span>
                            )}
                          </div>
                       </td>

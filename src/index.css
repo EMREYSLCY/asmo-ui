@@ -151,3 +151,14 @@ code {
   70% { box-shadow: 0 0 0 4px rgba(248, 81, 73, 0); }
   100% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0); }
 }
+.cluster-badge {
+  font-size: 0.7rem;
+  color: #ca8a04;
+  background-color: rgba(202, 138, 4, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(202, 138, 4, 0.3);
+  display: inline-block;
+  margin-top: 4px;
+  font-weight: bold;
+}
