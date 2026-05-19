@@ -176,3 +176,17 @@ code {
   border-radius: 4px;
   box-shadow: 0 0 8px rgba(14, 165, 233, 0.6);
 }
+.badge-lending {
+  background-color: #c2410c;
+  color: #fff;
+}
+
+.badge-lending-activity {
+  margin-left: 8px;
+  background-color: #ea580c;
+  color: #fff;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.6);
+}

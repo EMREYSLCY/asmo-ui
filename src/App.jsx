@@ -54,17 +54,17 @@ function App() {
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
     const rows = transactions.map(tx => [
       tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
       tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
-      tx.cluster || "Isolated", tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
+      tx.cluster || "Isolated", tx.health_factor || 99.0, tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Global_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Global_DeFi_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -78,6 +78,7 @@ function App() {
   const getRowStyle = (status, type, flag) => {
     if (status === 'PENDING') return { backgroundColor: 'rgba(234, 179, 8, 0.15)', borderLeft: '3px solid #eab308', opacity: 0.8 };
     if (type === 'CROSS_CHAIN' || flag === 'BRIDGE_ACTIVITY') return { backgroundColor: 'rgba(14, 165, 233, 0.12)', borderLeft: '3px solid #0ea5e9' };
+    if (type === 'LENDING' || flag === 'LENDING_ACTIVITY') return { backgroundColor: 'rgba(234, 88, 12, 0.12)', borderLeft: '3px solid #ea580c' };
     if (type === 'AI_AGENT' || flag === 'AGENT_FLOW') return { backgroundColor: 'rgba(163, 113, 247, 0.12)', borderLeft: '3px solid #a371f7' };
     if (type === 'DEX_SWAP' || type === 'DEX_LIQUIDITY' || flag === 'DEX_ACTIVITY') return { backgroundColor: 'rgba(219, 39, 119, 0.12)', borderLeft: '3px solid #db2777' };
     if (flag === 'WHALE') return { backgroundColor: 'rgba(248, 81, 73, 0.12)' };
@@ -86,6 +87,7 @@ function App() {
 
   const renderTypeBadge = (type) => {
     switch(type) {
+      case 'LENDING': return <span className="badge badge-lending">🏦 LENDING</span>;
       case 'CROSS_CHAIN': return <span className="badge badge-bridge">🌉 BRIDGE</span>;
       case 'AI_AGENT': return <span className="badge badge-agent">AI AGENT</span>;
       case 'DEX_SWAP': return <span className="badge badge-dex-swap">🦄 SWAP</span>;
@@ -101,6 +103,14 @@ function App() {
     return <span className="pnl-negative">- ${Math.abs(pnl).toFixed(2)}</span>;
   };
 
+  const renderHealthFactor = (hf) => {
+    if (!hf || hf >= 90) return <span className="sec-safe">HF: N/A</span>;
+    if (hf === 0) return <span className="sec-danger" style={{animation: 'pulse-danger 0.5s infinite'}}>💀 LIQUIDATED</span>;
+    if (hf < 1.1) return <span className="sec-danger" style={{animation: 'pulse-danger 1s infinite'}}>⚠️ LIQUIDATION RISK (HF: {hf})</span>;
+    if (hf < 1.5) return <span className="sec-warn">HF: {hf} (Warning)</span>;
+    return <span className="sec-safe">HF: {hf} (Healthy)</span>;
+  };
+
   const renderSecurityBadge = (score, label) => {
     if (!label) return <span className="sec-safe">✅ VERIFIED SAFE</span>;
     if (score < 25) return <span className="sec-danger">{label}</span>;
@@ -109,14 +119,15 @@ function App() {
   };
 
   const chartData = useMemo(() => {
-    const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0, 'CROSS_CHAIN': 0 };
-    let whaleVol = 0, agentVol = 0, dexVol = 0, bridgeVol = 0, standardVol = 0;
+    const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0, 'CROSS_CHAIN': 0, 'LENDING': 0 };
+    let whaleVol = 0, agentVol = 0, dexVol = 0, bridgeVol = 0, lendingVol = 0, standardVol = 0;
 
     transactions.forEach(tx => {
       if (counts[tx.type] !== undefined) counts[tx.type]++;
       const vol = (tx.amount || 0) * (tx.price_usd || 0);
       
-      if (tx.flag === 'BRIDGE_ACTIVITY') bridgeVol += vol;
+      if (tx.flag === 'LENDING_ACTIVITY') lendingVol += vol;
+      else if (tx.flag === 'BRIDGE_ACTIVITY') bridgeVol += vol;
       else if (tx.flag === 'WHALE' || tx.flag === 'PENDING_WHALE') whaleVol += vol;
       else if (tx.flag === 'AGENT_FLOW') agentVol += vol;
       else if (tx.flag === 'DEX_ACTIVITY') dexVol += vol;
@@ -125,6 +136,7 @@ function App() {
 
     const pie = Object.keys(counts).filter(k => counts[k] > 0).map(k => ({ name: k.replace('_', ' '), value: counts[k] }));
     const bar = [
+      { name: 'Lending Vol', value: Math.round(lendingVol), fill: '#ea580c' },
       { name: 'Bridge Vol', value: Math.round(bridgeVol), fill: '#0ea5e9' },
       { name: 'Whale Vol', value: Math.round(whaleVol), fill: '#f85149' },
       { name: 'AI Vol', value: Math.round(agentVol), fill: '#a371f7' },
@@ -153,6 +165,7 @@ function App() {
           if (ent.label?.includes('Agent') || ent.label?.includes('Registry')) color = '#a371f7';
           if (ent.label?.includes('Pool')) color = '#db2777';
           if (ent.label?.includes('Bridge') || ent.type === 'CROSS_CHAIN') color = '#0ea5e9';
+          if (ent.label?.includes('AAVE') || ent.type === 'LENDING') color = '#ea580c';
 
           nodesMap.set(ent.id, {
             id: ent.id,
@@ -169,21 +182,21 @@ function App() {
       links.push({
         source: tx.from_addr,
         target: tx.to_addr,
-        color: tx.type === 'CROSS_CHAIN' ? '#0ea5e9' : (tx.cluster ? '#ca8a04' : 'rgba(139, 148, 158, 0.3)')
+        color: tx.type === 'LENDING' ? '#ea580c' : (tx.type === 'CROSS_CHAIN' ? '#0ea5e9' : (tx.cluster ? '#ca8a04' : 'rgba(139, 148, 158, 0.3)'))
       });
     });
 
     return { nodes: Array.from(nodesMap.values()), links };
   }, [transactions]);
 
-  const PIE_COLORS = ['#a371f7', '#db2777', '#0284c7', '#3fb950', '#fb8f44', '#0ea5e9'];
+  const PIE_COLORS = ['#a371f7', '#db2777', '#ea580c', '#0ea5e9', '#3fb950', '#fb8f44'];
 
   return (
     <div className="dashboard-container">
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Cross-Chain Bridge Radar & Network Topology</span>
+          <span className="subtitle">DeFi Lending Sniper & Health Factor Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -196,7 +209,7 @@ function App() {
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
             <h2>Force-Directed Wallet Network Graph</h2>
-            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Blue Links indicate Cross-Chain Exits. Yellow Links indicate Sybil Clusters.</span>
+            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Orange Links indicate Lending. Blue indicates Exits. Yellow indicates Sybil Clusters.</span>
           </div>
           <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
              {networkData.nodes.length > 0 ? (
@@ -208,7 +221,7 @@ function App() {
                   nodeColor="color"
                   nodeRelSize={4}
                   linkColor="color"
-                  linkWidth={link => link.color === '#ca8a04' || link.color === '#0ea5e9' ? 2 : 1}
+                  linkWidth={link => ['#ca8a04', '#0ea5e9', '#ea580c'].includes(link.color) ? 2 : 1}
                   linkDirectionalArrowLength={3.5}
                   linkDirectionalArrowRelPos={1}
                   backgroundColor="#010409"
@@ -267,7 +280,7 @@ function App() {
                   <th>Status</th>
                   <th>Action Protocol</th>
                   <th>Target Asset</th>
-                  <th>Risk Audit</th>
+                  <th>Health & Risk</th>
                   <th>Base Vol.</th>
                   <th>Initiator Entity</th>
                   <th>Receiver Entity</th>
@@ -277,7 +290,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for Cross-Chain Exits and Agentic Flows...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Liquidations, Exits, and Agentic Flows...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -294,6 +307,7 @@ function App() {
                              {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
                              {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
                              {tx.flag === 'BRIDGE_ACTIVITY' && <span className="badge badge-bridge-activity">🔗 CROSS-CHAIN</span>}
+                             {tx.flag === 'LENDING_ACTIVITY' && <span className="badge badge-lending-activity">🏦 DEFI LENDING</span>}
                              {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
                              {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
                            </div>
@@ -307,7 +321,10 @@ function App() {
                       </td>
                       <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0,17)}...` : tx.asset}</td>
                       <td className="tx-security">
-                        {renderSecurityBadge(tx.sec_score, tx.sec_label)}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {renderSecurityBadge(tx.sec_score, tx.sec_label)}
+                          {renderHealthFactor(tx.health_factor)}
+                        </div>
                       </td>
                       <td className="tx-value">{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
                       
