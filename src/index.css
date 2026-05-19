@@ -162,3 +162,17 @@ code {
   margin-top: 4px;
   font-weight: bold;
 }
+.badge-bridge {
+  background-color: #0369a1;
+  color: #fff;
+}
+
+.badge-bridge-activity {
+  margin-left: 8px;
+  background-color: #0ea5e9;
+  color: #000;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(14, 165, 233, 0.6);
+}

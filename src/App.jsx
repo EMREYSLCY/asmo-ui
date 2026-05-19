@@ -64,7 +64,7 @@ function App() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Cluster_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Global_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -77,6 +77,7 @@ function App() {
 
   const getRowStyle = (status, type, flag) => {
     if (status === 'PENDING') return { backgroundColor: 'rgba(234, 179, 8, 0.15)', borderLeft: '3px solid #eab308', opacity: 0.8 };
+    if (type === 'CROSS_CHAIN' || flag === 'BRIDGE_ACTIVITY') return { backgroundColor: 'rgba(14, 165, 233, 0.12)', borderLeft: '3px solid #0ea5e9' };
     if (type === 'AI_AGENT' || flag === 'AGENT_FLOW') return { backgroundColor: 'rgba(163, 113, 247, 0.12)', borderLeft: '3px solid #a371f7' };
     if (type === 'DEX_SWAP' || type === 'DEX_LIQUIDITY' || flag === 'DEX_ACTIVITY') return { backgroundColor: 'rgba(219, 39, 119, 0.12)', borderLeft: '3px solid #db2777' };
     if (flag === 'WHALE') return { backgroundColor: 'rgba(248, 81, 73, 0.12)' };
@@ -85,6 +86,7 @@ function App() {
 
   const renderTypeBadge = (type) => {
     switch(type) {
+      case 'CROSS_CHAIN': return <span className="badge badge-bridge">🌉 BRIDGE</span>;
       case 'AI_AGENT': return <span className="badge badge-agent">AI AGENT</span>;
       case 'DEX_SWAP': return <span className="badge badge-dex-swap">🦄 SWAP</span>;
       case 'DEX_LIQUIDITY': return <span className="badge badge-dex-liquidity">🌊 POOL LP</span>;
@@ -107,13 +109,15 @@ function App() {
   };
 
   const chartData = useMemo(() => {
-    const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0 };
-    let whaleVol = 0, agentVol = 0, dexVol = 0, standardVol = 0;
+    const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0, 'CROSS_CHAIN': 0 };
+    let whaleVol = 0, agentVol = 0, dexVol = 0, bridgeVol = 0, standardVol = 0;
 
     transactions.forEach(tx => {
       if (counts[tx.type] !== undefined) counts[tx.type]++;
       const vol = (tx.amount || 0) * (tx.price_usd || 0);
-      if (tx.flag === 'WHALE' || tx.flag === 'PENDING_WHALE') whaleVol += vol;
+      
+      if (tx.flag === 'BRIDGE_ACTIVITY') bridgeVol += vol;
+      else if (tx.flag === 'WHALE' || tx.flag === 'PENDING_WHALE') whaleVol += vol;
       else if (tx.flag === 'AGENT_FLOW') agentVol += vol;
       else if (tx.flag === 'DEX_ACTIVITY') dexVol += vol;
       else standardVol += vol;
@@ -121,6 +125,7 @@ function App() {
 
     const pie = Object.keys(counts).filter(k => counts[k] > 0).map(k => ({ name: k.replace('_', ' '), value: counts[k] }));
     const bar = [
+      { name: 'Bridge Vol', value: Math.round(bridgeVol), fill: '#0ea5e9' },
       { name: 'Whale Vol', value: Math.round(whaleVol), fill: '#f85149' },
       { name: 'AI Vol', value: Math.round(agentVol), fill: '#a371f7' },
       { name: 'DEX Vol', value: Math.round(dexVol), fill: '#db2777' },
@@ -139,14 +144,15 @@ function App() {
       if (tx.from_addr === '0x00' || tx.to_addr === '0x00') return;
 
       [ 
-        { id: tx.from_addr, label: tx.from_label, flag: tx.flag, cluster: tx.cluster }, 
-        { id: tx.to_addr, label: tx.to_label, flag: tx.flag, cluster: tx.cluster } 
+        { id: tx.from_addr, label: tx.from_label, flag: tx.flag, cluster: tx.cluster, type: tx.type }, 
+        { id: tx.to_addr, label: tx.to_label, flag: tx.flag, cluster: tx.cluster, type: tx.type } 
       ].forEach(ent => {
         if (!nodesMap.has(ent.id)) {
           let color = '#3fb950'; 
           if (ent.label?.includes('Whale')) color = '#f85149';
           if (ent.label?.includes('Agent') || ent.label?.includes('Registry')) color = '#a371f7';
           if (ent.label?.includes('Pool')) color = '#db2777';
+          if (ent.label?.includes('Bridge') || ent.type === 'CROSS_CHAIN') color = '#0ea5e9';
 
           nodesMap.set(ent.id, {
             id: ent.id,
@@ -163,21 +169,21 @@ function App() {
       links.push({
         source: tx.from_addr,
         target: tx.to_addr,
-        color: tx.cluster ? '#ca8a04' : 'rgba(139, 148, 158, 0.3)'
+        color: tx.type === 'CROSS_CHAIN' ? '#0ea5e9' : (tx.cluster ? '#ca8a04' : 'rgba(139, 148, 158, 0.3)')
       });
     });
 
     return { nodes: Array.from(nodesMap.values()), links };
   }, [transactions]);
 
-  const PIE_COLORS = ['#a371f7', '#db2777', '#0284c7', '#3fb950', '#fb8f44'];
+  const PIE_COLORS = ['#a371f7', '#db2777', '#0284c7', '#3fb950', '#fb8f44', '#0ea5e9'];
 
   return (
     <div className="dashboard-container">
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Wallet Cluster Graph & Sybil Network Topology</span>
+          <span className="subtitle">Cross-Chain Bridge Radar & Network Topology</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -190,7 +196,7 @@ function App() {
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
             <h2>Force-Directed Wallet Network Graph</h2>
-            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Yellow Links indicate detected Sybil Clusters.</span>
+            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Blue Links indicate Cross-Chain Exits. Yellow Links indicate Sybil Clusters.</span>
           </div>
           <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
              {networkData.nodes.length > 0 ? (
@@ -202,7 +208,7 @@ function App() {
                   nodeColor="color"
                   nodeRelSize={4}
                   linkColor="color"
-                  linkWidth={link => link.color === '#ca8a04' ? 2 : 1}
+                  linkWidth={link => link.color === '#ca8a04' || link.color === '#0ea5e9' ? 2 : 1}
                   linkDirectionalArrowLength={3.5}
                   linkDirectionalArrowRelPos={1}
                   backgroundColor="#010409"
@@ -271,7 +277,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for Clusters and Agentic Flows...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Cross-Chain Exits and Agentic Flows...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -287,6 +293,7 @@ function App() {
                              {renderTypeBadge(tx.type)}
                              {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
                              {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
+                             {tx.flag === 'BRIDGE_ACTIVITY' && <span className="badge badge-bridge-activity">🔗 CROSS-CHAIN</span>}
                              {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
                              {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
                            </div>
