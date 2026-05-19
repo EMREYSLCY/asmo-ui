@@ -54,17 +54,17 @@ function App() {
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "Price_Impact", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
     const rows = transactions.map(tx => [
       tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
       tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
-      tx.cluster || "Isolated", tx.health_factor || 99.0, tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
+      tx.cluster || "Isolated", tx.health_factor || 99.0, tx.price_impact || 0.0, tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Global_DeFi_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Predictive_Market_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -196,7 +196,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">DeFi Lending Sniper & Health Factor Matrix</span>
+          <span className="subtitle">Predictive Market Simulator & Mechanics Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -269,7 +269,7 @@ function App() {
 
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow Matrix & Security Audit</h2>
+            <h2>Live Flow Matrix & Predictive Impact</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
@@ -281,7 +281,7 @@ function App() {
                   <th>Action Protocol</th>
                   <th>Target Asset</th>
                   <th>Health & Risk</th>
-                  <th>Base Vol.</th>
+                  <th>Base Vol. & Impact</th>
                   <th>Initiator Entity</th>
                   <th>Receiver Entity</th>
                   <th>Realized P&L</th>
@@ -290,7 +290,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for Liquidations, Exits, and Agentic Flows...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Market Volatility and Impact Dynamics...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -326,7 +326,16 @@ function App() {
                           {renderHealthFactor(tx.health_factor)}
                         </div>
                       </td>
-                      <td className="tx-value">{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
+                      <td className="tx-value">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span>{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</span>
+                          {tx.price_impact > 0.05 && (
+                             <span className={tx.price_impact > 1.0 ? "impact-high" : "impact-low"}>
+                               📉 Impact: {tx.price_impact}%
+                             </span>
+                          )}
+                        </div>
+                      </td>
                       
                       <td className="tx-wallet">
                         <a href={`https://testnet.arcscan.app/address/${tx.from_addr}`} target="_blank" rel="noreferrer">
