@@ -319,3 +319,17 @@ a:hover { text-decoration: underline; }
   font-weight: bold;
   animation: pulse-danger 1.5s infinite;
 }
+.badge-arbitrage {
+  background-color: #047857;
+  color: #fff;
+}
+
+.badge-arbitrage-activity {
+  margin-left: 8px;
+  background-color: #10b981;
+  color: #fff;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
