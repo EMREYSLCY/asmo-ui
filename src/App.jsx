@@ -54,18 +54,18 @@ function App() {
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "Price_Impact", "Arbitrage_Spread", "Agent_WinRate", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "TWAP", "Market_Trend", "Price_Impact", "Arbitrage_Spread", "Agent_WinRate", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
     const rows = transactions.map(tx => [
       tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
       tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
-      tx.cluster || "Isolated", tx.health_factor || 99.0, tx.price_impact || 0.0, tx.spread || 0.0, tx.agent_win_rate || 0.0,
+      tx.cluster || "Isolated", tx.health_factor || 99.0, tx.twap || 0.0, tx.twap_trend || "", tx.price_impact || 0.0, tx.spread || 0.0, tx.agent_win_rate || 0.0,
       tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Alpha_Strategy_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Macro_Intelligence_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -126,6 +126,15 @@ function App() {
     if (score < 25) return <span className="sec-danger">{label}</span>;
     if (score < 50) return <span className="sec-warn">{label}</span>;
     return <span className="sec-safe">{label}</span>;
+  };
+
+  const renderTwapBadge = (twap, trend) => {
+    if (!trend) return null;
+    if (trend.includes('Accumulation')) return <span className="trend-accum">{trend} (TWAP: ${twap})</span>;
+    if (trend.includes('Pressure')) return <span className="trend-dist">{trend} (TWAP: ${twap})</span>;
+    if (trend.includes('Bullish')) return <span className="trend-bull">{trend} (TWAP: ${twap})</span>;
+    if (trend.includes('Bearish')) return <span className="trend-bear">{trend} (TWAP: ${twap})</span>;
+    return <span className="trend-neutral">{trend} (TWAP: ${twap})</span>;
   };
 
   const chartData = useMemo(() => {
@@ -209,7 +218,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Agent Success Profiler & Alpha Strategy Matrix</span>
+          <span className="subtitle">Macro Intelligence & TWAP Volatility Oscillator</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -282,7 +291,7 @@ function App() {
 
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow Matrix & Alpha Agents</h2>
+            <h2>Live Flow Matrix & Macro Trend Audit</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
@@ -293,7 +302,7 @@ function App() {
                   <th>Status</th>
                   <th>Action Protocol</th>
                   <th>Target Asset</th>
-                  <th>Health & Risk</th>
+                  <th>Health & TWAP</th>
                   <th>Base Vol. & Alpha</th>
                   <th>Initiator Entity</th>
                   <th>Receiver Entity</th>
@@ -303,7 +312,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for Alpha Agents and Win Rates...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Market Trends and Macro Accumulation...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -340,6 +349,7 @@ function App() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {renderSecurityBadge(tx.sec_score, tx.sec_label)}
                           {renderHealthFactor(tx.health_factor)}
+                          {tx.twap_trend && renderTwapBadge(tx.twap, tx.twap_trend)}
                         </div>
                       </td>
                       <td className="tx-value">
