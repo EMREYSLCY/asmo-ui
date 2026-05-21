@@ -54,11 +54,12 @@ function App() {
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "Price_Impact", "Arbitrage_Spread", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
+    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "Price_Impact", "Arbitrage_Spread", "Agent_WinRate", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
     const rows = transactions.map(tx => [
       tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
       tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
-      tx.cluster || "Isolated", tx.health_factor || 99.0, tx.price_impact || 0.0, tx.spread || 0.0, tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
+      tx.cluster || "Isolated", tx.health_factor || 99.0, tx.price_impact || 0.0, tx.spread || 0.0, tx.agent_win_rate || 0.0,
+      tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -103,6 +104,13 @@ function App() {
     if (!pnl || pnl === 0) return <span className="pnl-neutral">---</span>;
     if (pnl > 0) return <span className="pnl-positive">+ ${pnl.toFixed(2)}</span>;
     return <span className="pnl-negative">- ${Math.abs(pnl).toFixed(2)}</span>;
+  };
+
+  const renderAgentBadge = (label, winRate) => {
+    if (!label) return null;
+    if (winRate > 60) return <span className="agent-alpha">🌟 Alpha Agent (WR: {winRate}%)</span>;
+    if (winRate > 0) return <span className="agent-beta">🤖 Beta Agent (WR: {winRate}%)</span>;
+    return <span className="entity-tag">{label}</span>;
   };
 
   const renderHealthFactor = (hf) => {
@@ -201,7 +209,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Arbitrage Scanner & Market Mechanics Matrix</span>
+          <span className="subtitle">Agent Success Profiler & Alpha Strategy Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -274,7 +282,7 @@ function App() {
 
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow Matrix & Strategy Audit</h2>
+            <h2>Live Flow Matrix & Alpha Agents</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
@@ -295,7 +303,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for Arbitrage Opportunities and Market Inefficiencies...</td>
+                    <td colSpan="8" className="empty-state">Scanning Network for Alpha Agents and Win Rates...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -352,13 +360,13 @@ function App() {
                       
                       <td className="tx-wallet">
                         <a href={`https://testnet.arcscan.app/address/${tx.from_addr}`} target="_blank" rel="noreferrer">
-                          {tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr)}
+                          {tx.from_label?.includes('Agent') ? renderAgentBadge(tx.from_label, tx.agent_win_rate) : (tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr))}
                         </a>
                       </td>
                       
                       <td className="tx-wallet">
                         <a href={`https://testnet.arcscan.app/address/${tx.to_addr}`} target="_blank" rel="noreferrer">
-                          {tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr)}
+                          {tx.to_label?.includes('Agent') ? renderAgentBadge(tx.to_label, tx.agent_win_rate) : (tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr))}
                         </a>
                       </td>
                       
