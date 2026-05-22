@@ -5,6 +5,7 @@ import './App.css';
 
 function App() {
   const [transactions, setTransactions] = useState([]);
+  const [leaderboard, setLeaderboard] = useState({ wallets: [], agents: [] });
   const [isConnected, setIsConnected] = useState(false);
   const [graphDimensions, setGraphDimensions] = useState({ width: 800, height: 400 });
   const wsRef = useRef(null);
@@ -18,6 +19,12 @@ function App() {
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        
+        if (data.msg_type === 'LEADERBOARD_UPDATE') {
+          setLeaderboard({ wallets: data.wallets, agents: data.agents });
+          return;
+        }
+
         setTransactions((prev) => {
           const existingIndex = prev.findIndex(t => t.tx_hash === data.tx_hash);
           const newData = { time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: data.status || 'CONFIRMED', ...data };
@@ -65,7 +72,7 @@ function App() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_MEV_Radar_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Institutional_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -222,7 +229,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">MEV Radar & Macro Trend Matrix</span>
+          <span className="subtitle">Institutional Leaderboard & Intelligence Matrix</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -231,6 +238,61 @@ function App() {
       </header>
 
       <main className="main-content">
+
+        {/* LİDERLİK TABLOSU WORKSPACE */}
+        <div className="leaderboard-container">
+          <div className="leaderboard-card">
+            <h3>🏆 Smart Money Whales (Top P&L)</h3>
+            <table className="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Wallet Entity</th>
+                  <th>Cumulative P&L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.wallets.length === 0 ? (
+                  <tr><td colSpan="3" style={{textAlign: 'center', color: '#8b949e', fontStyle: 'italic', padding: '16px'}}>Accumulating P&L Data...</td></tr>
+                ) : (
+                  leaderboard.wallets.map((w, i) => (
+                    <tr key={i}>
+                      <td className="leaderboard-rank">#{i + 1}</td>
+                      <td>{w.label ? <span className="entity-tag">{w.label}</span> : formatAddress(w.addr)}</td>
+                      <td style={{color: '#3fb950', fontWeight: 'bold'}}>+${w.pnl.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="leaderboard-card">
+            <h3>🤖 Alpha Agents (Top Win Rate)</h3>
+            <table className="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Agent Address</th>
+                  <th>Success Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.agents.length === 0 ? (
+                  <tr><td colSpan="3" style={{textAlign: 'center', color: '#8b949e', fontStyle: 'italic', padding: '16px'}}>Analyzing Agent Workflows...</td></tr>
+                ) : (
+                  leaderboard.agents.map((a, i) => (
+                    <tr key={i}>
+                      <td className="leaderboard-rank">#{i + 1}</td>
+                      <td>{renderAgentBadge(a.label, a.wr)}</td>
+                      <td style={{color: '#a371f7', fontWeight: 'bold'}}>{a.wr}%</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
         
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
