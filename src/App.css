@@ -409,3 +409,24 @@ a:hover { text-decoration: underline; }
   display: inline-block;
   font-weight: 600;
 }
+.badge-mev {
+  margin-left: 8px;
+  background-color: #dc2626;
+  color: #fff;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+  animation: pulse-danger 1s infinite;
+}
+
+.mev-text {
+  font-size: 0.7rem;
+  color: #fca5a5;
+  background-color: rgba(220, 38, 38, 0.2);
+  padding: 2px 4px;
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: bold;
+  border: 1px solid #dc2626;
+}
