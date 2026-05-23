@@ -61,9 +61,9 @@ function App() {
 
   const exportToCSV = () => {
     if (transactions.length === 0) return;
-    const headers = ["Time", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "TWAP", "Market_Trend", "Price_Impact", "Arbitrage_Spread", "Agent_WinRate", "MEV_Extracted", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
+    const headers = ["Time", "Network", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "TWAP", "Market_Trend", "Price_Impact", "Arbitrage_Spread", "Agent_WinRate", "MEV_Extracted", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
     const rows = transactions.map(tx => [
-      tx.time, tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
+      tx.time, tx.network || "ARC", tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
       tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
       tx.cluster || "Isolated", tx.health_factor || 99.0, tx.twap || 0.0, tx.twap_trend || "", tx.price_impact || 0.0, tx.spread || 0.0, tx.agent_win_rate || 0.0, tx.mev_extracted || 0.0,
       tx.execution_depth || 1, tx.pnl || 0.0, tx.narrative || "", tx.sec_label || "✅ VERIFIED SAFE"
@@ -72,7 +72,7 @@ function App() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_Institutional_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_MultiChain_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -81,6 +81,11 @@ function App() {
   const formatAddress = (addr) => {
     if (!addr || addr === '0x0000000000000000000000000000000000000000' || addr === '0x00') return 'System / Genesis';
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+  };
+  
+  const getExplorerLink = (network, addr) => {
+    if (network === 'BASE') return `https://basescan.org/address/${addr}`;
+    return `https://testnet.arcscan.app/address/${addr}`;
   };
 
   const getRowStyle = (status, type, flag) => {
@@ -93,6 +98,12 @@ function App() {
     if (type === 'DEX_SWAP' || type === 'DEX_LIQUIDITY' || flag === 'DEX_ACTIVITY') return { backgroundColor: 'rgba(219, 39, 119, 0.12)', borderLeft: '3px solid #db2777' };
     if (flag === 'WHALE') return { backgroundColor: 'rgba(248, 81, 73, 0.12)' };
     return {};
+  };
+
+  const renderNetworkBadge = (net) => {
+    const network = net || "ARC";
+    if (network === "BASE") return <span className="badge badge-base">🔵 BASE</span>;
+    return <span className="badge badge-arc">🔷 ARC</span>;
   };
 
   const renderTypeBadge = (type) => {
@@ -229,7 +240,7 @@ function App() {
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
-          <span className="subtitle">Institutional Leaderboard & Intelligence Matrix</span>
+          <span className="subtitle">Multi-Chain Intelligence Matrix & Global State</span>
         </div>
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
@@ -239,7 +250,6 @@ function App() {
 
       <main className="main-content">
 
-        {/* LİDERLİK TABLOSU WORKSPACE */}
         <div className="leaderboard-container">
           <div className="leaderboard-card">
             <h3>🏆 Smart Money Whales (Top P&L)</h3>
@@ -297,7 +307,7 @@ function App() {
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
             <h2>Force-Directed Wallet Network Graph</h2>
-            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Red Links indicate MEV Exploits. Green indicate Arbitrage. Orange indicate Lending.</span>
+            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Cross-Chain Dynamics. Red Links: MEV. Green: Arbitrage. Orange: Lending.</span>
           </div>
           <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
              {networkData.nodes.length > 0 ? (
@@ -357,7 +367,7 @@ function App() {
 
         <div className="panel">
           <div className="panel-header">
-            <h2>Live Flow Matrix & Exploit Audit</h2>
+            <h2>Multi-Chain Live Flow Matrix</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
@@ -378,7 +388,7 @@ function App() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Network for MEV Attacks, Arbitrage, and Market Trends...</td>
+                    <td colSpan="8" className="empty-state">Scanning Multiple Networks for MEV Attacks, Arbitrage, and Market Trends...</td>
                   </tr>
                 ) : (
                   transactions.map((tx, index) => (
@@ -391,6 +401,7 @@ function App() {
                       <td>
                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                             {renderNetworkBadge(tx.network)}
                              {renderTypeBadge(tx.type)}
                              {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
                              {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
@@ -441,13 +452,13 @@ function App() {
                       </td>
                       
                       <td className="tx-wallet">
-                        <a href={`https://testnet.arcscan.app/address/${tx.from_addr}`} target="_blank" rel="noreferrer">
+                        <a href={getExplorerLink(tx.network, tx.from_addr)} target="_blank" rel="noreferrer">
                           {tx.from_label?.includes('Agent') ? renderAgentBadge(tx.from_label, tx.agent_win_rate) : (tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr))}
                         </a>
                       </td>
                       
                       <td className="tx-wallet">
-                        <a href={`https://testnet.arcscan.app/address/${tx.to_addr}`} target="_blank" rel="noreferrer">
+                        <a href={getExplorerLink(tx.network, tx.to_addr)} target="_blank" rel="noreferrer">
                           {tx.to_label?.includes('Agent') ? renderAgentBadge(tx.to_label, tx.agent_win_rate) : (tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr))}
                         </a>
                       </td>
