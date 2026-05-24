@@ -3,23 +3,34 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import ForceGraph2D from 'react-force-graph-2d';
 import './App.css';
 
+const getWsUrl = () => {
+  try {
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) {
+      return import.meta.env.VITE_WS_URL;
+    }
+  } catch (e) {}
+  return 'wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev'; // Fallback
+};
+
 function App() {
   const [transactions, setTransactions] = useState([]);
   const [leaderboard, setLeaderboard] = useState({ wallets: [], agents: [] });
   const [isConnected, setIsConnected] = useState(false);
+  const [activeNetwork, setActiveNetwork] = useState('ALL');
   const [graphDimensions, setGraphDimensions] = useState({ width: 800, height: 400 });
+  
   const wsRef = useRef(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
     const connect = () => {
-      const ws = new WebSocket('wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev');
+      const wsUrl = getWsUrl();
+      const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => setIsConnected(true);
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        
         if (data.msg_type === 'LEADERBOARD_UPDATE') {
           setLeaderboard({ wallets: data.wallets, agents: data.agents });
           return;
@@ -59,10 +70,15 @@ function App() {
     }
   }, []);
 
+  const filteredTransactions = useMemo(() => {
+    if (activeNetwork === 'ALL') return transactions;
+    return transactions.filter(tx => tx.network === activeNetwork);
+  }, [transactions, activeNetwork]);
+
   const exportToCSV = () => {
-    if (transactions.length === 0) return;
+    if (filteredTransactions.length === 0) return;
     const headers = ["Time", "Network", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "TWAP", "Market_Trend", "Price_Impact", "Arbitrage_Spread", "Agent_WinRate", "MEV_Extracted", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
-    const rows = transactions.map(tx => [
+    const rows = filteredTransactions.map(tx => [
       tx.time, tx.network || "ARC", tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
       tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
       tx.cluster || "Isolated", tx.health_factor || 99.0, tx.twap || 0.0, tx.twap_trend || "", tx.price_impact || 0.0, tx.spread || 0.0, tx.agent_win_rate || 0.0, tx.mev_extracted || 0.0,
@@ -72,7 +88,7 @@ function App() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_MultiChain_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_${activeNetwork}_Matrix_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -82,7 +98,7 @@ function App() {
     if (!addr || addr === '0x0000000000000000000000000000000000000000' || addr === '0x00') return 'System / Genesis';
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
-  
+
   const getExplorerLink = (network, addr) => {
     if (network === 'BASE') return `https://basescan.org/address/${addr}`;
     return `https://testnet.arcscan.app/address/${addr}`;
@@ -160,7 +176,7 @@ function App() {
     const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0, 'CROSS_CHAIN': 0, 'LENDING': 0, 'ARBITRAGE': 0 };
     let whaleVol = 0, agentVol = 0, dexVol = 0, bridgeVol = 0, lendingVol = 0, arbVol = 0, mevVol = 0, standardVol = 0;
 
-    transactions.forEach(tx => {
+    filteredTransactions.forEach(tx => {
       if (counts[tx.type] !== undefined) counts[tx.type]++;
       const vol = (tx.amount || 0) * (tx.price_usd || 0);
       
@@ -187,13 +203,13 @@ function App() {
     ].filter(d => d.value > 0);
 
     return { pie, bar };
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   const networkData = useMemo(() => {
     const nodesMap = new Map();
     const links = [];
 
-    transactions.forEach(tx => {
+    filteredTransactions.forEach(tx => {
       if (!tx.from_addr || !tx.to_addr) return;
       if (tx.from_addr === '0x00' || tx.to_addr === '0x00') return;
 
@@ -231,7 +247,7 @@ function App() {
     });
 
     return { nodes: Array.from(nodesMap.values()), links };
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   const PIE_COLORS = ['#a371f7', '#db2777', '#10b981', '#ea580c', '#0ea5e9', '#3fb950', '#fb8f44', '#dc2626'];
 
@@ -242,6 +258,13 @@ function App() {
           <h1>A.S.M.O.</h1>
           <span className="subtitle">Multi-Chain Intelligence Matrix & Global State</span>
         </div>
+        
+        <div className="network-switcher">
+          <button className={`net-btn ${activeNetwork === 'ALL' ? 'active-net' : ''}`} onClick={() => setActiveNetwork('ALL')}>🌐 Global State</button>
+          <button className={`net-btn ${activeNetwork === 'ARC' ? 'active-net' : ''}`} onClick={() => setActiveNetwork('ARC')}>🔷 ARC Network</button>
+          <button className={`net-btn ${activeNetwork === 'BASE' ? 'active-net' : ''}`} onClick={() => setActiveNetwork('BASE')}>🔵 BASE Network</button>
+        </div>
+
         <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
           <span className={isConnected ? "pulse" : ""}>{isConnected ? '🟢' : '🔴'}</span> 
           {isConnected ? 'Engine Linked' : 'Engine Offline'}
@@ -306,7 +329,7 @@ function App() {
         
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
-            <h2>Force-Directed Wallet Network Graph</h2>
+            <h2>Force-Directed Wallet Network Graph ({activeNetwork})</h2>
             <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Cross-Chain Dynamics. Red Links: MEV. Green: Arbitrage. Orange: Lending.</span>
           </div>
           <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
@@ -330,7 +353,7 @@ function App() {
 
         <div className="analytics-dashboard">
           <div className="chart-box">
-            <h3>Protocol Activity Distribution</h3>
+            <h3>Protocol Activity Distribution ({activeNetwork})</h3>
             {chartData.pie.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -347,7 +370,7 @@ function App() {
           </div>
 
           <div className="chart-box">
-            <h3>Intelligence Volume Metric ($)</h3>
+            <h3>Intelligence Volume Metric ($) ({activeNetwork})</h3>
             {chartData.bar.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chartData.bar} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -367,7 +390,7 @@ function App() {
 
         <div className="panel">
           <div className="panel-header">
-            <h2>Multi-Chain Live Flow Matrix</h2>
+            <h2>Multi-Chain Live Flow Matrix ({activeNetwork})</h2>
             <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
           </div>
           
@@ -386,12 +409,12 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {transactions.length === 0 ? (
+                {filteredTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning Multiple Networks for MEV Attacks, Arbitrage, and Market Trends...</td>
+                    <td colSpan="8" className="empty-state">Scanning {activeNetwork} Network for MEV Attacks, Arbitrage, and Market Trends...</td>
                   </tr>
                 ) : (
-                  transactions.map((tx, index) => (
+                  filteredTransactions.map((tx, index) => (
                     <tr key={index} className="tx-row" style={getRowStyle(tx.status, tx.type, tx.flag)}>
                       <td className="tx-status">
                          <span className={`badge ${tx.status === 'PENDING' ? 'badge-pending' : 'badge-confirmed'}`}>
