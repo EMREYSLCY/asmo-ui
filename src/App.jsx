@@ -9,7 +9,7 @@ const getWsUrl = () => {
       return import.meta.env.VITE_WS_URL;
     }
   } catch (e) {}
-  return 'wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev'; // Fallback
+  return 'wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev'; 
 };
 
 function App() {
@@ -18,6 +18,10 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState('ALL');
   const [graphDimensions, setGraphDimensions] = useState({ width: 800, height: 400 });
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('ALL');
+  const [selectedTx, setSelectedTx] = useState(null);
   
   const wsRef = useRef(null);
   const containerRef = useRef(null);
@@ -70,15 +74,37 @@ function App() {
     }
   }, []);
 
-  const filteredTransactions = useMemo(() => {
-    if (activeNetwork === 'ALL') return transactions;
-    return transactions.filter(tx => tx.network === activeNetwork);
-  }, [transactions, activeNetwork]);
+  const displayedTransactions = useMemo(() => {
+    let filtered = transactions;
+    
+    if (activeNetwork !== 'ALL') {
+      filtered = filtered.filter(tx => tx.network === activeNetwork);
+    }
+    
+    if (filterType !== 'ALL') {
+      filtered = filtered.filter(tx => tx.flag === filterType || tx.type === filterType);
+    }
+    
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(tx => 
+        tx.tx_hash?.toLowerCase().includes(term) ||
+        tx.from_addr?.toLowerCase().includes(term) ||
+        tx.to_addr?.toLowerCase().includes(term) ||
+        tx.asset?.toLowerCase().includes(term) ||
+        tx.narrative?.toLowerCase().includes(term) ||
+        tx.from_label?.toLowerCase().includes(term) ||
+        tx.to_label?.toLowerCase().includes(term)
+      );
+    }
+    
+    return filtered;
+  }, [transactions, activeNetwork, filterType, searchTerm]);
 
   const exportToCSV = () => {
-    if (filteredTransactions.length === 0) return;
+    if (displayedTransactions.length === 0) return;
     const headers = ["Time", "Network", "Status", "Type", "Flag", "Hash", "Asset", "Amount", "Value_USD", "From_Entity", "To_Entity", "Sybil_Cluster", "Health_Factor", "TWAP", "Market_Trend", "Price_Impact", "Arbitrage_Spread", "Agent_WinRate", "MEV_Extracted", "Exec_Depth", "Realized_PnL", "Narrative", "Security_Label"];
-    const rows = filteredTransactions.map(tx => [
+    const rows = displayedTransactions.map(tx => [
       tx.time, tx.network || "ARC", tx.status, tx.type, tx.flag || "STANDARD", tx.tx_hash, tx.asset, 
       tx.amount, tx.amount * (tx.price_usd || 0), tx.from_label || tx.from_addr || "N/A", tx.to_label || tx.to_addr || "N/A", 
       tx.cluster || "Isolated", tx.health_factor || 99.0, tx.twap || 0.0, tx.twap_trend || "", tx.price_impact || 0.0, tx.spread || 0.0, tx.agent_win_rate || 0.0, tx.mev_extracted || 0.0,
@@ -88,7 +114,7 @@ function App() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ASMO_${activeNetwork}_Matrix_${new Date().getTime()}.csv`;
+    link.download = `ASMO_Matrix_Export_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -176,10 +202,9 @@ function App() {
     const counts = { 'AI_AGENT': 0, 'DEX_SWAP': 0, 'DEX_LIQUIDITY': 0, 'NATIVE': 0, 'TOKEN': 0, 'CROSS_CHAIN': 0, 'LENDING': 0, 'ARBITRAGE': 0 };
     let whaleVol = 0, agentVol = 0, dexVol = 0, bridgeVol = 0, lendingVol = 0, arbVol = 0, mevVol = 0, standardVol = 0;
 
-    filteredTransactions.forEach(tx => {
+    displayedTransactions.forEach(tx => {
       if (counts[tx.type] !== undefined) counts[tx.type]++;
       const vol = (tx.amount || 0) * (tx.price_usd || 0);
-      
       if (tx.flag === 'MEV_ACTIVITY') mevVol += vol;
       else if (tx.flag === 'ARBITRAGE_ACTIVITY') arbVol += vol;
       else if (tx.flag === 'LENDING_ACTIVITY') lendingVol += vol;
@@ -203,13 +228,13 @@ function App() {
     ].filter(d => d.value > 0);
 
     return { pie, bar };
-  }, [filteredTransactions]);
+  }, [displayedTransactions]);
 
   const networkData = useMemo(() => {
     const nodesMap = new Map();
     const links = [];
 
-    filteredTransactions.forEach(tx => {
+    displayedTransactions.forEach(tx => {
       if (!tx.from_addr || !tx.to_addr) return;
       if (tx.from_addr === '0x00' || tx.to_addr === '0x00') return;
 
@@ -247,12 +272,46 @@ function App() {
     });
 
     return { nodes: Array.from(nodesMap.values()), links };
-  }, [filteredTransactions]);
+  }, [displayedTransactions]);
 
   const PIE_COLORS = ['#a371f7', '#db2777', '#10b981', '#ea580c', '#0ea5e9', '#3fb950', '#fb8f44', '#dc2626'];
 
   return (
     <div className="dashboard-container">
+      {/* 🚀 DRILL-DOWN MODAL */}
+      {selectedTx && (
+        <div className="modal-overlay" onClick={() => setSelectedTx(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🔍 Deep Trace: {selectedTx.tx_hash}</h2>
+              <button className="close-btn" onClick={() => setSelectedTx(null)}>✕</button>
+            </div>
+            <div className="modal-grid">
+              <div className="modal-card">
+                <h4>Execution Trace</h4>
+                <p><strong>Network:</strong> {renderNetworkBadge(selectedTx.network)}</p>
+                <p><strong>Gas Consumed:</strong> {selectedTx.gas_used} Gwei</p>
+                <p><strong>Execution Depth:</strong> Level {selectedTx.execution_depth}</p>
+                <p><strong>Block Status:</strong> {selectedTx.status}</p>
+                <p><strong>Timestamp:</strong> {selectedTx.time}</p>
+              </div>
+              <div className="modal-card">
+                <h4>Financials & Alpha</h4>
+                <p><strong>Asset Transfer:</strong> {selectedTx.amount} {selectedTx.asset}</p>
+                <p><strong>Total Value:</strong> ${(selectedTx.amount * selectedTx.price_usd).toFixed(2)}</p>
+                <p><strong>Realized P&L:</strong> {renderPnL(selectedTx.pnl)}</p>
+                <p><strong>Price Impact:</strong> {selectedTx.price_impact > 0 ? `${selectedTx.price_impact}%` : 'N/A'}</p>
+                <p><strong>Alpha Extracted:</strong> {selectedTx.spread > 0 ? `Spread +${selectedTx.spread}%` : (selectedTx.mev_extracted > 0 ? `MEV $${selectedTx.mev_extracted}` : 'N/A')}</p>
+              </div>
+            </div>
+            <div className="modal-json">
+              <h4>Raw Hex Payload & State Matrix</h4>
+              <pre>{JSON.stringify(selectedTx, null, 2)}</pre>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
@@ -389,9 +448,30 @@ function App() {
         </div>
 
         <div className="panel">
-          <div className="panel-header">
-            <h2>Multi-Chain Live Flow Matrix ({activeNetwork})</h2>
-            <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
+          <div className="panel-header" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <h2>Multi-Chain Live Flow Matrix ({activeNetwork})</h2>
+            </div>
+            {/* 🔍 ADVANCED SEARCH & FILTER CONTROLS */}
+            <div className="matrix-controls">
+              <input 
+                type="text" 
+                className="search-input" 
+                placeholder="Search hash, address, asset, narrative..." 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
+              />
+              <select className="filter-select" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                <option value="ALL">All Event Types</option>
+                <option value="ARBITRAGE_ACTIVITY">🔄 Arbitrage Spread</option>
+                <option value="MEV_ACTIVITY">🚨 MEV Exploits</option>
+                <option value="WHALE">🐋 Whale Flows</option>
+                <option value="AGENT_FLOW">🤖 AI Agent Actions</option>
+                <option value="LENDING_ACTIVITY">🏦 Lending/Liquidations</option>
+                <option value="BRIDGE_ACTIVITY">🌉 Bridge Activity</option>
+              </select>
+              <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
+            </div>
           </div>
           
           <div className="table-container">
@@ -409,13 +489,13 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.length === 0 ? (
+                {displayedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="empty-state">Scanning {activeNetwork} Network for MEV Attacks, Arbitrage, and Market Trends...</td>
+                    <td colSpan="8" className="empty-state">No records matched your search parameters in the {activeNetwork} Matrix...</td>
                   </tr>
                 ) : (
-                  filteredTransactions.map((tx, index) => (
-                    <tr key={index} className="tx-row" style={getRowStyle(tx.status, tx.type, tx.flag)}>
+                  displayedTransactions.map((tx, index) => (
+                    <tr key={index} className="tx-row" style={getRowStyle(tx.status, tx.type, tx.flag)} onClick={() => setSelectedTx(tx)}>
                       <td className="tx-status">
                          <span className={`badge ${tx.status === 'PENDING' ? 'badge-pending' : 'badge-confirmed'}`}>
                            {tx.status === 'PENDING' ? '⏳ PENDING' : '✓ CONFIRMED'}
@@ -475,13 +555,13 @@ function App() {
                       </td>
                       
                       <td className="tx-wallet">
-                        <a href={getExplorerLink(tx.network, tx.from_addr)} target="_blank" rel="noreferrer">
+                        <a href={getExplorerLink(tx.network, tx.from_addr)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>
                           {tx.from_label?.includes('Agent') ? renderAgentBadge(tx.from_label, tx.agent_win_rate) : (tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr))}
                         </a>
                       </td>
                       
                       <td className="tx-wallet">
-                        <a href={getExplorerLink(tx.network, tx.to_addr)} target="_blank" rel="noreferrer">
+                        <a href={getExplorerLink(tx.network, tx.to_addr)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>
                           {tx.to_label?.includes('Agent') ? renderAgentBadge(tx.to_label, tx.agent_win_rate) : (tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr))}
                         </a>
                       </td>
