@@ -9,7 +9,12 @@ const getWsUrl = () => {
       return import.meta.env.VITE_WS_URL;
     }
   } catch (e) {}
-  return 'wss://glorious-fiesta-pv45wv747g6hx66-8765.app.github.dev';
+  
+  if (typeof window !== 'undefined' && window.location.hostname.includes('github.dev')) {
+    return `wss://${window.location.hostname.replace('-5173', '-8765')}`;
+  }
+  
+  return 'ws://localhost:8765';
 };
 
 function App() {
@@ -21,6 +26,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [selectedTx, setSelectedTx] = useState(null);
+  const [selectedEntity, setSelectedEntity] = useState(null);
   
   const wsRef = useRef(null);
   const containerRef = useRef(null);
@@ -120,6 +126,47 @@ function App() {
     return filtered;
   }, [transactions, activeNetwork, filterType, searchTerm]);
 
+  const entityData = useMemo(() => {
+    if (!selectedEntity) return null;
+    const txs = transactions.filter(tx => tx.from_addr === selectedEntity || tx.to_addr === selectedEntity);
+    let totalVol = 0;
+    let pnl = 0;
+    let mev = 0;
+    const assets = {};
+    const counterparties = {};
+    let latestLabel = null;
+
+    txs.forEach(tx => {
+      const vol = (tx.amount || 0) * (tx.price_usd || 0);
+      totalVol += vol;
+      if (tx.from_addr === selectedEntity && tx.pnl) pnl += tx.pnl;
+      if (tx.from_addr === selectedEntity && tx.mev_extracted) mev += tx.mev_extracted;
+
+      if (tx.asset) assets[tx.asset] = (assets[tx.asset] || 0) + vol;
+
+      const counterparty = tx.from_addr === selectedEntity ? tx.to_addr : tx.from_addr;
+      counterparties[counterparty] = (counterparties[counterparty] || 0) + 1;
+
+      if (tx.from_addr === selectedEntity && tx.from_label) latestLabel = tx.from_label;
+      if (tx.to_addr === selectedEntity && tx.to_label && !latestLabel) latestLabel = tx.to_label;
+    });
+
+    const topAsset = Object.entries(assets).sort((a,b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    const topCounterparty = Object.entries(counterparties).sort((a,b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
+    return {
+      address: selectedEntity,
+      label: latestLabel || formatAddress(selectedEntity),
+      txCount: txs.length,
+      totalVolume: totalVol,
+      netPnl: pnl,
+      mevExtracted: mev,
+      topAsset: topAsset.length > 15 ? `${topAsset.substring(0, 15)}...` : topAsset,
+      topCounterparty: formatAddress(topCounterparty),
+      history: txs.slice(0, 20)
+    };
+  }, [selectedEntity, transactions]);
+
   const exportToCSV = () => {
     if (displayedTransactions.length === 0) return;
     const headers = [
@@ -143,11 +190,6 @@ function App() {
   const formatAddress = (addr) => {
     if (!addr || addr === '0x0000000000000000000000000000000000000000' || addr === '0x00') return 'System / Genesis';
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
-  };
-
-  const getExplorerLink = (network, addr) => {
-    if (network === 'BASE') return `https://basescan.org/address/${addr}`;
-    return `https://testnet.arcscan.app/address/${addr}`;
   };
 
   const getRowStyle = (status, type, flag) => {
@@ -301,7 +343,69 @@ function App() {
 
   return (
     <div className="dashboard-container">
-      {selectedTx && (
+      {/* X-Ray Entity Profiler Modal */}
+      {selectedEntity && entityData && (
+        <div className="modal-overlay" onClick={() => setSelectedEntity(null)}>
+          <div className="xray-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="xray-header">
+              <div className="xray-title">
+                <h2>🕵️‍♂️ X-Ray Profiler: {entityData.label}</h2>
+                <span style={{ color: '#8b949e', fontSize: '0.9rem', marginTop: '8px', display: 'block' }}>{entityData.address}</span>
+              </div>
+              <button className="close-btn" onClick={() => setSelectedEntity(null)}>✕</button>
+            </div>
+            <div className="xray-metrics">
+              <div className="xray-card">
+                <div className="xray-card-title">Total Volume (USD)</div>
+                <div className="xray-card-value">${entityData.totalVolume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+              </div>
+              <div className="xray-card">
+                <div className="xray-card-title">Net Realized PnL</div>
+                <div className="xray-card-value">{renderPnL(entityData.netPnl)}</div>
+              </div>
+              <div className="xray-card">
+                <div className="xray-card-title">Top Asset Interacted</div>
+                <div className="xray-card-value" style={{ color: '#0ea5e9', fontSize: '1.1rem' }}>{entityData.topAsset}</div>
+              </div>
+              <div className="xray-card">
+                <div className="xray-card-title">Primary Counterparty</div>
+                <div className="xray-card-value" style={{ color: '#a371f7', fontSize: '1.1rem' }}>{entityData.topCounterparty}</div>
+              </div>
+            </div>
+            <div className="xray-history">
+              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>Recent Activity Fingerprint</h4>
+              <table className="accounting-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Network</th>
+                    <th>Action</th>
+                    <th>Value</th>
+                    <th>PnL / Impact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entityData.history.map((tx, idx) => (
+                    <tr key={idx} style={getRowStyle(tx.status, tx.type, tx.flag)}>
+                      <td style={{ color: '#8b949e' }}>{tx.time}</td>
+                      <td>{renderNetworkBadge(tx.network)}</td>
+                      <td>{renderTypeBadge(tx.type)}</td>
+                      <td style={{ fontWeight: 'bold' }}>{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
+                      <td>{renderPnL(tx.pnl)}</td>
+                    </tr>
+                  ))}
+                  {entityData.history.length === 0 && (
+                    <tr><td colSpan="5" style={{ textAlign: 'center', color: '#8b949e', padding: '20px' }}>No direct history found in current matrix state.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Deep Trace Modal */}
+      {selectedTx && !selectedEntity && (
         <div className="modal-overlay" onClick={() => setSelectedTx(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -368,7 +472,7 @@ function App() {
                   leaderboard.wallets.map((w, i) => (
                     <tr key={i}>
                       <td className="leaderboard-rank">#{i + 1}</td>
-                      <td>{w.label ? <span className="entity-tag">{w.label}</span> : formatAddress(w.addr)}</td>
+                      <td><span className="entity-link" onClick={() => setSelectedEntity(w.addr)}>{w.label || formatAddress(w.addr)}</span></td>
                       <td style={{ color: '#3fb950', fontWeight: 'bold' }}>+${w.pnl.toFixed(2)}</td>
                     </tr>
                   ))
@@ -393,7 +497,7 @@ function App() {
                   leaderboard.agents.map((a, i) => (
                     <tr key={i}>
                       <td className="leaderboard-rank">#{i + 1}</td>
-                      <td>{renderAgentBadge(a.label, a.wr)}</td>
+                      <td><span className="entity-link" onClick={() => setSelectedEntity(a.addr)}>{a.label || formatAddress(a.addr)}</span></td>
                       <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
                     </tr>
                   ))
@@ -422,6 +526,7 @@ function App() {
                 linkDirectionalArrowLength={3.5}
                 linkDirectionalArrowRelPos={1}
                 backgroundColor="#010409"
+                onNodeClick={(node) => setSelectedEntity(node.id)}
               />
             ) : (
               <div className="empty-chart">Awaiting Node Connections...</div>
@@ -556,14 +661,14 @@ function App() {
                         </div>
                       </td>
                       <td className="tx-wallet">
-                        <a href={getExplorerLink(tx.network, tx.from_addr)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                        <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.from_addr); }}>
                           {tx.from_label?.includes('Agent') ? renderAgentBadge(tx.from_label, tx.agent_win_rate) : tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr)}
-                        </a>
+                        </span>
                       </td>
                       <td className="tx-wallet">
-                        <a href={getExplorerLink(tx.network, tx.to_addr)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                        <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.to_addr); }}>
                           {tx.to_label?.includes('Agent') ? renderAgentBadge(tx.to_label, tx.agent_win_rate) : tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr)}
-                        </a>
+                        </span>
                       </td>
                       <td className="tx-pnl">{renderPnL(tx.pnl)}</td>
                     </tr>
