@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ForceGraph2D from 'react-force-graph-2d';
 import './App.css';
@@ -27,11 +27,75 @@ function App() {
   const [filterType, setFilterType] = useState('ALL');
   const [selectedTx, setSelectedTx] = useState(null);
   const [selectedEntity, setSelectedEntity] = useState(null);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   
   const wsRef = useRef(null);
   const containerRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef(null);
+  
+  const audioCtxRef = useRef(null);
+  const soundEnabledRef = useRef(false);
+
+  const initAudio = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    soundEnabledRef.current = !soundEnabledRef.current;
+    setSoundEnabled(soundEnabledRef.current);
+  };
+
+  const playSonar = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 1.5);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.5);
+  };
+
+  const playAlert = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  };
+
+  const playSuccess = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.setValueAtTime(900, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  };
 
   useEffect(() => {
     const connect = () => {
@@ -52,6 +116,17 @@ function App() {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
             return;
           }
+          
+          if (data.flag === 'MEV_ACTIVITY') {
+            playAlert();
+          } else if (data.flag === 'WHALE' || data.flag === 'PENDING_WHALE') {
+            if ((data.amount * data.price_usd) >= 25000) {
+              playSonar();
+            }
+          } else if (data.flag === 'ARBITRAGE_ACTIVITY') {
+            playSuccess();
+          }
+
           setTransactions((prev) => {
             const existingIndex = prev.findIndex((t) => t.tx_hash === data.tx_hash);
             const newData = { time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: data.status || 'CONFIRMED', ...data };
@@ -448,8 +523,13 @@ function App() {
           <button className={`net-btn ${activeNetwork === 'ARC' ? 'active-net' : ''}`} onClick={() => setActiveNetwork('ARC')}>🔷 ARC Network</button>
           <button className={`net-btn ${activeNetwork === 'BASE' ? 'active-net' : ''}`} onClick={() => setActiveNetwork('BASE')}>🔵 BASE Network</button>
         </div>
-        <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
-          <span className={isConnected ? 'pulse' : ''}>{isConnected ? '🟢' : '🔴'}</span> {isConnected ? 'Engine Linked' : 'Engine Offline'}
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <button className={`sound-btn ${soundEnabled ? 'sound-active' : ''}`} onClick={initAudio}>
+            {soundEnabled ? '🔊 Sonar Active' : '🔇 Sonar Muted'}
+          </button>
+          <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
+            <span className={isConnected ? 'pulse' : ''}>{isConnected ? '🟢' : '🔴'}</span> {isConnected ? 'Engine Linked' : 'Engine Offline'}
+          </div>
         </div>
       </header>
 
