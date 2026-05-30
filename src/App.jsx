@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import ForceGraph2D from 'react-force-graph-2d';
+import ForceGraph3D from 'react-force-graph-3d';
 import './App.css';
 
 const getWsUrl = () => {
@@ -395,19 +395,19 @@ function App() {
           nodesMap.set(ent.id, {
             id: ent.id,
             name: ent.label || `${ent.id.substring(0, 6)}...`,
-            val: 2,
+            val: 4,
             color: color,
             cluster: ent.cluster,
           });
         } else {
-          nodesMap.get(ent.id).val += 0.5;
+          nodesMap.get(ent.id).val += 1;
         }
       });
       
       links.push({
         source: tx.from_addr,
         target: tx.to_addr,
-        color: tx.flag === 'MEV_ACTIVITY' ? '#dc2626' : tx.type === 'ARBITRAGE' ? '#10b981' : tx.type === 'LENDING' ? '#ea580c' : tx.type === 'CROSS_CHAIN' ? '#0ea5e9' : tx.cluster ? '#ca8a04' : 'rgba(139, 148, 158, 0.3)',
+        color: tx.flag === 'MEV_ACTIVITY' ? '#dc2626' : tx.type === 'ARBITRAGE' ? '#10b981' : tx.type === 'LENDING' ? '#ea580c' : tx.type === 'CROSS_CHAIN' ? '#0ea5e9' : tx.cluster ? '#ca8a04' : 'rgba(139, 148, 158, 0.5)',
       });
     });
     
@@ -418,7 +418,6 @@ function App() {
 
   return (
     <div className="dashboard-container">
-      {/* X-Ray Entity Profiler Modal */}
       {selectedEntity && entityData && (
         <div className="modal-overlay" onClick={() => setSelectedEntity(null)}>
           <div className="xray-modal" onClick={(e) => e.stopPropagation()}>
@@ -479,7 +478,6 @@ function App() {
         </div>
       )}
 
-      {/* Transaction Deep Trace Modal */}
       {selectedTx && !selectedEntity && (
         <div className="modal-overlay" onClick={() => setSelectedTx(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -589,22 +587,23 @@ function App() {
 
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
-            <h2>Force-Directed Wallet Network Graph ({activeNetwork})</h2>
-            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>Cross-Chain Dynamics. Red Links: MEV. Green: Arbitrage. Orange: Lending.</span>
+            <h2>Orbital Liquidity Map ({activeNetwork})</h2>
+            <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>3D Deep Space View. Particles indicate live transaction flow and direction.</span>
           </div>
           <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
             {networkData.nodes.length > 0 ? (
-              <ForceGraph2D
+              <ForceGraph3D
                 width={graphDimensions.width}
                 height={graphDimensions.height}
                 graphData={networkData}
                 nodeLabel="name"
                 nodeColor="color"
-                nodeRelSize={4}
+                nodeRelSize={6}
                 linkColor="color"
-                linkWidth={(link) => (['#ca8a04', '#0ea5e9', '#ea580c', '#10b981', '#dc2626'].includes(link.color) ? 2 : 1)}
-                linkDirectionalArrowLength={3.5}
-                linkDirectionalArrowRelPos={1}
+                linkWidth={1}
+                linkDirectionalParticles={3}
+                linkDirectionalParticleWidth={2}
+                linkDirectionalParticleSpeed={0.006}
                 backgroundColor="#010409"
                 onNodeClick={(node) => setSelectedEntity(node.id)}
               />
