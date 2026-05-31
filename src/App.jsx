@@ -29,6 +29,11 @@ function App() {
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(false);
   
+  const [mempoolSim, setMempoolSim] = useState({
+    ARC: { volume: 0, impact: 0, txs: [] },
+    BASE: { volume: 0, impact: 0, txs: [] }
+  });
+  
   const wsRef = useRef(null);
   const containerRef = useRef(null);
   const reconnectAttempts = useRef(0);
@@ -112,8 +117,21 @@ function App() {
         
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
+          
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+          
+          if (data.msg_type === 'MEMPOOL_SIMULATION') {
+            setMempoolSim(prev => ({
+              ...prev,
+              [data.network]: {
+                volume: data.total_volume,
+                impact: data.expected_impact,
+                txs: data.high_risk_txs
+              }
+            }));
             return;
           }
           
@@ -241,6 +259,20 @@ function App() {
       history: txs.slice(0, 20)
     };
   }, [selectedEntity, transactions]);
+
+  const displayMempool = useMemo(() => {
+    if (activeNetwork === 'ALL') {
+      const arcData = mempoolSim.ARC || { volume: 0, impact: 0, txs: [] };
+      const baseData = mempoolSim.BASE || { volume: 0, impact: 0, txs: [] };
+      const allTxs = [...arcData.txs, ...baseData.txs].sort((a, b) => b.usd_value - a.usd_value).slice(0, 5);
+      return {
+        volume: arcData.volume + baseData.volume,
+        impact: Math.max(arcData.impact, baseData.impact),
+        txs: allTxs
+      };
+    }
+    return mempoolSim[activeNetwork] || { volume: 0, impact: 0, txs: [] };
+  }, [mempoolSim, activeNetwork]);
 
   const exportToCSV = () => {
     if (displayedTransactions.length === 0) return;
@@ -583,6 +615,54 @@ function App() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div className="panel mempool-panel" style={{ marginBottom: '24px' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü (Next-Block Prediction)</h2>
+            <span className="pulse-text">Live Mempool Scanning...</span>
+          </div>
+          <div className="mempool-grid">
+            <div className="mempool-stat-card">
+              <h4>Pending Block Volume</h4>
+              <div className="mempool-value">${displayMempool.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+            </div>
+            <div className="mempool-stat-card">
+              <h4>Expected Price Impact</h4>
+              <div className={`mempool-value ${displayMempool.impact > 1 ? 'impact-high' : ''}`}>{displayMempool.impact.toFixed(2)}%</div>
+            </div>
+            <div className="mempool-stat-card">
+              <h4>Volatility Forecast</h4>
+              <div className="mempool-value" style={{ color: displayMempool.impact > 2 ? '#f85149' : '#3fb950' }}>
+                {displayMempool.impact > 2 ? '⚠️ HIGH VOLATILITY' : '🌊 STABLE FLOW'}
+              </div>
+            </div>
+          </div>
+          <table className="accounting-table mempool-table">
+            <thead>
+              <tr>
+                <th>Vanguard Hash</th>
+                <th>From Entity</th>
+                <th>To Entity</th>
+                <th>Projected Size (USD)</th>
+                <th>Est. Impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayMempool.txs.map((t, i) => (
+                <tr key={i} className="mempool-row">
+                  <td className="mempool-hash">{t.tx_hash.substring(0, 15)}...</td>
+                  <td>{formatAddress(t.from_addr)}</td>
+                  <td>{formatAddress(t.to_addr)}</td>
+                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>${t.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td>{t.impact}%</td>
+                </tr>
+              ))}
+              {displayMempool.txs.length === 0 && (
+                <tr><td colSpan="5" className="empty-state">No significant vanguard flows detected in current mempool...</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         <div className="panel" style={{ marginBottom: '24px' }}>
