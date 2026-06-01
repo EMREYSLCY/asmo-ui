@@ -36,6 +36,7 @@ function App() {
   
   const wsRef = useRef(null);
   const containerRef = useRef(null);
+  const fileInputRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef(null);
   
@@ -134,6 +135,19 @@ function App() {
             }));
             return;
           }
+
+          if (data.msg_type === 'BACKUP_READY') {
+            const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ASMO_Disaster_Recovery_${new Date().getTime()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            return;
+          }
           
           if (data.flag === 'MEV_ACTIVITY') {
             playAlert();
@@ -194,6 +208,50 @@ function App() {
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
+
+  const handleBackup = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'BACKUP' }));
+    }
+  };
+
+  const handleRestore = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ action: 'RESTORE', data: parsed }));
+          alert("Geri Yükleme Komutu A.S.M.O. Motoruna İletildi!");
+        }
+      } catch (err) {
+        alert("Geçersiz veya bozuk yedekleme dosyası!");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null;
+  };
+
+  const projectAnalysis = useMemo(() => {
+    const projects = {};
+    transactions.forEach(tx => {
+      if (!tx.asset || tx.asset === 'ARC' || tx.asset === 'BASE') return;
+      if (!projects[tx.asset]) {
+        projects[tx.asset] = { asset: tx.asset, volume: 0, txCount: 0, pnl: 0, wallets: new Set() };
+      }
+      projects[tx.asset].volume += (tx.amount || 0) * (tx.price_usd || 0);
+      projects[tx.asset].txCount += 1;
+      projects[tx.asset].pnl += (tx.pnl || 0);
+      projects[tx.asset].wallets.add(tx.from_addr);
+      projects[tx.asset].wallets.add(tx.to_addr);
+    });
+    return Object.values(projects)
+      .map(p => ({ ...p, uniqueWallets: p.wallets.size }))
+      .sort((a, b) => b.volume - a.volume)
+      .slice(0, 10);
+  }, [transactions]);
 
   const displayedTransactions = useMemo(() => {
     let filtered = transactions;
@@ -663,6 +721,62 @@ function App() {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="panel" style={{ marginBottom: '24px' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#58a6ff' }}>🗄️ Proje Analiz Paneli & Felaket Kurtarma</h2>
+          </div>
+          <div className="project-analysis-grid">
+            <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
+              <table className="accounting-table">
+                <thead>
+                  <tr>
+                    <th>Project / Asset Contract</th>
+                    <th>Total Volume (USD)</th>
+                    <th>Tx Count</th>
+                    <th>Unique Wallets</th>
+                    <th>Net PnL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {projectAnalysis.map((p, i) => (
+                    <tr key={i}>
+                      <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{p.asset.length > 20 ? `${p.asset.substring(0, 17)}...` : p.asset}</td>
+                      <td>${p.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                      <td>{p.txCount}</td>
+                      <td>{p.uniqueWallets}</td>
+                      <td>{renderPnL(p.pnl)}</td>
+                    </tr>
+                  ))}
+                  {projectAnalysis.length === 0 && (
+                    <tr><td colSpan="5" className="empty-state">Proje verisi bekleniyor...</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="recovery-card" style={{ flex: 1 }}>
+              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Sistem Yedekleme & Geri Yükleme</h3>
+              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>A.S.M.O. veritabanını şifreli JSON formatında dışa aktarın veya mevcut bir yedeği anında motora enjekte edin.</p>
+              
+              <button className="recovery-btn backup-btn" onClick={handleBackup}>
+                📥 A.S.M.O. Veritabanını Yedekle
+              </button>
+              
+              <div style={{ marginTop: '24px' }}>
+                <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
+                  📤 Sistem Geri Yükle (Restore)
+                </button>
+                <input 
+                  type="file" 
+                  accept=".json" 
+                  ref={fileInputRef} 
+                  style={{ display: 'none' }} 
+                  onChange={handleRestore} 
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="panel" style={{ marginBottom: '24px' }}>

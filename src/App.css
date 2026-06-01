@@ -933,3 +933,54 @@ a:hover {
   color: #58a6ff !important;
   font-family: monospace;
 }
+
+.project-analysis-grid {
+  display: flex;
+  align-items: flex-start;
+}
+
+.recovery-card {
+  background: #010409;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.recovery-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.backup-btn {
+  background-color: rgba(88, 166, 255, 0.15);
+  color: #58a6ff;
+  border: 1px solid rgba(88, 166, 255, 0.4);
+}
+
+.backup-btn:hover {
+  background-color: #58a6ff;
+  color: #0d1117;
+}
+
+.restore-btn {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+}
+
+.restore-btn:hover {
+  background-color: #f85149;
+  color: #0d1117;
+}
