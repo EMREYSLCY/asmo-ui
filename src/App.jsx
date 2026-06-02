@@ -34,6 +34,8 @@ function App() {
     BASE: { volume: 0, impact: 0, txs: [] }
   });
   
+  const [arbitrageRoutes, setArbitrageRoutes] = useState([]);
+  
   const wsRef = useRef(null);
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -121,6 +123,15 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+          
+          if (data.msg_type === 'ARBITRAGE_RADAR') {
+            setArbitrageRoutes(prev => {
+              const newRoute = { time: new Date().toLocaleTimeString(), ...data };
+              return [newRoute, ...prev].slice(0, 5);
+            });
+            playSuccess();
             return;
           }
           
@@ -669,6 +680,46 @@ function App() {
                       <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
                     </tr>
                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginBottom: '24px' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
+            <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Detection Time</th>
+                  <th>Target Asset</th>
+                  <th>Execution Route</th>
+                  <th>Entry Price</th>
+                  <th>Exit Price</th>
+                  <th>Spread %</th>
+                  <th>Est. Net Profit (50k Vol)</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {arbitrageRoutes.map((route, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}>
+                    <td style={{ color: '#8b949e' }}>{route.time}</td>
+                    <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
+                    <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
+                    <td>${route.buy_price.toFixed(4)}</td>
+                    <td>${route.sell_price.toFixed(4)}</td>
+                    <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
+                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td><button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#10b981' }}>Execute Route</button></td>
+                  </tr>
+                ))}
+                {arbitrageRoutes.length === 0 && (
+                  <tr><td colSpan="8" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
                 )}
               </tbody>
             </table>
