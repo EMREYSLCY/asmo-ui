@@ -28,6 +28,7 @@ function App() {
   const [selectedTx, setSelectedTx] = useState(null);
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [killZone, setKillZone] = useState([]);
   
   const [mempoolSim, setMempoolSim] = useState({
     ARC: { volume: 0, impact: 0, txs: [] },
@@ -123,6 +124,11 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+          
+          if (data.msg_type === 'KILL_ZONE_UPDATE') {
+            setKillZone(data.data);
             return;
           }
           
@@ -680,6 +686,48 @@ function App() {
                       <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
                     </tr>
                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone (Heatmap)</h2>
+            <span className="pulse-text" style={{ color: '#ef4444' }}>Tracking Vulnerable Collateral...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Target Entity</th>
+                  <th>Locked Collateral</th>
+                  <th>Active Debt</th>
+                  <th>Health Factor</th>
+                  <th>Status</th>
+                  <th>Est. Liq. Reward</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {killZone.map((kz, i) => (
+                  <tr key={i} style={{ backgroundColor: kz.hf < 1.05 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.1)' }}>
+                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(kz.address)} className="entity-link">{formatAddress(kz.address)}</td>
+                    <td>${kz.collateral.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td style={{ color: '#f85149' }}>${kz.debt.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td style={{ fontWeight: 'bold', color: kz.hf < 1.05 ? '#f85149' : '#eab308' }}>{kz.hf}</td>
+                    <td>
+                      <span className="badge" style={{ backgroundColor: kz.hf < 1.05 ? '#dc2626' : '#ca8a04', color: '#fff' }}>
+                        {kz.hf < 1.05 ? 'CRITICAL' : 'AT RISK'}
+                      </span>
+                    </td>
+                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td><button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#dc2626' }}>Flash Liquidate</button></td>
+                  </tr>
+                ))}
+                {killZone.length === 0 && (
+                  <tr><td colSpan="7" className="empty-state">All monitored entities are currently over-collateralized. No immediate liquidation risks.</td></tr>
                 )}
               </tbody>
             </table>
