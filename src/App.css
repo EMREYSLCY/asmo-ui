@@ -712,7 +712,7 @@ a:hover {
   border: 1px solid #30363d;
   border-radius: 12px;
   width: 90%;
-  max-width: 800px;
+  max-width: 1000px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;

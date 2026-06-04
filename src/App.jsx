@@ -609,6 +609,24 @@ function App() {
                 <p><strong>Price Impact:</strong> {selectedTx.price_impact > 0 ? `${selectedTx.price_impact}%` : 'N/A'}</p>
                 <p><strong>Alpha Extracted:</strong> {selectedTx.spread > 0 ? `Spread +${selectedTx.spread}%` : selectedTx.mev_extracted > 0 ? `MEV $${selectedTx.mev_extracted}` : 'N/A'}</p>
               </div>
+              {selectedTx.decoded_payload && (
+                <div className="modal-card">
+                  <h4>🕵️‍♂️ Payload X-Ray</h4>
+                  <p><strong>Method ID:</strong> <span style={{color: '#a371f7', fontFamily: 'monospace'}}>{selectedTx.decoded_payload.method}</span></p>
+                  <p><strong>Deciphered:</strong> <span style={{color: '#58a6ff', fontWeight: 'bold'}}>{selectedTx.decoded_payload.name}</span></p>
+                  <p><strong>Payload Size:</strong> {selectedTx.decoded_payload.raw_length} bytes</p>
+                  <p><strong>Risk Profile:</strong>
+                    <span className="badge" style={{
+                      marginLeft: '8px',
+                      backgroundColor: selectedTx.decoded_payload.risk === 'CRITICAL' ? '#dc2626' : selectedTx.decoded_payload.risk === 'HIGH' ? '#ca8a04' : selectedTx.decoded_payload.risk === 'MEDIUM' ? '#2563eb' : '#3fb950',
+                      color: '#fff',
+                      boxShadow: selectedTx.decoded_payload.risk === 'CRITICAL' ? '0 0 8px rgba(220, 38, 38, 0.6)' : 'none'
+                    }}>
+                      {selectedTx.decoded_payload.risk}
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
             <div className="modal-json">
               <h4>Raw Hex Payload & State Matrix</h4>
