@@ -29,6 +29,7 @@ function App() {
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [killZone, setKillZone] = useState([]);
+  const [sybilClusters, setSybilClusters] = useState([]);
   
   const [mempoolSim, setMempoolSim] = useState({
     ARC: { volume: 0, impact: 0, txs: [] },
@@ -129,6 +130,11 @@ function App() {
           
           if (data.msg_type === 'KILL_ZONE_UPDATE') {
             setKillZone(data.data);
+            return;
+          }
+
+          if (data.msg_type === 'SYBIL_HUNTER_UPDATE') {
+            setSybilClusters(data.data);
             return;
           }
           
@@ -746,6 +752,54 @@ function App() {
                 ))}
                 {killZone.length === 0 && (
                   <tr><td colSpan="7" className="empty-state">All monitored entities are currently over-collateralized. No immediate liquidation risks.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginBottom: '24px', borderColor: '#ca8a04', boxShadow: 'inset 0 0 20px rgba(202, 138, 4, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter (Klon Cüzdan Ağ Örümceği)</h2>
+            <span className="pulse-text" style={{ color: '#eab308' }}>Detecting Wash Trading & Sybil Rings...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Sybil Cluster ID</th>
+                  <th>Connected Entities</th>
+                  <th>Network Dominance (PnL)</th>
+                  <th>Risk Profile</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sybilClusters.map((cluster, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(202, 138, 4, 0.05)' }}>
+                    <td style={{ color: '#eab308', fontWeight: 'bold' }}>{cluster.name}</td>
+                    <td style={{ color: '#c9d1d9' }}>{cluster.wallets.length} Wallets Linked</td>
+                    <td style={{ color: cluster.total_pnl >= 0 ? '#3fb950' : '#f85149', fontWeight: 'bold' }}>
+                      {cluster.total_pnl >= 0 ? '+' : '-'}${Math.abs(cluster.total_pnl).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </td>
+                    <td>
+                      <span className="badge" style={{ backgroundColor: cluster.wallets.length > 5 ? '#dc2626' : '#ea580c', color: '#fff' }}>
+                        {cluster.wallets.length > 5 ? 'HIGH RISK (SYBIL)' : 'SUSPICIOUS RING'}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#ca8a04' }} onClick={() => {
+                        const addresses = cluster.wallets.join('\n');
+                        navigator.clipboard.writeText(addresses);
+                        alert('Sybil cüzdan adresleri panoya kopyalandı:\n\n' + addresses.substring(0, 100) + '...');
+                      }}>
+                        Extract Addrs
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {sybilClusters.length === 0 && (
+                  <tr><td colSpan="5" className="empty-state">No active Sybil rings detected in the current matrix state.</td></tr>
                 )}
               </tbody>
             </table>
