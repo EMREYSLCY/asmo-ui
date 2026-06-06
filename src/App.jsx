@@ -30,6 +30,7 @@ function App() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [killZone, setKillZone] = useState([]);
   const [sybilClusters, setSybilClusters] = useState([]);
+  const [snipeTargets, setSnipeTargets] = useState([]);
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -112,6 +113,22 @@ function App() {
     osc.stop(ctx.currentTime + 0.5);
   };
 
+  const playSnipe = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(1500, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  };
+
   useEffect(() => {
     const connect = () => {
       const wsUrl = getWsUrl();
@@ -130,6 +147,12 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+          
+          if (data.msg_type === 'ZERO_BLOCK_SNIPER') {
+            setSnipeTargets(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            playSnipe();
             return;
           }
           
@@ -730,6 +753,50 @@ function App() {
                       <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
                     </tr>
                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginBottom: '24px', borderColor: '#a371f7', boxShadow: 'inset 0 0 20px rgba(163, 113, 247, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper (New Pair Radar)</h2>
+            <span className="pulse-text" style={{ color: '#a371f7' }}>Scanning Factory Contracts...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Network</th>
+                  <th>Target Token</th>
+                  <th>Pool Pair</th>
+                  <th>Dev/Creator</th>
+                  <th>Security Report</th>
+                  <th>System Verdict</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {snipeTargets.map((target, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(163, 113, 247, 0.05)' }}>
+                    <td style={{ color: '#8b949e' }}>{target.time}</td>
+                    <td>{renderNetworkBadge(target.network)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(target.token0)} className="entity-link">{formatAddress(target.token0)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(target.pair)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
+                    <td>{renderSecurityBadge(target.score, target.label)}</td>
+                    <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
+                    <td>
+                      <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: target.score >= 80 ? '#3fb950' : '#30363d', cursor: target.score >= 80 ? 'pointer' : 'not-allowed' }}>
+                        {target.score >= 80 ? 'EXECUTE SNIPE' : 'LOCKED'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {snipeTargets.length === 0 && (
+                  <tr><td colSpan="8" className="empty-state">No new liquidity pools detected in recent blocks. Sniper standing by...</td></tr>
                 )}
               </tbody>
             </table>
