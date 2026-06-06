@@ -31,6 +31,11 @@ function App() {
   const [killZone, setKillZone] = useState([]);
   const [sybilClusters, setSybilClusters] = useState([]);
   
+  const [auditInput, setAuditInput] = useState('');
+  const [auditNetwork, setAuditNetwork] = useState('BASE');
+  const [auditData, setAuditData] = useState(null);
+  const [isAuditing, setIsAuditing] = useState(false);
+  
   const [mempoolSim, setMempoolSim] = useState({
     ARC: { volume: 0, impact: 0, txs: [] },
     BASE: { volume: 0, impact: 0, txs: [] }
@@ -172,6 +177,14 @@ function App() {
             return;
           }
           
+          if (data.msg_type === 'AUDIT_RESULT') {
+            setAuditData(data.data);
+            setIsAuditing(false);
+            if (data.data.score < 50) playAlert();
+            else playSuccess();
+            return;
+          }
+          
           if (data.flag === 'MEV_ACTIVITY') {
             playAlert();
           } else if (data.flag === 'WHALE' || data.flag === 'PENDING_WHALE') {
@@ -255,6 +268,13 @@ function App() {
     };
     reader.readAsText(file);
     e.target.value = null;
+  };
+
+  const handleAudit = () => {
+    if (!auditInput || !wsRef.current) return;
+    setIsAuditing(true);
+    setAuditData(null);
+    wsRef.current.send(JSON.stringify({ action: 'AUDIT', address: auditInput, network: auditNetwork }));
   };
 
   const projectAnalysis = useMemo(() => {
@@ -714,6 +734,54 @@ function App() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel (Manual Audit)</h2>
+            <span className="pulse-text" style={{ color: '#3b82f6' }}>Awaiting Target Hash...</span>
+          </div>
+          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <select value={auditNetwork} onChange={e => setAuditNetwork(e.target.value)} className="filter-select" style={{ width: '150px' }}>
+               <option value="BASE">🔵 BASE</option>
+               <option value="ARC">🔷 ARC</option>
+            </select>
+            <input type="text" className="search-input" style={{flex: 1}} placeholder="Enter Contract Address (0x...)" value={auditInput} onChange={e => setAuditInput(e.target.value)} />
+            <button className="export-btn" style={{backgroundColor: '#3b82f6'}} onClick={handleAudit}>{isAuditing ? 'SCANNING...' : 'AUDIT CONTRACT'}</button>
+          </div>
+          
+          {auditData && (
+            <div className="audit-results-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+              <div className="mempool-stat-card" style={{ borderColor: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
+                <h4>Security Score</h4>
+                <div className="mempool-value" style={{ color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
+                  {auditData.score}/100
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Honeypot Status</h4>
+                <div className="mempool-value" style={{ color: auditData.is_honeypot ? '#f85149' : '#3fb950' }}>
+                  {auditData.is_honeypot ? 'DETECTED' : 'SAFE'}
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Mintable / Inflation</h4>
+                <div className="mempool-value" style={{ color: auditData.is_mintable ? '#eab308' : '#3fb950' }}>
+                  {auditData.is_mintable ? 'WARNING' : 'LOCKED'}
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Blacklist Function</h4>
+                <div className="mempool-value" style={{ color: auditData.is_blacklisted ? '#f85149' : '#3fb950' }}>
+                  {auditData.is_blacklisted ? 'PRESENT' : 'NONE'}
+                </div>
+              </div>
+              <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '12px', background: '#010409', borderRadius: '8px', border: '1px solid #30363d' }}>
+                <span style={{ color: '#8b949e', marginRight: '12px' }}>Final Verdict:</span> 
+                <strong style={{ fontSize: '1.2rem', color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>{auditData.label}</strong>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
