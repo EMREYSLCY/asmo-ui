@@ -31,6 +31,7 @@ function App() {
   const [killZone, setKillZone] = useState([]);
   const [sybilClusters, setSybilClusters] = useState([]);
   const [snipeTargets, setSnipeTargets] = useState([]);
+  const [darkPoolAlerts, setDarkPoolAlerts] = useState([]);
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -129,6 +130,22 @@ function App() {
     osc.stop(ctx.currentTime + 0.3);
   };
 
+  const playDarkPool = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(100, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(50, ctx.currentTime + 1.0);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.0);
+  };
+
   useEffect(() => {
     const connect = () => {
       const wsUrl = getWsUrl();
@@ -147,6 +164,12 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+
+          if (data.msg_type === 'DARK_POOL_ALERT') {
+            setDarkPoolAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            playDarkPool();
             return;
           }
           
@@ -753,6 +776,48 @@ function App() {
                       <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
                     </tr>
                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginBottom: '24px', borderColor: '#64748b', boxShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.15)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics (Aklama Dedektifi)</h2>
+            <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC & Mixers...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Detection Time</th>
+                  <th>Network</th>
+                  <th>Suspect Hash</th>
+                  <th>Source Entity</th>
+                  <th>Wash Protocol</th>
+                  <th>Est. Laundered (USD)</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {darkPoolAlerts.map((alert, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(100, 116, 139, 0.1)' }}>
+                    <td style={{ color: '#8b949e' }}>{alert.time}</td>
+                    <td>{renderNetworkBadge(alert.network)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 15)}...</td>
+                    <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(alert.from_addr)} className="entity-link">{formatAddress(alert.from_addr)}</td>
+                    <td style={{ color: '#f85149', fontWeight: 'bold' }}>{alert.protocol}</td>
+                    <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td>
+                      <button className="export-btn pulse" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#475569', border: '1px solid #94a3b8' }}>
+                        INITIATE TRACE
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {darkPoolAlerts.length === 0 && (
+                  <tr><td colSpan="7" className="empty-state">No active laundering or Dark Pool flows detected currently.</td></tr>
                 )}
               </tbody>
             </table>
