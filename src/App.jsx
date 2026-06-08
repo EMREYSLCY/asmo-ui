@@ -32,6 +32,7 @@ function App() {
   const [sybilClusters, setSybilClusters] = useState([]);
   const [snipeTargets, setSnipeTargets] = useState([]);
   const [darkPoolAlerts, setDarkPoolAlerts] = useState([]);
+  const [sentimentData, setSentimentData] = useState([]);
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -146,6 +147,22 @@ function App() {
     osc.stop(ctx.currentTime + 1.0);
   };
 
+  const playViralAlert = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.5);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  };
+
   useEffect(() => {
     const connect = () => {
       const wsUrl = getWsUrl();
@@ -164,6 +181,12 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+
+          if (data.msg_type === 'SOCIAL_SENTIMENT') {
+            setSentimentData(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            if (data.hype_score > 90) playViralAlert();
             return;
           }
 
@@ -776,6 +799,52 @@ function App() {
                       <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
                     </tr>
                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster & Social Sentiment Matrix</h2>
+            <span className="pulse-text" style={{ color: '#8b5cf6' }}>Cross-Referencing On-Chain Vol w/ Off-Chain Hype...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Detection Time</th>
+                  <th>Network</th>
+                  <th>Target Contract</th>
+                  <th>Social Narrative</th>
+                  <th>Mentions/Hr</th>
+                  <th>Hype Score</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sentimentData.map((data, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(139, 92, 246, 0.05)' }}>
+                    <td style={{ color: '#8b949e' }}>{data.time}</td>
+                    <td>{renderNetworkBadge(data.network)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(data.asset)} className="entity-link">{formatAddress(data.asset)}</td>
+                    <td style={{ fontWeight: 'bold', color: '#d2a8ff' }}>{data.narrative}</td>
+                    <td>{data.mentions.toLocaleString()}</td>
+                    <td style={{ fontWeight: 'bold', color: data.hype_score > 90 ? '#f85149' : '#3fb950' }}>{data.hype_score}/100</td>
+                    <td>
+                      <span className="badge" style={{ backgroundColor: data.hype_score > 90 ? '#dc2626' : '#238636', color: '#fff' }}>
+                        {data.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#8b5cf6' }}>Track Trend</button>
+                    </td>
+                  </tr>
+                ))}
+                {sentimentData.length === 0 && (
+                  <tr><td colSpan="8" className="empty-state">No anomalous social narratives detected correlating with current on-chain flows.</td></tr>
                 )}
               </tbody>
             </table>
