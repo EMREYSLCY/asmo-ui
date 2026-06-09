@@ -45,6 +45,7 @@ function App() {
   });
   
   const [arbitrageRoutes, setArbitrageRoutes] = useState([]);
+  const [flashSimulator, setFlashSimulator] = useState({ isOpen: false, route: null, amount: 50000, status: 'IDLE', result: null });
   
   const wsRef = useRef(null);
   const containerRef = useRef(null);
@@ -115,52 +116,20 @@ function App() {
     osc.stop(ctx.currentTime + 0.5);
   };
 
-  const playSnipe = () => {
+  const playFlashZap = () => {
     if (!soundEnabledRef.current || !audioCtxRef.current) return;
     const ctx = audioCtxRef.current;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'square';
-    osc.frequency.setValueAtTime(1500, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.4, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-  };
-
-  const playDarkPool = () => {
-    if (!soundEnabledRef.current || !audioCtxRef.current) return;
-    const ctx = audioCtxRef.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(100, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(50, ctx.currentTime + 1.0);
+    osc.frequency.setValueAtTime(2000, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.1);
     gain.gain.setValueAtTime(0.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 1.0);
-  };
-
-  const playViralAlert = () => {
-    if (!soundEnabledRef.current || !audioCtxRef.current) return;
-    const ctx = audioCtxRef.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.5);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.5);
+    osc.stop(ctx.currentTime + 0.1);
   };
 
   useEffect(() => {
@@ -186,19 +155,16 @@ function App() {
 
           if (data.msg_type === 'SOCIAL_SENTIMENT') {
             setSentimentData(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            if (data.hype_score > 90) playViralAlert();
             return;
           }
 
           if (data.msg_type === 'DARK_POOL_ALERT') {
             setDarkPoolAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            playDarkPool();
             return;
           }
           
           if (data.msg_type === 'ZERO_BLOCK_SNIPER') {
             setSnipeTargets(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            playSnipe();
             return;
           }
           
@@ -260,8 +226,6 @@ function App() {
             if ((data.amount * data.price_usd) >= 25000) {
               playSonar();
             }
-          } else if (data.flag === 'ARBITRAGE_ACTIVITY') {
-            playSuccess();
           }
 
           setTransactions((prev) => {
@@ -344,6 +308,35 @@ function App() {
     setIsAuditing(true);
     setAuditData(null);
     wsRef.current.send(JSON.stringify({ action: 'AUDIT', address: auditInput, network: auditNetwork }));
+  };
+
+  const flashMath = useMemo(() => {
+    if (!flashSimulator.route) return null;
+    const amount = flashSimulator.amount;
+    const spread = flashSimulator.route.spread;
+    const grossProfit = amount * (spread / 100);
+    const fee = amount * 0.0005; 
+    const gas = 85.50; 
+    const slippagePercent = (amount / 5000000) * 1.5; 
+    const slippageCost = amount * (slippagePercent / 100);
+    const netProfit = grossProfit - fee - gas - slippageCost;
+    const isProfitable = netProfit > 0;
+    
+    return { grossProfit, fee, gas, slippagePercent, slippageCost, netProfit, isProfitable };
+  }, [flashSimulator.amount, flashSimulator.route]);
+
+  const executeFlashloan = () => {
+    setFlashSimulator(prev => ({ ...prev, status: 'SIMULATING' }));
+    playFlashZap();
+    setTimeout(() => {
+      setFlashSimulator(prev => ({ ...prev, status: 'SUCCESS' }));
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ 
+          action: 'EXECUTE_FLASHLOAN', 
+          data: { amount: flashSimulator.amount, netProfit: flashMath.netProfit, spread: flashSimulator.route.spread } 
+        }));
+      }
+    }, 1500);
   };
 
   const projectAnalysis = useMemo(() => {
@@ -620,6 +613,93 @@ function App() {
 
   return (
     <div className="dashboard-container">
+      {/* Flashloan Simulator Modal */}
+      {flashSimulator.isOpen && flashSimulator.route && (
+        <div className="modal-overlay" onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>
+          <div className="flash-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="flash-header">
+              <h2>⚡ Flashloan Attack Simulator</h2>
+              <button className="close-btn" onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>✕</button>
+            </div>
+            
+            <div className="flash-body">
+              <div className="flash-info-row">
+                <span>Target Route:</span>
+                <strong style={{color: '#c9d1d9'}}>{flashSimulator.route.route}</strong>
+              </div>
+              <div className="flash-info-row">
+                <span>Market Spread:</span>
+                <strong style={{color: '#10b981'}}>+{flashSimulator.route.spread}%</strong>
+              </div>
+              
+              <div className="flash-slider-container">
+                <label>Borrowed Capital (USD): <span style={{color: '#eab308', fontWeight: 'bold'}}>${flashSimulator.amount.toLocaleString()}</span></label>
+                <input 
+                  type="range" 
+                  min="10000" 
+                  max="5000000" 
+                  step="10000" 
+                  value={flashSimulator.amount} 
+                  className="flash-slider"
+                  onChange={(e) => setFlashSimulator({ ...flashSimulator, amount: Number(e.target.value) })}
+                  disabled={flashSimulator.status !== 'IDLE'}
+                />
+              </div>
+
+              {flashMath && (
+                <div className="flash-results">
+                  <div className="flash-res-item">
+                    <span>Gross Profit</span>
+                    <span style={{color: '#c9d1d9'}}>${flashMath.grossProfit.toFixed(2)}</span>
+                  </div>
+                  <div className="flash-res-item">
+                    <span>AAVE Fee (0.05%)</span>
+                    <span style={{color: '#f85149'}}>-${flashMath.fee.toFixed(2)}</span>
+                  </div>
+                  <div className="flash-res-item">
+                    <span>Network Gas</span>
+                    <span style={{color: '#f85149'}}>-${flashMath.gas.toFixed(2)}</span>
+                  </div>
+                  <div className="flash-res-item">
+                    <span>Est. Slippage ({flashMath.slippagePercent.toFixed(3)}%)</span>
+                    <span style={{color: '#ea580c'}}>-${flashMath.slippageCost.toFixed(2)}</span>
+                  </div>
+                  <hr style={{borderColor: '#30363d', margin: '12px 0'}} />
+                  <div className="flash-res-item" style={{fontSize: '1.2rem'}}>
+                    <span>Net Extractable Value</span>
+                    <span style={{color: flashMath.isProfitable ? '#3fb950' : '#dc2626', fontWeight: 'bold'}}>
+                      {flashMath.isProfitable ? '+' : ''}${flashMath.netProfit.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flash-action">
+                {flashSimulator.status === 'IDLE' && (
+                  <button 
+                    className="flash-btn pulse" 
+                    style={{backgroundColor: flashMath.isProfitable ? '#10b981' : '#dc2626'}}
+                    onClick={executeFlashloan}
+                  >
+                    {flashMath.isProfitable ? '⚡ EXECUTE ATTACK' : '⚠️ REVERT WARNING'}
+                  </button>
+                )}
+                {flashSimulator.status === 'SIMULATING' && (
+                  <button className="flash-btn" style={{backgroundColor: '#eab308', color: '#000'}} disabled>
+                    ⏳ BROADCASTING TO MEMPOOL...
+                  </button>
+                )}
+                {flashSimulator.status === 'SUCCESS' && (
+                  <button className="flash-btn" style={{backgroundColor: flashMath.isProfitable ? '#3fb950' : '#f85149'}} onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>
+                    {flashMath.isProfitable ? '✓ ATTACK SUCCESSFUL (CHECK MATRIX)' : '✕ TX REVERTED'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedEntity && entityData && (
         <div className="modal-overlay" onClick={() => setSelectedEntity(null)}>
           <div className="xray-modal" onClick={(e) => e.stopPropagation()}>
@@ -1090,7 +1170,6 @@ function App() {
                   <th>Entry Price</th>
                   <th>Exit Price</th>
                   <th>Spread %</th>
-                  <th>Est. Net Profit (50k Vol)</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -1103,12 +1182,19 @@ function App() {
                     <td>${route.buy_price.toFixed(4)}</td>
                     <td>${route.sell_price.toFixed(4)}</td>
                     <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td><button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#10b981' }}>Execute Route</button></td>
+                    <td>
+                      <button 
+                        className="export-btn pulse" 
+                        style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }}
+                        onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                      >
+                        ⚡ SIMULATE
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {arbitrageRoutes.length === 0 && (
-                  <tr><td colSpan="8" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
+                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
                 )}
               </tbody>
             </table>

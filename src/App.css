@@ -984,3 +984,123 @@ a:hover {
   background-color: #f85149;
   color: #0d1117;
 }
+
+.flash-modal {
+  background-color: #0d1117;
+  border: 1px solid #eab308;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 0 40px rgba(234, 179, 8, 0.15), inset 0 0 20px rgba(234, 179, 8, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.flash-header {
+  background: linear-gradient(90deg, rgba(13,17,23,1) 0%, rgba(202,138,4,0.1) 100%);
+  padding: 20px 24px;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flash-header h2 {
+  margin: 0;
+  color: #eab308;
+  font-family: monospace;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flash-body {
+  padding: 24px;
+}
+
+.flash-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #21262d;
+  font-family: monospace;
+  font-size: 1.1rem;
+}
+
+.flash-slider-container {
+  margin: 30px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flash-slider-container label {
+  color: #8b949e;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.flash-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  background: #21262d;
+  border-radius: 4px;
+  outline: none;
+}
+
+.flash-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eab308;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+}
+
+.flash-results {
+  background: #010409;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.flash-res-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.flash-action {
+  display: flex;
+  justify-content: center;
+}
+
+.flash-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: monospace;
+}
+
+.flash-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.flash-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
