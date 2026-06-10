@@ -33,6 +33,8 @@ function App() {
   const [snipeTargets, setSnipeTargets] = useState([]);
   const [darkPoolAlerts, setDarkPoolAlerts] = useState([]);
   const [sentimentData, setSentimentData] = useState([]);
+  const [shadowTargets, setShadowTargets] = useState([]);
+  const [shadowLogs, setShadowLogs] = useState([]);
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -132,6 +134,38 @@ function App() {
     osc.stop(ctx.currentTime + 0.1);
   };
 
+  const playDarkPool = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(100, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(50, ctx.currentTime + 1.0);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.0);
+  };
+
+  const playViralAlert = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.5);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  };
+
   useEffect(() => {
     const connect = () => {
       const wsUrl = getWsUrl();
@@ -153,18 +187,31 @@ function App() {
             return;
           }
 
+          if (data.msg_type === 'SHADOW_TRADE') {
+            setShadowLogs(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 10));
+            playFlashZap();
+            setTransactions((prev) => {
+              const newData = { time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: 'CONFIRMED', ...data };
+              return [newData, ...prev].slice(0, 150);
+            });
+            return;
+          }
+
           if (data.msg_type === 'SOCIAL_SENTIMENT') {
             setSentimentData(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            if (data.hype_score > 90) playViralAlert();
             return;
           }
 
           if (data.msg_type === 'DARK_POOL_ALERT') {
             setDarkPoolAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            playDarkPool();
             return;
           }
           
           if (data.msg_type === 'ZERO_BLOCK_SNIPER') {
             setSnipeTargets(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            playSnipe();
             return;
           }
           
@@ -226,6 +273,8 @@ function App() {
             if ((data.amount * data.price_usd) >= 25000) {
               playSonar();
             }
+          } else if (data.flag === 'ARBITRAGE_ACTIVITY') {
+            playSuccess();
           }
 
           setTransactions((prev) => {
@@ -308,6 +357,17 @@ function App() {
     setIsAuditing(true);
     setAuditData(null);
     wsRef.current.send(JSON.stringify({ action: 'AUDIT', address: auditInput, network: auditNetwork }));
+  };
+
+  const toggleShadow = (addr) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (shadowTargets.includes(addr)) {
+      setShadowTargets(prev => prev.filter(a => a !== addr));
+      wsRef.current.send(JSON.stringify({ action: 'STOP_SHADOW', address: addr }));
+    } else {
+      setShadowTargets(prev => [...prev, addr]);
+      wsRef.current.send(JSON.stringify({ action: 'START_SHADOW', address: addr }));
+    }
   };
 
   const flashMath = useMemo(() => {
@@ -613,7 +673,6 @@ function App() {
 
   return (
     <div className="dashboard-container">
-      {/* Flashloan Simulator Modal */}
       {flashSimulator.isOpen && flashSimulator.route && (
         <div className="modal-overlay" onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>
           <div className="flash-modal" onClick={(e) => e.stopPropagation()}>
@@ -841,17 +900,27 @@ function App() {
                   <th>Rank</th>
                   <th>Wallet Entity</th>
                   <th>Cumulative P&L</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {leaderboard.wallets.length === 0 ? (
-                  <tr><td colSpan="3" style={{ textAlign: 'center', color: '#8b949e', fontStyle: 'italic', padding: '16px' }}>Accumulating P&L Data...</td></tr>
+                  <tr><td colSpan="4" style={{ textAlign: 'center', color: '#8b949e', fontStyle: 'italic', padding: '16px' }}>Accumulating P&L Data...</td></tr>
                 ) : (
                   leaderboard.wallets.map((w, i) => (
                     <tr key={i}>
                       <td className="leaderboard-rank">#{i + 1}</td>
                       <td><span className="entity-link" onClick={() => setSelectedEntity(w.addr)}>{w.label || formatAddress(w.addr)}</span></td>
                       <td style={{ color: '#3fb950', fontWeight: 'bold' }}>+${w.pnl.toFixed(2)}</td>
+                      <td>
+                        <button 
+                          className="export-btn" 
+                          style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: shadowTargets.includes(w.addr) ? '#dc2626' : '#0ea5e9' }}
+                          onClick={() => toggleShadow(w.addr)}
+                        >
+                          {shadowTargets.includes(w.addr) ? '🛑 STOP' : '👁️ SHADOW'}
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -866,22 +935,83 @@ function App() {
                   <th>Rank</th>
                   <th>Agent Address</th>
                   <th>Success Rate</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {leaderboard.agents.length === 0 ? (
-                  <tr><td colSpan="3" style={{ textAlign: 'center', color: '#8b949e', fontStyle: 'italic', padding: '16px' }}>Analyzing Agent Workflows...</td></tr>
+                  <tr><td colSpan="4" style={{ textAlign: 'center', color: '#8b949e', fontStyle: 'italic', padding: '16px' }}>Analyzing Agent Workflows...</td></tr>
                 ) : (
                   leaderboard.agents.map((a, i) => (
                     <tr key={i}>
                       <td className="leaderboard-rank">#{i + 1}</td>
                       <td><span className="entity-link" onClick={() => setSelectedEntity(a.addr)}>{a.label || formatAddress(a.addr)}</span></td>
                       <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
+                      <td>
+                        <button 
+                          className="export-btn" 
+                          style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: shadowTargets.includes(a.addr) ? '#dc2626' : '#0ea5e9' }}
+                          onClick={() => toggleShadow(a.addr)}
+                        >
+                          {shadowTargets.includes(a.addr) ? '🛑 STOP' : '👁️ SHADOW'}
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <div className="panel shadow-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#0ea5e9' }}>🤖 Institutional Copy-Trade Engine (Shadow Mode)</h2>
+            <span className="pulse-text" style={{ color: '#0ea5e9' }}>Awaiting Target Execution...</span>
+          </div>
+          <div className="project-analysis-grid">
+            <div className="recovery-card" style={{ flex: 1, marginRight: '16px' }}>
+              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Active Targets</h3>
+              {shadowTargets.length === 0 ? (
+                <p style={{ fontSize: '0.85rem', color: '#8b949e' }}>Select a target from the leaderboard to initiate Shadow Protocol.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {shadowTargets.map((addr, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#010409', padding: '8px 12px', borderRadius: '4px', border: '1px solid #30363d' }}>
+                      <span style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{formatAddress(addr)}</span>
+                      <button className="close-btn" style={{ fontSize: '1rem' }} onClick={() => toggleShadow(addr)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="table-container" style={{ flex: 2 }}>
+              <table className="accounting-table">
+                <thead>
+                  <tr>
+                    <th>Execution Time</th>
+                    <th>Network</th>
+                    <th>Shadow Hash</th>
+                    <th>Mirrored Action</th>
+                    <th>Target Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shadowLogs.map((log, idx) => (
+                    <tr key={idx} style={{ backgroundColor: 'rgba(14, 165, 233, 0.1)' }}>
+                      <td style={{ color: '#8b949e' }}>{log.time}</td>
+                      <td>{renderNetworkBadge(log.network)}</td>
+                      <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedTx(log)} className="entity-link">{log.tx_hash.substring(0, 15)}...</td>
+                      <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>Copied ${log.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} Flow</td>
+                      <td style={{ color: '#0ea5e9' }}>{log.narrative}</td>
+                    </tr>
+                  ))}
+                  {shadowLogs.length === 0 && (
+                    <tr><td colSpan="5" className="empty-state">No shadow trades executed yet. Waiting for target movement...</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
