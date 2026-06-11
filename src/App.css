@@ -1104,3 +1104,65 @@ a:hover {
   cursor: not-allowed;
   opacity: 0.8;
 }
+.logic-tree-container {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 16px;
+}
+
+.logic-tree {
+  list-style-type: none;
+  padding-left: 20px;
+  border-left: 1px dashed #30363d;
+  margin: 0;
+}
+
+.tree-node {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.tree-node::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: -20px;
+  width: 15px;
+  border-top: 1px dashed #30363d;
+}
+
+.tree-label {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.risk-LOW {
+  color: #3fb950;
+  border-color: rgba(63, 185, 80, 0.4);
+  box-shadow: inset 0 0 10px rgba(63, 185, 80, 0.1);
+}
+
+.risk-MEDIUM {
+  color: #58a6ff;
+  border-color: rgba(88, 166, 255, 0.4);
+  box-shadow: inset 0 0 10px rgba(88, 166, 255, 0.1);
+}
+
+.risk-HIGH {
+  color: #eab308;
+  border-color: rgba(234, 179, 8, 0.4);
+  box-shadow: inset 0 0 10px rgba(234, 179, 8, 0.1);
+}
+
+.risk-CRITICAL {
+  color: #f85149;
+  border-color: rgba(248, 81, 73, 0.4);
+  box-shadow: inset 0 0 10px rgba(248, 81, 73, 0.1);
+  animation: pulse-danger 2s infinite;
+}
