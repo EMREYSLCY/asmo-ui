@@ -28,6 +28,7 @@ function App() {
   const [selectedTx, setSelectedTx] = useState(null);
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  
   const [killZone, setKillZone] = useState([]);
   const [sybilClusters, setSybilClusters] = useState([]);
   const [snipeTargets, setSnipeTargets] = useState([]);
@@ -35,6 +36,7 @@ function App() {
   const [sentimentData, setSentimentData] = useState([]);
   const [shadowTargets, setShadowTargets] = useState([]);
   const [shadowLogs, setShadowLogs] = useState([]);
+  const [bridgeTsunamis, setBridgeTsunamis] = useState([]);
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -170,6 +172,22 @@ function App() {
     osc.stop(ctx.currentTime + 0.5);
   };
 
+  const playTsunamiWarning = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(50, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(200, ctx.currentTime + 2.0);
+    gain.gain.setValueAtTime(0.8, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 2.0);
+  };
+
   useEffect(() => {
     const connect = () => {
       const wsUrl = getWsUrl();
@@ -188,6 +206,12 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+
+          if (data.msg_type === 'INCOMING_BRIDGE_TSUNAMI') {
+            setBridgeTsunamis(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 4));
+            playTsunamiWarning();
             return;
           }
 
@@ -1047,93 +1071,6 @@ function App() {
           </div>
         </div>
 
-        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#d946ef', boxShadow: 'inset 0 0 20px rgba(217, 70, 239, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#d946ef' }}>🔬 Bytecode Decompiler & Logic Tree</h2>
-            <span className="pulse-text" style={{ color: '#d946ef' }}>Awaiting Unverified Hash...</span>
-          </div>
-          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-            <input type="text" className="search-input" style={{flex: 1, borderColor: '#d946ef'}} placeholder="Enter Unverified Contract Address (0x...)" value={decompileInput} onChange={e => setDecompileInput(e.target.value)} />
-            <button className="export-btn" style={{backgroundColor: '#d946ef', color: '#000'}} onClick={handleDecompile}>{isDecompiling ? 'DECOMPILING...' : 'EXTRACT LOGIC TREE'}</button>
-          </div>
-          
-          {decompileData && (
-            <div className="decompile-results" style={{ background: '#010409', borderRadius: '8px', border: '1px solid #30363d', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #30363d', paddingBottom: '12px', marginBottom: '16px' }}>
-                <div>
-                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Contract Target</span>
-                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9', fontSize: '1.1rem' }}>{decompileData.address}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Compiler</span>
-                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{decompileData.compiler_version}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Size</span>
-                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{decompileData.size_bytes} Bytes</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>System Verdict</span>
-                  <div style={{ fontWeight: 'bold', color: decompileData.overall_risk === 'CRITICAL' ? '#f85149' : decompileData.overall_risk === 'WARNING' ? '#eab308' : '#3fb950' }}>
-                    {decompileData.overall_risk}
-                  </div>
-                </div>
-              </div>
-              <div className="logic-tree-container" style={{ paddingLeft: '8px' }}>
-                {renderLogicTree(decompileData.nodes)}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel (Manual Audit)</h2>
-            <span className="pulse-text" style={{ color: '#3b82f6' }}>Awaiting Target Hash...</span>
-          </div>
-          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-            <select value={auditNetwork} onChange={e => setAuditNetwork(e.target.value)} className="filter-select" style={{ width: '150px' }}>
-               <option value="BASE">🔵 BASE</option>
-               <option value="ARC">🔷 ARC</option>
-            </select>
-            <input type="text" className="search-input" style={{flex: 1}} placeholder="Enter Contract Address (0x...)" value={auditInput} onChange={e => setAuditInput(e.target.value)} />
-            <button className="export-btn" style={{backgroundColor: '#3b82f6'}} onClick={handleAudit}>{isAuditing ? 'SCANNING...' : 'AUDIT CONTRACT'}</button>
-          </div>
-          
-          {auditData && (
-            <div className="audit-results-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-              <div className="mempool-stat-card" style={{ borderColor: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
-                <h4>Security Score</h4>
-                <div className="mempool-value" style={{ color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
-                  {auditData.score}/100
-                </div>
-              </div>
-              <div className="mempool-stat-card">
-                <h4>Honeypot Status</h4>
-                <div className="mempool-value" style={{ color: auditData.is_honeypot ? '#f85149' : '#3fb950' }}>
-                  {auditData.is_honeypot ? 'DETECTED' : 'SAFE'}
-                </div>
-              </div>
-              <div className="mempool-stat-card">
-                <h4>Mintable / Inflation</h4>
-                <div className="mempool-value" style={{ color: auditData.is_mintable ? '#eab308' : '#3fb950' }}>
-                  {auditData.is_mintable ? 'WARNING' : 'LOCKED'}
-                </div>
-              </div>
-              <div className="mempool-stat-card">
-                <h4>Blacklist Function</h4>
-                <div className="mempool-value" style={{ color: auditData.is_blacklisted ? '#f85149' : '#3fb950' }}>
-                  {auditData.is_blacklisted ? 'PRESENT' : 'NONE'}
-                </div>
-              </div>
-              <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '12px', background: '#010409', borderRadius: '8px', border: '1px solid #30363d' }}>
-                <span style={{ color: '#8b949e', marginRight: '12px' }}>Final Verdict:</span> 
-                <strong style={{ fontSize: '1.2rem', color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>{auditData.label}</strong>
-              </div>
-            </div>
-          )}
-        </div>
-
         <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster & Social Sentiment Matrix</h2>
@@ -1174,6 +1111,48 @@ function App() {
                 ))}
                 {sentimentData.length === 0 && (
                   <tr><td colSpan="8" className="empty-state">No anomalous social narratives detected correlating with current on-chain flows.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel bridge-tsunami-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#0ea5e9' }}>🌉 Multi-Hop Bridge Vacuum (Liquidity Radar)</h2>
+            <span className="pulse-text" style={{ color: '#0ea5e9' }}>Monitoring Cross-Chain Portals...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Detection Time</th>
+                  <th>Source Chain</th>
+                  <th>Destination Chain</th>
+                  <th>Asset</th>
+                  <th>Volume (USD)</th>
+                  <th>ETA</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bridgeTsunamis.map((tsunami, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(14, 165, 233, 0.1)' }}>
+                    <td style={{ color: '#8b949e' }}>{tsunami.time}</td>
+                    <td style={{ color: '#c9d1d9', fontWeight: 'bold' }}>{tsunami.source}</td>
+                    <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{tsunami.destination}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{tsunami.asset}</td>
+                    <td style={{ color: '#eab308', fontWeight: 'bold' }}>${tsunami.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td style={{ color: '#f85149', fontWeight: 'bold' }}>~{tsunami.eta_seconds}s</td>
+                    <td>
+                      <span className="badge pulse" style={{ backgroundColor: '#0ea5e9', color: '#000' }}>
+                        {tsunami.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {bridgeTsunamis.length === 0 && (
+                  <tr><td colSpan="7" className="empty-state">Awaiting inbound cross-chain liquidity surges...</td></tr>
                 )}
               </tbody>
             </table>
@@ -1266,6 +1245,93 @@ function App() {
           </div>
         </div>
 
+        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#d946ef', boxShadow: 'inset 0 0 20px rgba(217, 70, 239, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#d946ef' }}>🔬 Bytecode Decompiler & Logic Tree</h2>
+            <span className="pulse-text" style={{ color: '#d946ef' }}>Awaiting Unverified Hash...</span>
+          </div>
+          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <input type="text" className="search-input" style={{flex: 1, borderColor: '#d946ef'}} placeholder="Enter Unverified Contract Address (0x...)" value={decompileInput} onChange={e => setDecompileInput(e.target.value)} />
+            <button className="export-btn" style={{backgroundColor: '#d946ef', color: '#000'}} onClick={handleDecompile}>{isDecompiling ? 'DECOMPILING...' : 'EXTRACT LOGIC TREE'}</button>
+          </div>
+          
+          {decompileData && (
+            <div className="decompile-results" style={{ background: '#010409', borderRadius: '8px', border: '1px solid #30363d', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #30363d', paddingBottom: '12px', marginBottom: '16px' }}>
+                <div>
+                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Contract Target</span>
+                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9', fontSize: '1.1rem' }}>{decompileData.address}</div>
+                </div>
+                <div>
+                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Compiler</span>
+                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{decompileData.compiler_version}</div>
+                </div>
+                <div>
+                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Size</span>
+                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{decompileData.size_bytes} Bytes</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>System Verdict</span>
+                  <div style={{ fontWeight: 'bold', color: decompileData.overall_risk === 'CRITICAL' ? '#f85149' : decompileData.overall_risk === 'WARNING' ? '#eab308' : '#3fb950' }}>
+                    {decompileData.overall_risk}
+                  </div>
+                </div>
+              </div>
+              <div className="logic-tree-container" style={{ paddingLeft: '8px' }}>
+                {renderLogicTree(decompileData.nodes)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel (Manual Audit)</h2>
+            <span className="pulse-text" style={{ color: '#3b82f6' }}>Awaiting Target Hash...</span>
+          </div>
+          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <select value={auditNetwork} onChange={e => setAuditNetwork(e.target.value)} className="filter-select" style={{ width: '150px' }}>
+               <option value="BASE">🔵 BASE</option>
+               <option value="ARC">🔷 ARC</option>
+            </select>
+            <input type="text" className="search-input" style={{flex: 1}} placeholder="Enter Contract Address (0x...)" value={auditInput} onChange={e => setAuditInput(e.target.value)} />
+            <button className="export-btn" style={{backgroundColor: '#3b82f6'}} onClick={handleAudit}>{isAuditing ? 'SCANNING...' : 'AUDIT CONTRACT'}</button>
+          </div>
+          
+          {auditData && (
+            <div className="audit-results-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+              <div className="mempool-stat-card" style={{ borderColor: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
+                <h4>Security Score</h4>
+                <div className="mempool-value" style={{ color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
+                  {auditData.score}/100
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Honeypot Status</h4>
+                <div className="mempool-value" style={{ color: auditData.is_honeypot ? '#f85149' : '#3fb950' }}>
+                  {auditData.is_honeypot ? 'DETECTED' : 'SAFE'}
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Mintable / Inflation</h4>
+                <div className="mempool-value" style={{ color: auditData.is_mintable ? '#eab308' : '#3fb950' }}>
+                  {auditData.is_mintable ? 'WARNING' : 'LOCKED'}
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Blacklist Function</h4>
+                <div className="mempool-value" style={{ color: auditData.is_blacklisted ? '#f85149' : '#3fb950' }}>
+                  {auditData.is_blacklisted ? 'PRESENT' : 'NONE'}
+                </div>
+              </div>
+              <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '12px', background: '#010409', borderRadius: '8px', border: '1px solid #30363d' }}>
+                <span style={{ color: '#8b949e', marginRight: '12px' }}>Final Verdict:</span> 
+                <strong style={{ fontSize: '1.2rem', color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>{auditData.label}</strong>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone (Heatmap)</h2>
@@ -1350,6 +1416,52 @@ function App() {
                 ))}
                 {sybilClusters.length === 0 && (
                   <tr><td colSpan="5" className="empty-state">No active Sybil rings detected in the current matrix state.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginBottom: '24px' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
+            <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Detection Time</th>
+                  <th>Target Asset</th>
+                  <th>Execution Route</th>
+                  <th>Entry Price</th>
+                  <th>Exit Price</th>
+                  <th>Spread %</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {arbitrageRoutes.map((route, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}>
+                    <td style={{ color: '#8b949e' }}>{route.time}</td>
+                    <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
+                    <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
+                    <td>${route.buy_price.toFixed(4)}</td>
+                    <td>${route.sell_price.toFixed(4)}</td>
+                    <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
+                    <td>
+                      <button 
+                        className="export-btn pulse" 
+                        style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }}
+                        onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                      >
+                        ⚡ SIMULATE
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {arbitrageRoutes.length === 0 && (
+                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
                 )}
               </tbody>
             </table>
@@ -1637,4 +1749,4 @@ function App() {
   );
 }
 
-export default App;
+export default App;git add
