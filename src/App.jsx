@@ -37,6 +37,7 @@ function App() {
   const [shadowTargets, setShadowTargets] = useState([]);
   const [shadowLogs, setShadowLogs] = useState([]);
   const [bridgeTsunamis, setBridgeTsunamis] = useState([]);
+  const [shadowRelayAlerts, setShadowRelayAlerts] = useState([]);
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -188,6 +189,23 @@ function App() {
     osc.stop(ctx.currentTime + 2.0);
   };
 
+  const playGlitch = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(100, ctx.currentTime);
+    osc.frequency.setValueAtTime(400, ctx.currentTime + 0.05);
+    osc.frequency.setValueAtTime(100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  };
+
   useEffect(() => {
     const connect = () => {
       const wsUrl = getWsUrl();
@@ -206,6 +224,12 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+
+          if (data.msg_type === 'SHADOW_RELAY_ALERT') {
+            setShadowRelayAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            playGlitch();
             return;
           }
 
@@ -1020,6 +1044,48 @@ function App() {
           </div>
         </div>
 
+        <div className="panel shadow-panel" style={{ marginBottom: '24px', borderColor: '#14b8a6', boxShadow: 'inset 0 0 20px rgba(20, 184, 166, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#14b8a6' }}>🥷 MEV Shadow-Relay Interceptor</h2>
+            <span className="pulse-text" style={{ color: '#14b8a6' }}>Detecting Unseen Private TXs & Bribes...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Execution Time</th>
+                  <th>Network</th>
+                  <th>Stealth Hash</th>
+                  <th>Hidden Volume (USD)</th>
+                  <th>TX Protocol</th>
+                  <th>Validator Bribe</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shadowRelayAlerts.map((alert, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)' }}>
+                    <td style={{ color: '#8b949e' }}>{alert.time}</td>
+                    <td>{renderNetworkBadge(alert.network)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 15)}...</td>
+                    <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td style={{ color: '#14b8a6', fontWeight: 'bold' }}>{alert.type}</td>
+                    <td style={{ color: '#f85149', fontWeight: 'bold' }}>${alert.bribe.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td>
+                      <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#14b8a6', color: '#000' }}>
+                        DECODE ROUTE
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {shadowRelayAlerts.length === 0 && (
+                  <tr><td colSpan="7" className="empty-state">No private or relay-bribed transactions detected in the latest blocks.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div className="panel shadow-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#0ea5e9' }}>🤖 Institutional Copy-Trade Engine (Shadow Mode)</h2>
@@ -1069,6 +1135,45 @@ function App() {
               </table>
             </div>
           </div>
+        </div>
+
+        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#d946ef', boxShadow: 'inset 0 0 20px rgba(217, 70, 239, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#d946ef' }}>🔬 Bytecode Decompiler & Logic Tree</h2>
+            <span className="pulse-text" style={{ color: '#d946ef' }}>Awaiting Unverified Hash...</span>
+          </div>
+          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <input type="text" className="search-input" style={{flex: 1, borderColor: '#d946ef'}} placeholder="Enter Unverified Contract Address (0x...)" value={decompileInput} onChange={e => setDecompileInput(e.target.value)} />
+            <button className="export-btn" style={{backgroundColor: '#d946ef', color: '#000'}} onClick={handleDecompile}>{isDecompiling ? 'DECOMPILING...' : 'EXTRACT LOGIC TREE'}</button>
+          </div>
+          
+          {decompileData && (
+            <div className="decompile-results" style={{ background: '#010409', borderRadius: '8px', border: '1px solid #30363d', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #30363d', paddingBottom: '12px', marginBottom: '16px' }}>
+                <div>
+                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Contract Target</span>
+                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9', fontSize: '1.1rem' }}>{decompileData.address}</div>
+                </div>
+                <div>
+                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Compiler</span>
+                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{decompileData.compiler_version}</div>
+                </div>
+                <div>
+                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Size</span>
+                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{decompileData.size_bytes} Bytes</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>System Verdict</span>
+                  <div style={{ fontWeight: 'bold', color: decompileData.overall_risk === 'CRITICAL' ? '#f85149' : decompileData.overall_risk === 'WARNING' ? '#eab308' : '#3fb950' }}>
+                    {decompileData.overall_risk}
+                  </div>
+                </div>
+              </div>
+              <div className="logic-tree-container" style={{ paddingLeft: '8px' }}>
+                {renderLogicTree(decompileData.nodes)}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
@@ -1199,89 +1304,6 @@ function App() {
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div className="panel" style={{ marginBottom: '24px', borderColor: '#a371f7', boxShadow: 'inset 0 0 20px rgba(163, 113, 247, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper (New Pair Radar)</h2>
-            <span className="pulse-text" style={{ color: '#a371f7' }}>Scanning Factory Contracts...</span>
-          </div>
-          <div className="table-container">
-            <table className="accounting-table">
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Network</th>
-                  <th>Target Token</th>
-                  <th>Pool Pair</th>
-                  <th>Dev/Creator</th>
-                  <th>Security Report</th>
-                  <th>System Verdict</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snipeTargets.map((target, idx) => (
-                  <tr key={idx} style={{ backgroundColor: 'rgba(163, 113, 247, 0.05)' }}>
-                    <td style={{ color: '#8b949e' }}>{target.time}</td>
-                    <td>{renderNetworkBadge(target.network)}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(target.token0)} className="entity-link">{formatAddress(target.token0)}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(target.pair)}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
-                    <td>{renderSecurityBadge(target.score, target.label)}</td>
-                    <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
-                    <td>
-                      <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: target.score >= 80 ? '#3fb950' : '#30363d', cursor: target.score >= 80 ? 'pointer' : 'not-allowed' }}>
-                        {target.score >= 80 ? 'EXECUTE SNIPE' : 'LOCKED'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {snipeTargets.length === 0 && (
-                  <tr><td colSpan="8" className="empty-state">No new liquidity pools detected in recent blocks. Sniper standing by...</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#d946ef', boxShadow: 'inset 0 0 20px rgba(217, 70, 239, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#d946ef' }}>🔬 Bytecode Decompiler & Logic Tree</h2>
-            <span className="pulse-text" style={{ color: '#d946ef' }}>Awaiting Unverified Hash...</span>
-          </div>
-          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-            <input type="text" className="search-input" style={{flex: 1, borderColor: '#d946ef'}} placeholder="Enter Unverified Contract Address (0x...)" value={decompileInput} onChange={e => setDecompileInput(e.target.value)} />
-            <button className="export-btn" style={{backgroundColor: '#d946ef', color: '#000'}} onClick={handleDecompile}>{isDecompiling ? 'DECOMPILING...' : 'EXTRACT LOGIC TREE'}</button>
-          </div>
-          
-          {decompileData && (
-            <div className="decompile-results" style={{ background: '#010409', borderRadius: '8px', border: '1px solid #30363d', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #30363d', paddingBottom: '12px', marginBottom: '16px' }}>
-                <div>
-                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Contract Target</span>
-                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9', fontSize: '1.1rem' }}>{decompileData.address}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Compiler</span>
-                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{decompileData.compiler_version}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>Size</span>
-                  <div style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{decompileData.size_bytes} Bytes</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>System Verdict</span>
-                  <div style={{ fontWeight: 'bold', color: decompileData.overall_risk === 'CRITICAL' ? '#f85149' : decompileData.overall_risk === 'WARNING' ? '#eab308' : '#3fb950' }}>
-                    {decompileData.overall_risk}
-                  </div>
-                </div>
-              </div>
-              <div className="logic-tree-container" style={{ paddingLeft: '8px' }}>
-                {renderLogicTree(decompileData.nodes)}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
@@ -1437,6 +1459,7 @@ function App() {
                   <th>Entry Price</th>
                   <th>Exit Price</th>
                   <th>Spread %</th>
+                  <th>Est. Net Profit (50k Vol)</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -1449,19 +1472,12 @@ function App() {
                     <td>${route.buy_price.toFixed(4)}</td>
                     <td>${route.sell_price.toFixed(4)}</td>
                     <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                    <td>
-                      <button 
-                        className="export-btn pulse" 
-                        style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }}
-                        onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
-                      >
-                        ⚡ SIMULATE
-                      </button>
-                    </td>
+                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td><button className="export-btn pulse" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000' }} onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}>⚡ SIMULATE</button></td>
                   </tr>
                 ))}
                 {arbitrageRoutes.length === 0 && (
-                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
+                  <tr><td colSpan="8" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
                 )}
               </tbody>
             </table>
