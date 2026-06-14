@@ -38,6 +38,7 @@ function App() {
   const [shadowLogs, setShadowLogs] = useState([]);
   const [bridgeTsunamis, setBridgeTsunamis] = useState([]);
   const [shadowRelayAlerts, setShadowRelayAlerts] = useState([]);
+  const [autoEjectAlerts, setAutoEjectAlerts] = useState([]);
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -206,6 +207,23 @@ function App() {
     osc.stop(ctx.currentTime + 0.3);
   };
 
+  const playRugSiren = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.4);
+    osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.8);
+    gain.gain.setValueAtTime(0.7, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.6);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.6);
+  };
+
   useEffect(() => {
     const connect = () => {
       const wsUrl = getWsUrl();
@@ -224,6 +242,12 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+
+          if (data.msg_type === 'AUTO_EJECT_ALERT') {
+            setAutoEjectAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            playRugSiren();
             return;
           }
 
@@ -432,6 +456,19 @@ function App() {
     } else {
       setShadowTargets(prev => [...prev, addr]);
       wsRef.current.send(JSON.stringify({ action: 'START_SHADOW', address: addr }));
+    }
+  };
+
+  const executeAutoEject = (target) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      playSuccess();
+      wsRef.current.send(JSON.stringify({
+        action: 'EXECUTE_AUTO_EJECT',
+        tx_hash: target.tx_hash,
+        gas: target.est_gas_gwei * 2,
+        rescued_amount: 50000 
+      }));
+      setAutoEjectAlerts(prev => prev.filter(t => t.tx_hash !== target.tx_hash));
     }
   };
 
@@ -971,6 +1008,47 @@ function App() {
       </header>
 
       <main className="main-content">
+        {autoEjectAlerts.length > 0 && (
+          <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444', boxShadow: 'inset 0 0 40px rgba(239, 68, 68, 0.2)', animation: 'pulse-danger 1s infinite' }}>
+            <div className="panel-header">
+              <h2 style={{ color: '#ef4444' }}>🛡️⚡ AUTO-EJECT FRONT-RUNNER PROTOCOL</h2>
+              <span className="pulse-text" style={{ color: '#ef4444', fontWeight: 'bold' }}>CRITICAL: RUG PULL DETECTED IN MEMPOOL</span>
+            </div>
+            <div className="table-container">
+              <table className="accounting-table">
+                <thead>
+                  <tr>
+                    <th style={{ color: '#fca5a5' }}>Target Pool</th>
+                    <th style={{ color: '#fca5a5' }}>Malicious Developer</th>
+                    <th style={{ color: '#fca5a5' }}>Attacker Gas</th>
+                    <th style={{ color: '#fca5a5' }}>Required Gas (2x)</th>
+                    <th style={{ color: '#fca5a5' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {autoEjectAlerts.map((alert, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                      <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(alert.pool_addr)}</td>
+                      <td style={{ fontFamily: 'monospace', color: '#fca5a5' }}>{formatAddress(alert.dev_addr)}</td>
+                      <td style={{ color: '#8b949e' }}>{alert.est_gas_gwei} Gwei</td>
+                      <td style={{ color: '#eab308', fontWeight: 'bold' }}>{alert.est_gas_gwei * 2} Gwei</td>
+                      <td>
+                        <button 
+                          className="export-btn" 
+                          style={{ padding: '8px 16px', fontSize: '1rem', backgroundColor: '#ef4444', color: '#fff', fontWeight: '900', letterSpacing: '1px', border: '2px solid #b91c1c' }}
+                          onClick={() => executeAutoEject(alert)}
+                        >
+                          EXECUTE FRONTRUN
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="leaderboard-container">
           <div className="leaderboard-card">
             <h3>🏆 Smart Money Whales (Top P&L)</h3>
@@ -1306,6 +1384,50 @@ function App() {
           </div>
         </div>
 
+        <div className="panel" style={{ marginBottom: '24px', borderColor: '#a371f7', boxShadow: 'inset 0 0 20px rgba(163, 113, 247, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper (New Pair Radar)</h2>
+            <span className="pulse-text" style={{ color: '#a371f7' }}>Scanning Factory Contracts...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Network</th>
+                  <th>Target Token</th>
+                  <th>Pool Pair</th>
+                  <th>Dev/Creator</th>
+                  <th>Security Report</th>
+                  <th>System Verdict</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {snipeTargets.map((target, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(163, 113, 247, 0.05)' }}>
+                    <td style={{ color: '#8b949e' }}>{target.time}</td>
+                    <td>{renderNetworkBadge(target.network)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(target.token0)} className="entity-link">{formatAddress(target.token0)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(target.pair)}</td>
+                    <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
+                    <td>{renderSecurityBadge(target.score, target.label)}</td>
+                    <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
+                    <td>
+                      <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: target.score >= 80 ? '#3fb950' : '#30363d', cursor: target.score >= 80 ? 'pointer' : 'not-allowed' }}>
+                        {target.score >= 80 ? 'EXECUTE SNIPE' : 'LOCKED'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {snipeTargets.length === 0 && (
+                  <tr><td colSpan="8" className="empty-state">No new liquidity pools detected in recent blocks. Sniper standing by...</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel (Manual Audit)</h2>
@@ -1459,7 +1581,6 @@ function App() {
                   <th>Entry Price</th>
                   <th>Exit Price</th>
                   <th>Spread %</th>
-                  <th>Est. Net Profit (50k Vol)</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -1472,12 +1593,19 @@ function App() {
                     <td>${route.buy_price.toFixed(4)}</td>
                     <td>${route.sell_price.toFixed(4)}</td>
                     <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td><button className="export-btn pulse" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000' }} onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}>⚡ SIMULATE</button></td>
+                    <td>
+                      <button 
+                        className="export-btn pulse" 
+                        style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }}
+                        onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                      >
+                        ⚡ SIMULATE
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {arbitrageRoutes.length === 0 && (
-                  <tr><td colSpan="8" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
+                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
                 )}
               </tbody>
             </table>
