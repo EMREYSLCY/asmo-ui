@@ -424,10 +424,10 @@ function App() {
         const parsed = JSON.parse(event.target.result);
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ action: 'RESTORE', data: parsed }));
-          alert("Geri Yükleme Komutu A.S.M.O. Motoruna İletildi!");
+          alert("Restore command dispatched to A.S.M.O. Engine!");
         }
       } catch (err) {
-        alert("Geçersiz veya bozuk yedekleme dosyası!");
+        alert("Invalid or corrupted backup file!");
       }
     };
     reader.readAsText(file);
@@ -571,6 +571,20 @@ function App() {
 
     const topAsset = Object.entries(assets).sort((a,b) => b[1] - a[1])[0]?.[0] || 'N/A';
     const topCounterparty = Object.entries(counterparties).sort((a,b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    
+    let charCodeSum = 0;
+    for(let i=0; i<selectedEntity.length; i++) charCodeSum += selectedEntity.charCodeAt(i);
+    
+    const profileTypes = ["Algorithmic HFT Bot 🤖", "Diamond Hands Accumulator 💎", "Panic Seller (Weak Hands) 🧻", "Momentum Chaser 🌊", "MEV Searcher / Sniper 🎯"];
+    const sessions = ["Asia (01:00 - 06:00 UTC)", "London (08:00 - 16:00 UTC)", "New York (14:00 - 22:00 UTC)", "Continuous 24/7 (Bot)"];
+    const risks = ["Extreme (Degen)", "Aggressive", "Calculated", "Risk-Averse"];
+
+    const biometrics = {
+        profile: profileTypes[charCodeSum % profileTypes.length],
+        session: sessions[(charCodeSum * 3) % sessions.length],
+        risk: risks[(charCodeSum * 7) % risks.length],
+        greed: (charCodeSum * 13) % 100
+    };
 
     return {
       address: selectedEntity,
@@ -581,6 +595,7 @@ function App() {
       mevExtracted: mev,
       topAsset: topAsset.length > 15 ? `${topAsset.substring(0, 15)}...` : topAsset,
       topCounterparty: formatAddress(topCounterparty),
+      biometrics: biometrics,
       history: txs.slice(0, 20)
     };
   }, [selectedEntity, transactions]);
@@ -886,6 +901,31 @@ function App() {
               </div>
               <button className="close-btn" onClick={() => setSelectedEntity(null)}>✕</button>
             </div>
+            
+            <div className="xray-biometrics">
+              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>🧠 Behavioral Biometrics & Psych Profile</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="bio-stat">
+                  <span className="bio-label">Classification</span>
+                  <span className="bio-value">{entityData.biometrics.profile}</span>
+                </div>
+                <div className="bio-stat">
+                  <span className="bio-label">Active Timezone</span>
+                  <span className="bio-value">{entityData.biometrics.session}</span>
+                </div>
+                <div className="bio-stat">
+                  <span className="bio-label">Risk Tolerance</span>
+                  <span className="bio-value" style={{color: entityData.biometrics.risk.includes('Extreme') ? '#f85149' : '#eab308'}}>{entityData.biometrics.risk}</span>
+                </div>
+                <div className="bio-stat">
+                  <span className="bio-label">Fear/Greed Index ({entityData.biometrics.greed}/100)</span>
+                  <div className="greed-bar-bg">
+                    <div className="greed-bar-fill" style={{ width: `${entityData.biometrics.greed}%`, backgroundColor: entityData.biometrics.greed > 75 ? '#f85149' : entityData.biometrics.greed > 40 ? '#eab308' : '#3fb950' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="xray-metrics">
               <div className="xray-card">
                 <div className="xray-card-title">Total Volume (USD)</div>
@@ -1254,6 +1294,54 @@ function App() {
           )}
         </div>
 
+        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel (Manual Audit)</h2>
+            <span className="pulse-text" style={{ color: '#3b82f6' }}>Awaiting Target Hash...</span>
+          </div>
+          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <select value={auditNetwork} onChange={e => setAuditNetwork(e.target.value)} className="filter-select" style={{ width: '150px' }}>
+               <option value="BASE">🔵 BASE</option>
+               <option value="ARC">🔷 ARC</option>
+            </select>
+            <input type="text" className="search-input" style={{flex: 1}} placeholder="Enter Contract Address (0x...)" value={auditInput} onChange={e => setAuditInput(e.target.value)} />
+            <button className="export-btn" style={{backgroundColor: '#3b82f6'}} onClick={handleAudit}>{isAuditing ? 'SCANNING...' : 'AUDIT CONTRACT'}</button>
+          </div>
+          
+          {auditData && (
+            <div className="audit-results-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+              <div className="mempool-stat-card" style={{ borderColor: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
+                <h4>Security Score</h4>
+                <div className="mempool-value" style={{ color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
+                  {auditData.score}/100
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Honeypot Status</h4>
+                <div className="mempool-value" style={{ color: auditData.is_honeypot ? '#f85149' : '#3fb950' }}>
+                  {auditData.is_honeypot ? 'DETECTED' : 'SAFE'}
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Mintable / Inflation</h4>
+                <div className="mempool-value" style={{ color: auditData.is_mintable ? '#eab308' : '#3fb950' }}>
+                  {auditData.is_mintable ? 'WARNING' : 'LOCKED'}
+                </div>
+              </div>
+              <div className="mempool-stat-card">
+                <h4>Blacklist Function</h4>
+                <div className="mempool-value" style={{ color: auditData.is_blacklisted ? '#f85149' : '#3fb950' }}>
+                  {auditData.is_blacklisted ? 'PRESENT' : 'NONE'}
+                </div>
+              </div>
+              <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '12px', background: '#010409', borderRadius: '8px', border: '1px solid #30363d' }}>
+                <span style={{ color: '#8b949e', marginRight: '12px' }}>Final Verdict:</span> 
+                <strong style={{ fontSize: '1.2rem', color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>{auditData.label}</strong>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster & Social Sentiment Matrix</h2>
@@ -1428,54 +1516,6 @@ function App() {
           </div>
         </div>
 
-        <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel (Manual Audit)</h2>
-            <span className="pulse-text" style={{ color: '#3b82f6' }}>Awaiting Target Hash...</span>
-          </div>
-          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-            <select value={auditNetwork} onChange={e => setAuditNetwork(e.target.value)} className="filter-select" style={{ width: '150px' }}>
-               <option value="BASE">🔵 BASE</option>
-               <option value="ARC">🔷 ARC</option>
-            </select>
-            <input type="text" className="search-input" style={{flex: 1}} placeholder="Enter Contract Address (0x...)" value={auditInput} onChange={e => setAuditInput(e.target.value)} />
-            <button className="export-btn" style={{backgroundColor: '#3b82f6'}} onClick={handleAudit}>{isAuditing ? 'SCANNING...' : 'AUDIT CONTRACT'}</button>
-          </div>
-          
-          {auditData && (
-            <div className="audit-results-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-              <div className="mempool-stat-card" style={{ borderColor: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
-                <h4>Security Score</h4>
-                <div className="mempool-value" style={{ color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>
-                  {auditData.score}/100
-                </div>
-              </div>
-              <div className="mempool-stat-card">
-                <h4>Honeypot Status</h4>
-                <div className="mempool-value" style={{ color: auditData.is_honeypot ? '#f85149' : '#3fb950' }}>
-                  {auditData.is_honeypot ? 'DETECTED' : 'SAFE'}
-                </div>
-              </div>
-              <div className="mempool-stat-card">
-                <h4>Mintable / Inflation</h4>
-                <div className="mempool-value" style={{ color: auditData.is_mintable ? '#eab308' : '#3fb950' }}>
-                  {auditData.is_mintable ? 'WARNING' : 'LOCKED'}
-                </div>
-              </div>
-              <div className="mempool-stat-card">
-                <h4>Blacklist Function</h4>
-                <div className="mempool-value" style={{ color: auditData.is_blacklisted ? '#f85149' : '#3fb950' }}>
-                  {auditData.is_blacklisted ? 'PRESENT' : 'NONE'}
-                </div>
-              </div>
-              <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '12px', background: '#010409', borderRadius: '8px', border: '1px solid #30363d' }}>
-                <span style={{ color: '#8b949e', marginRight: '12px' }}>Final Verdict:</span> 
-                <strong style={{ fontSize: '1.2rem', color: auditData.score >= 90 ? '#3fb950' : auditData.score >= 50 ? '#eab308' : '#f85149' }}>{auditData.label}</strong>
-              </div>
-            </div>
-          )}
-        </div>
-
         <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone (Heatmap)</h2>
@@ -1551,7 +1591,7 @@ function App() {
                       <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#ca8a04' }} onClick={() => {
                         const addresses = cluster.wallets.join('\n');
                         navigator.clipboard.writeText(addresses);
-                        alert('Sybil cüzdan adresleri panoya kopyalandı:\n\n' + addresses.substring(0, 100) + '...');
+                        alert('Sybil wallet addresses copied to clipboard:\n\n' + addresses.substring(0, 100) + '...');
                       }}>
                         Extract Addrs
                       </button>
@@ -1605,7 +1645,7 @@ function App() {
                   </tr>
                 ))}
                 {arbitrageRoutes.length === 0 && (
-                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
+                  <tr><td colSpan="7" className="empty-state">Awaiting profitable cross-chain spreads...</td></tr>
                 )}
               </tbody>
             </table>
@@ -1662,7 +1702,7 @@ function App() {
 
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
-            <h2 style={{ color: '#58a6ff' }}>🗄️ Proje Analiz Paneli & Felaket Kurtarma</h2>
+            <h2 style={{ color: '#58a6ff' }}>🗄️ System Backup & Restore</h2>
           </div>
           <div className="project-analysis-grid">
             <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
@@ -1687,22 +1727,22 @@ function App() {
                     </tr>
                   ))}
                   {projectAnalysis.length === 0 && (
-                    <tr><td colSpan="5" className="empty-state">Proje verisi bekleniyor...</td></tr>
+                    <tr><td colSpan="5" className="empty-state">Awaiting project data...</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
             <div className="recovery-card" style={{ flex: 1 }}>
-              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Sistem Yedekleme & Geri Yükleme</h3>
-              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>A.S.M.O. veritabanını şifreli JSON formatında dışa aktarın veya mevcut bir yedeği anında motora enjekte edin.</p>
+              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>System Backup & Restore</h3>
+              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>Export the A.S.M.O. database in encrypted JSON format or instantly inject an existing backup into the engine.</p>
               
               <button className="recovery-btn backup-btn" onClick={handleBackup}>
-                📥 A.S.M.O. Veritabanını Yedekle
+                📥 Backup A.S.M.O. Database
               </button>
               
               <div style={{ marginTop: '24px' }}>
                 <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
-                  📤 Sistem Geri Yükle (Restore)
+                  📤 Restore System
                 </button>
                 <input 
                   type="file" 

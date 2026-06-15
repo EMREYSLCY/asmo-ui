@@ -1166,3 +1166,47 @@ a:hover {
   box-shadow: inset 0 0 10px rgba(248, 81, 73, 0.1);
   animation: pulse-danger 2s infinite;
 }
+.xray-biometrics {
+  padding: 24px;
+  background-color: #010409;
+  border-bottom: 1px solid #30363d;
+}
+
+.bio-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #161b22;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+}
+
+.bio-label {
+  font-size: 0.8rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.bio-value {
+  font-size: 1.1rem;
+  color: #c9d1d9;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.greed-bar-bg {
+  width: 100%;
+  height: 12px;
+  background-color: #0d1117;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #30363d;
+  margin-top: 4px;
+}
+
+.greed-bar-fill {
+  height: 100%;
+  transition: width 0.5s ease-in-out;
+}
