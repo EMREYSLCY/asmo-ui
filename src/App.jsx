@@ -39,6 +39,7 @@ function App() {
   const [bridgeTsunamis, setBridgeTsunamis] = useState([]);
   const [shadowRelayAlerts, setShadowRelayAlerts] = useState([]);
   const [autoEjectAlerts, setAutoEjectAlerts] = useState([]);
+  const [vestingDumps, setVestingDumps] = useState([]);
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -242,6 +243,12 @@ function App() {
           
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+
+          if (data.msg_type === 'VESTING_DUMP_ALERT') {
+            setVestingDumps(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            playRugSiren();
             return;
           }
 
@@ -469,6 +476,17 @@ function App() {
         rescued_amount: 50000 
       }));
       setAutoEjectAlerts(prev => prev.filter(t => t.tx_hash !== target.tx_hash));
+    }
+  };
+
+  const executeShortDump = (target) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      playSuccess();
+      wsRef.current.send(JSON.stringify({
+        action: 'EXECUTE_SHORT_DUMP',
+        token_addr: target.token_addr
+      }));
+      setVestingDumps(prev => prev.filter(t => t.tx_hash !== target.tx_hash));
     }
   };
 
@@ -1089,6 +1107,55 @@ function App() {
           </div>
         )}
 
+        {vestingDumps.length > 0 && (
+          <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(220, 38, 38, 0.05)', borderColor: '#b91c1c', boxShadow: 'inset 0 0 30px rgba(185, 28, 28, 0.15)' }}>
+            <div className="panel-header">
+              <h2 style={{ color: '#ef4444' }}>⏳🩸 VESTING DUMP PREDICTOR</h2>
+              <span className="pulse-text" style={{ color: '#ef4444' }}>Massive Token Unlock Detected...</span>
+            </div>
+            <div className="table-container">
+              <table className="accounting-table">
+                <thead>
+                  <tr>
+                    <th style={{ color: '#fca5a5' }}>Detection Time</th>
+                    <th style={{ color: '#fca5a5' }}>Network</th>
+                    <th style={{ color: '#fca5a5' }}>Token Contract</th>
+                    <th style={{ color: '#fca5a5' }}>Dev Wallet</th>
+                    <th style={{ color: '#fca5a5' }}>Unlocked Vol (USD)</th>
+                    <th style={{ color: '#fca5a5' }}>Status</th>
+                    <th style={{ color: '#fca5a5' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vestingDumps.map((dump, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid rgba(220, 38, 38, 0.2)' }}>
+                      <td style={{ color: '#8b949e' }}>{dump.time}</td>
+                      <td>{renderNetworkBadge(dump.network)}</td>
+                      <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(dump.token_addr)} className="entity-link">{formatAddress(dump.token_addr)}</td>
+                      <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(dump.dev_addr)} className="entity-link">{formatAddress(dump.dev_addr)}</td>
+                      <td style={{ color: '#f85149', fontWeight: 'bold' }}>${dump.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                      <td>
+                        <span className="badge" style={{ backgroundColor: '#dc2626', color: '#fff', animation: 'pulse-danger 1s infinite' }}>
+                          {dump.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button 
+                          className="export-btn" 
+                          style={{ padding: '6px 12px', fontSize: '0.85rem', backgroundColor: '#dc2626', fontWeight: 'bold' }}
+                          onClick={() => executeShortDump(dump)}
+                        >
+                          📉 SHORT TARGET
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="leaderboard-container">
           <div className="leaderboard-card">
             <h3>🏆 Smart Money Whales (Top P&L)</h3>
@@ -1591,7 +1658,7 @@ function App() {
                       <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#ca8a04' }} onClick={() => {
                         const addresses = cluster.wallets.join('\n');
                         navigator.clipboard.writeText(addresses);
-                        alert('Sybil wallet addresses copied to clipboard:\n\n' + addresses.substring(0, 100) + '...');
+                        alert('Sybil cüzdan adresleri panoya kopyalandı:\n\n' + addresses.substring(0, 100) + '...');
                       }}>
                         Extract Addrs
                       </button>
@@ -1645,7 +1712,7 @@ function App() {
                   </tr>
                 ))}
                 {arbitrageRoutes.length === 0 && (
-                  <tr><td colSpan="7" className="empty-state">Awaiting profitable cross-chain spreads...</td></tr>
+                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
                 )}
               </tbody>
             </table>
@@ -1702,7 +1769,7 @@ function App() {
 
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
-            <h2 style={{ color: '#58a6ff' }}>🗄️ System Backup & Restore</h2>
+            <h2 style={{ color: '#58a6ff' }}>🗄️ Proje Analiz Paneli & Felaket Kurtarma</h2>
           </div>
           <div className="project-analysis-grid">
             <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
@@ -1727,22 +1794,22 @@ function App() {
                     </tr>
                   ))}
                   {projectAnalysis.length === 0 && (
-                    <tr><td colSpan="5" className="empty-state">Awaiting project data...</td></tr>
+                    <tr><td colSpan="5" className="empty-state">Proje verisi bekleniyor...</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
             <div className="recovery-card" style={{ flex: 1 }}>
-              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>System Backup & Restore</h3>
-              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>Export the A.S.M.O. database in encrypted JSON format or instantly inject an existing backup into the engine.</p>
+              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Sistem Yedekleme & Geri Yükleme</h3>
+              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>A.S.M.O. veritabanını şifreli JSON formatında dışa aktarın veya mevcut bir yedeği anında motora enjekte edin.</p>
               
               <button className="recovery-btn backup-btn" onClick={handleBackup}>
-                📥 Backup A.S.M.O. Database
+                📥 A.S.M.O. Veritabanını Yedekle
               </button>
               
               <div style={{ marginTop: '24px' }}>
                 <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
-                  📤 Restore System
+                  📤 Sistem Geri Yükle (Restore)
                 </button>
                 <input 
                   type="file" 
