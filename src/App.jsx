@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ForceGraph3D from 'react-force-graph-3d';
+import ForceGraph2D from 'react-force-graph-2d';
 import './App.css';
 
 const getWsUrl = () => {
@@ -23,6 +24,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState('ALL');
   const [graphDimensions, setGraphDimensions] = useState({ width: 800, height: 400 });
+  const [cabalDimensions, setCabalDimensions] = useState({ width: 800, height: 400 });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [selectedTx, setSelectedTx] = useState(null);
@@ -49,6 +51,10 @@ function App() {
   const [decompileInput, setDecompileInput] = useState('');
   const [isDecompiling, setIsDecompiling] = useState(false);
   const [decompileData, setDecompileData] = useState(null);
+
+  const [cabalInput, setCabalInput] = useState('');
+  const [isScanningCabal, setIsScanningCabal] = useState(false);
+  const [cabalData, setCabalData] = useState(null);
   
   const [mempoolSim, setMempoolSim] = useState({
     ARC: { volume: 0, impact: 0, txs: [] },
@@ -60,6 +66,7 @@ function App() {
   
   const wsRef = useRef(null);
   const containerRef = useRef(null);
+  const cabalRef = useRef(null);
   const fileInputRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef(null);
@@ -246,6 +253,14 @@ function App() {
             return;
           }
 
+          if (data.msg_type === 'CABAL_RESULT') {
+            setCabalData(data.data);
+            setIsScanningCabal(false);
+            if (data.data.risk_level === 'CRITICAL') playAlert();
+            else playSuccess();
+            return;
+          }
+
           if (data.msg_type === 'VESTING_DUMP_ALERT') {
             setVestingDumps(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
             playRugSiren();
@@ -410,6 +425,9 @@ function App() {
       if (containerRef.current) {
         setGraphDimensions({ width: containerRef.current.offsetWidth, height: 400 });
       }
+      if (cabalRef.current) {
+        setCabalDimensions({ width: cabalRef.current.offsetWidth, height: 400 });
+      }
     };
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
@@ -453,6 +471,13 @@ function App() {
     setIsDecompiling(true);
     setDecompileData(null);
     wsRef.current.send(JSON.stringify({ action: 'DECOMPILE', address: decompileInput, network: activeNetwork === 'ALL' ? 'ARC' : activeNetwork }));
+  };
+
+  const handleCabalScan = () => {
+    if (!cabalInput || !wsRef.current) return;
+    setIsScanningCabal(true);
+    setCabalData(null);
+    wsRef.current.send(JSON.stringify({ action: 'CABAL_SCAN', address: cabalInput, network: activeNetwork === 'ALL' ? 'ARC' : activeNetwork }));
   };
 
   const toggleShadow = (addr) => {
@@ -1229,6 +1254,73 @@ function App() {
           </div>
         </div>
 
+        <div className="panel cabal-panel" style={{ marginBottom: '24px', borderColor: '#ec4899', boxShadow: 'inset 0 0 20px rgba(236, 72, 153, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#ec4899' }}>🕸️ Insider Cabal Profiler (Bubble Map)</h2>
+            <span className="pulse-text" style={{ color: '#ec4899' }}>Awaiting Target Token Hash...</span>
+          </div>
+          <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <input type="text" className="search-input" style={{flex: 1, borderColor: '#ec4899'}} placeholder="Enter Token Address to expose hidden monopolies..." value={cabalInput} onChange={e => setCabalInput(e.target.value)} />
+            <button className="export-btn" style={{backgroundColor: '#db2777', color: '#fff'}} onClick={handleCabalScan}>{isScanningCabal ? 'TRACING NODES...' : 'EXTRACT CABAL MAP'}</button>
+          </div>
+          
+          {cabalData && (
+            <div className="cabal-results">
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                <div className="mempool-stat-card" style={{ flex: 1, borderColor: cabalData.total_cabal_dominance > 50 ? '#f85149' : '#eab308' }}>
+                  <h4>Total Insider Dominance</h4>
+                  <div className="mempool-value" style={{ color: cabalData.total_cabal_dominance > 50 ? '#f85149' : '#eab308' }}>
+                    {cabalData.total_cabal_dominance}%
+                  </div>
+                </div>
+                <div className="mempool-stat-card" style={{ flex: 1 }}>
+                  <h4>Identified Syndicates</h4>
+                  <div className="mempool-value" style={{ color: '#c9d1d9' }}>
+                    {cabalData.syndicates.length} Clusters
+                  </div>
+                </div>
+                <div className="mempool-stat-card" style={{ flex: 1, borderColor: cabalData.risk_level === 'CRITICAL' ? '#f85149' : '#eab308' }}>
+                  <h4>Centralization Risk</h4>
+                  <div className="mempool-value" style={{ color: cabalData.risk_level === 'CRITICAL' ? '#f85149' : '#eab308' }}>
+                    {cabalData.risk_level}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="graph-container" ref={cabalRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10, background: 'rgba(13,17,23,0.8)', padding: '8px', borderRadius: '4px', border: '1px solid #30363d' }}>
+                  <h4 style={{ margin: '0 0 8px 0', color: '#e6edf3', fontSize: '0.8rem' }}>Syndicate Legend</h4>
+                  {cabalData.syndicates.map((syn, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: '#8b949e', marginBottom: '4px' }}>
+                      <div style={{ width: '10px', height: '10px', backgroundColor: syn.color, borderRadius: '50%' }}></div>
+                      {syn.name} ({syn.control_pct}%)
+                    </div>
+                  ))}
+                </div>
+                {cabalDimensions.width > 0 && (
+                  <ForceGraph2D
+                    width={cabalDimensions.width}
+                    height={400}
+                    graphData={cabalData.graph}
+                    nodeLabel="name"
+                    nodeColor="color"
+                    nodeVal="val"
+                    linkColor="color"
+                    linkWidth={1.5}
+                    linkDirectionalParticles={2}
+                    linkDirectionalParticleSpeed={0.005}
+                    backgroundColor="#010409"
+                    onNodeClick={(node) => {
+                       navigator.clipboard.writeText(node.id);
+                       alert('Entity address copied: ' + node.id);
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="panel shadow-panel" style={{ marginBottom: '24px', borderColor: '#14b8a6', boxShadow: 'inset 0 0 20px rgba(20, 184, 166, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#14b8a6' }}>🥷 MEV Shadow-Relay Interceptor</h2>
@@ -1583,48 +1675,6 @@ function App() {
           </div>
         </div>
 
-        <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone (Heatmap)</h2>
-            <span className="pulse-text" style={{ color: '#ef4444' }}>Tracking Vulnerable Collateral...</span>
-          </div>
-          <div className="table-container">
-            <table className="accounting-table">
-              <thead>
-                <tr>
-                  <th>Target Entity</th>
-                  <th>Locked Collateral</th>
-                  <th>Active Debt</th>
-                  <th>Health Factor</th>
-                  <th>Status</th>
-                  <th>Est. Liq. Reward</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {killZone.map((kz, i) => (
-                  <tr key={i} style={{ backgroundColor: kz.hf < 1.05 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.1)' }}>
-                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(kz.address)} className="entity-link">{formatAddress(kz.address)}</td>
-                    <td>${kz.collateral.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td style={{ color: '#f85149' }}>${kz.debt.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td style={{ fontWeight: 'bold', color: kz.hf < 1.05 ? '#f85149' : '#eab308' }}>{kz.hf}</td>
-                    <td>
-                      <span className="badge" style={{ backgroundColor: kz.hf < 1.05 ? '#dc2626' : '#ca8a04', color: '#fff' }}>
-                        {kz.hf < 1.05 ? 'CRITICAL' : 'AT RISK'}
-                      </span>
-                    </td>
-                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td><button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#dc2626' }}>Flash Liquidate</button></td>
-                  </tr>
-                ))}
-                {killZone.length === 0 && (
-                  <tr><td colSpan="7" className="empty-state">All monitored entities are currently over-collateralized. No immediate liquidation risks.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         <div className="panel" style={{ marginBottom: '24px', borderColor: '#ca8a04', boxShadow: 'inset 0 0 20px rgba(202, 138, 4, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter (Klon Cüzdan Ağ Örümceği)</h2>
@@ -1769,7 +1819,7 @@ function App() {
 
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
-            <h2 style={{ color: '#58a6ff' }}>🗄️ Proje Analiz Paneli & Felaket Kurtarma</h2>
+            <h2 style={{ color: '#58a6ff' }}>🗄️ System Backup & Restore</h2>
           </div>
           <div className="project-analysis-grid">
             <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
@@ -1794,22 +1844,22 @@ function App() {
                     </tr>
                   ))}
                   {projectAnalysis.length === 0 && (
-                    <tr><td colSpan="5" className="empty-state">Proje verisi bekleniyor...</td></tr>
+                    <tr><td colSpan="5" className="empty-state">Awaiting project data...</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
             <div className="recovery-card" style={{ flex: 1 }}>
-              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Sistem Yedekleme & Geri Yükleme</h3>
-              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>A.S.M.O. veritabanını şifreli JSON formatında dışa aktarın veya mevcut bir yedeği anında motora enjekte edin.</p>
+              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>System Backup & Restore</h3>
+              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>Export the A.S.M.O. database in encrypted JSON format or instantly inject an existing backup into the engine.</p>
               
               <button className="recovery-btn backup-btn" onClick={handleBackup}>
-                📥 A.S.M.O. Veritabanını Yedekle
+                📥 Backup A.S.M.O. Database
               </button>
               
               <div style={{ marginTop: '24px' }}>
                 <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
-                  📤 Sistem Geri Yükle (Restore)
+                  📤 Restore System
                 </button>
                 <input 
                   type="file" 
