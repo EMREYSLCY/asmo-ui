@@ -10,11 +10,9 @@ const getWsUrl = () => {
       return import.meta.env.VITE_WS_URL;
     }
   } catch (e) {}
-  
   if (typeof window !== 'undefined' && window.location.hostname.includes('github.dev')) {
     return `wss://${window.location.hostname.replace('-5173', '-8765')}`;
   }
-  
   return 'ws://localhost:8765';
 };
 
@@ -42,6 +40,7 @@ function App() {
   const [shadowRelayAlerts, setShadowRelayAlerts] = useState([]);
   const [autoEjectAlerts, setAutoEjectAlerts] = useState([]);
   const [vestingDumps, setVestingDumps] = useState([]);
+  const [overlordState, setOverlordState] = useState({ active: false, max_spend: 50000, min_profit: 500 });
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -150,86 +149,20 @@ function App() {
     osc.stop(ctx.currentTime + 0.1);
   };
 
-  const playDarkPool = () => {
-    if (!soundEnabledRef.current || !audioCtxRef.current) return;
-    const ctx = audioCtxRef.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(100, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(50, ctx.currentTime + 1.0);
-    gain.gain.setValueAtTime(0.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 1.0);
-  };
-
-  const playViralAlert = () => {
+  const playOverlordActivate = () => {
     if (!soundEnabledRef.current || !audioCtxRef.current) return;
     const ctx = audioCtxRef.current;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.5);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.5);
-  };
-
-  const playTsunamiWarning = () => {
-    if (!soundEnabledRef.current || !audioCtxRef.current) return;
-    const ctx = audioCtxRef.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(50, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(200, ctx.currentTime + 2.0);
-    gain.gain.setValueAtTime(0.8, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 2.0);
-  };
-
-  const playGlitch = () => {
-    if (!soundEnabledRef.current || !audioCtxRef.current) return;
-    const ctx = audioCtxRef.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'square';
     osc.frequency.setValueAtTime(100, ctx.currentTime);
-    osc.frequency.setValueAtTime(400, ctx.currentTime + 0.05);
-    osc.frequency.setValueAtTime(100, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.6, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.0);
+    gain.gain.setValueAtTime(0.8, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-  };
-
-  const playRugSiren = () => {
-    if (!soundEnabledRef.current || !audioCtxRef.current) return;
-    const ctx = audioCtxRef.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(600, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.4);
-    osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.8);
-    gain.gain.setValueAtTime(0.7, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.6);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 1.6);
+    osc.stop(ctx.currentTime + 1.0);
   };
 
   useEffect(() => {
@@ -248,6 +181,11 @@ function App() {
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
           
+          if (data.msg_type === 'OVERLORD_STATUS') {
+            setOverlordState(data.data);
+            return;
+          }
+
           if (data.msg_type === 'LEADERBOARD_UPDATE') {
             setLeaderboard({ wallets: data.wallets, agents: data.agents });
             return;
@@ -263,25 +201,21 @@ function App() {
 
           if (data.msg_type === 'VESTING_DUMP_ALERT') {
             setVestingDumps(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            playRugSiren();
             return;
           }
 
           if (data.msg_type === 'AUTO_EJECT_ALERT') {
             setAutoEjectAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            playRugSiren();
             return;
           }
 
           if (data.msg_type === 'SHADOW_RELAY_ALERT') {
             setShadowRelayAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            playGlitch();
             return;
           }
 
           if (data.msg_type === 'INCOMING_BRIDGE_TSUNAMI') {
             setBridgeTsunamis(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 4));
-            playTsunamiWarning();
             return;
           }
 
@@ -305,19 +239,16 @@ function App() {
 
           if (data.msg_type === 'SOCIAL_SENTIMENT') {
             setSentimentData(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            if (data.hype_score > 90) playViralAlert();
             return;
           }
 
           if (data.msg_type === 'DARK_POOL_ALERT') {
             setDarkPoolAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            playDarkPool();
             return;
           }
           
           if (data.msg_type === 'ZERO_BLOCK_SNIPER') {
             setSnipeTargets(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            playSnipe();
             return;
           }
           
@@ -433,6 +364,14 @@ function App() {
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
+
+  const handleOverlordToggle = () => {
+    if (!wsRef.current) return;
+    const newState = { ...overlordState, active: !overlordState.active };
+    setOverlordState(newState);
+    if(newState.active) playOverlordActivate();
+    wsRef.current.send(JSON.stringify({ action: 'TOGGLE_OVERLORD', data: newState }));
+  };
 
   const handleBackup = () => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -1091,6 +1030,71 @@ function App() {
       </header>
 
       <main className="main-content">
+        <div className="panel overlord-panel" style={{ marginBottom: '24px', background: overlordState.active ? 'linear-gradient(90deg, #1f0535 0%, #0d1117 100%)' : '#010409', borderColor: overlordState.active ? '#d946ef' : '#30363d', boxShadow: overlordState.active ? 'inset 0 0 40px rgba(217, 70, 239, 0.15)' : 'none', transition: 'all 0.4s ease' }}>
+          <div className="panel-header" style={{ borderBottom: '1px solid #30363d', paddingBottom: '16px' }}>
+            <div>
+              <h2 style={{ color: overlordState.active ? '#d946ef' : '#8b949e', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                🤖 OVERLORD AUTONOMOUS AI
+                {overlordState.active && <span className="badge" style={{ backgroundColor: '#d946ef', color: '#000', fontSize: '0.8rem', animation: 'pulse-danger 2s infinite' }}>SYSTEM LIVE</span>}
+              </h2>
+              <span style={{ fontSize: '0.85rem', color: '#8b949e' }}>Hand over control to the AI. A.S.M.O. will automatically execute snipes, front-runs, and flashloans if constraints are met.</span>
+            </div>
+            <button 
+              onClick={handleOverlordToggle}
+              style={{
+                padding: '12px 32px',
+                fontSize: '1.2rem',
+                fontWeight: '900',
+                letterSpacing: '2px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                border: overlordState.active ? '2px solid #d946ef' : '2px solid #8b949e',
+                backgroundColor: overlordState.active ? 'rgba(217, 70, 239, 0.2)' : 'transparent',
+                color: overlordState.active ? '#fdf4ff' : '#8b949e',
+                boxShadow: overlordState.active ? '0 0 20px rgba(217, 70, 239, 0.5)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {overlordState.active ? 'DISENGAGE' : 'ENGAGE OVERLORD'}
+            </button>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '20px' }}>
+            <div className="flash-slider-container" style={{ margin: 0 }}>
+              <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Max Execution Capital (USD): <span style={{color: '#eab308', fontWeight: 'bold'}}>${overlordState.max_spend.toLocaleString()}</span></label>
+              <input 
+                type="range" min="1000" max="500000" step="1000" 
+                value={overlordState.max_spend} 
+                className="flash-slider"
+                onChange={(e) => {
+                  if(!overlordState.active) {
+                    setOverlordState(prev => ({...prev, max_spend: Number(e.target.value)}));
+                    if(wsRef.current) wsRef.current.send(JSON.stringify({ action: 'TOGGLE_OVERLORD', data: { ...overlordState, max_spend: Number(e.target.value) } }));
+                  }
+                }}
+                disabled={overlordState.active}
+                style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
+              />
+            </div>
+            <div className="flash-slider-container" style={{ margin: 0 }}>
+              <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Min Expected Profit (USD): <span style={{color: '#3fb950', fontWeight: 'bold'}}>${overlordState.min_profit.toLocaleString()}</span></label>
+              <input 
+                type="range" min="100" max="10000" step="100" 
+                value={overlordState.min_profit} 
+                className="flash-slider"
+                onChange={(e) => {
+                  if(!overlordState.active) {
+                    setOverlordState(prev => ({...prev, min_profit: Number(e.target.value)}));
+                    if(wsRef.current) wsRef.current.send(JSON.stringify({ action: 'TOGGLE_OVERLORD', data: { ...overlordState, min_profit: Number(e.target.value) } }));
+                  }
+                }}
+                disabled={overlordState.active}
+                style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
+              />
+            </div>
+          </div>
+        </div>
+
         {autoEjectAlerts.length > 0 && (
           <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444', boxShadow: 'inset 0 0 40px rgba(239, 68, 68, 0.2)', animation: 'pulse-danger 1s infinite' }}>
             <div className="panel-header">
@@ -1675,6 +1679,48 @@ function App() {
           </div>
         </div>
 
+        <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone (Heatmap)</h2>
+            <span className="pulse-text" style={{ color: '#ef4444' }}>Tracking Vulnerable Collateral...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Target Entity</th>
+                  <th>Locked Collateral</th>
+                  <th>Active Debt</th>
+                  <th>Health Factor</th>
+                  <th>Status</th>
+                  <th>Est. Liq. Reward</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {killZone.map((kz, i) => (
+                  <tr key={i} style={{ backgroundColor: kz.hf < 1.05 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.1)' }}>
+                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(kz.address)} className="entity-link">{formatAddress(kz.address)}</td>
+                    <td>${kz.collateral.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td style={{ color: '#f85149' }}>${kz.debt.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td style={{ fontWeight: 'bold', color: kz.hf < 1.05 ? '#f85149' : '#eab308' }}>{kz.hf}</td>
+                    <td>
+                      <span className="badge" style={{ backgroundColor: kz.hf < 1.05 ? '#dc2626' : '#ca8a04', color: '#fff' }}>
+                        {kz.hf < 1.05 ? 'CRITICAL' : 'AT RISK'}
+                      </span>
+                    </td>
+                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td><button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#dc2626' }}>Flash Liquidate</button></td>
+                  </tr>
+                ))}
+                {killZone.length === 0 && (
+                  <tr><td colSpan="7" className="empty-state">All monitored entities are currently over-collateralized. No immediate liquidation risks.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div className="panel" style={{ marginBottom: '24px', borderColor: '#ca8a04', boxShadow: 'inset 0 0 20px rgba(202, 138, 4, 0.05)' }}>
           <div className="panel-header">
             <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter (Klon Cüzdan Ağ Örümceği)</h2>
@@ -1738,6 +1784,7 @@ function App() {
                   <th>Entry Price</th>
                   <th>Exit Price</th>
                   <th>Spread %</th>
+                  <th>Est. Net Profit (50k Vol)</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -1750,19 +1797,12 @@ function App() {
                     <td>${route.buy_price.toFixed(4)}</td>
                     <td>${route.sell_price.toFixed(4)}</td>
                     <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                    <td>
-                      <button 
-                        className="export-btn pulse" 
-                        style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }}
-                        onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
-                      >
-                        ⚡ SIMULATE
-                      </button>
-                    </td>
+                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td><button className="export-btn pulse" style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }} onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}>⚡ SIMULATE</button></td>
                   </tr>
                 ))}
                 {arbitrageRoutes.length === 0 && (
-                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
+                  <tr><td colSpan="8" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
                 )}
               </tbody>
             </table>
@@ -1819,7 +1859,7 @@ function App() {
 
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
-            <h2 style={{ color: '#58a6ff' }}>🗄️ System Backup & Restore</h2>
+            <h2 style={{ color: '#58a6ff' }}>🗄️ Proje Analiz Paneli & Felaket Kurtarma</h2>
           </div>
           <div className="project-analysis-grid">
             <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
@@ -1844,22 +1884,22 @@ function App() {
                     </tr>
                   ))}
                   {projectAnalysis.length === 0 && (
-                    <tr><td colSpan="5" className="empty-state">Awaiting project data...</td></tr>
+                    <tr><td colSpan="5" className="empty-state">Proje verisi bekleniyor...</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
             <div className="recovery-card" style={{ flex: 1 }}>
-              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>System Backup & Restore</h3>
-              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>Export the A.S.M.O. database in encrypted JSON format or instantly inject an existing backup into the engine.</p>
+              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Sistem Yedekleme & Geri Yükleme</h3>
+              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>A.S.M.O. veritabanını şifreli JSON formatında dışa aktarın veya mevcut bir yedeği anında motora enjekte edin.</p>
               
               <button className="recovery-btn backup-btn" onClick={handleBackup}>
-                📥 Backup A.S.M.O. Database
+                📥 A.S.M.O. Veritabanını Yedekle
               </button>
               
               <div style={{ marginTop: '24px' }}>
                 <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
-                  📤 Restore System
+                  📤 Sistem Geri Yükle (Restore)
                 </button>
                 <input 
                   type="file" 
