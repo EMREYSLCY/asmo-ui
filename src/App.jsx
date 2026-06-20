@@ -40,6 +40,7 @@ function App() {
   const [shadowRelayAlerts, setShadowRelayAlerts] = useState([]);
   const [autoEjectAlerts, setAutoEjectAlerts] = useState([]);
   const [vestingDumps, setVestingDumps] = useState([]);
+  const [gasWars, setGasWars] = useState([]);
   const [overlordState, setOverlordState] = useState({ active: false, max_spend: 50000, min_profit: 500 });
   
   const [auditInput, setAuditInput] = useState('');
@@ -149,6 +150,88 @@ function App() {
     osc.stop(ctx.currentTime + 0.1);
   };
 
+  const playDarkPool = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(100, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(50, ctx.currentTime + 1.0);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.0);
+  };
+
+  const playViralAlert = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.5);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  };
+
+  const playTsunamiWarning = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(50, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(200, ctx.currentTime + 2.0);
+    gain.gain.setValueAtTime(0.8, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 2.0);
+  };
+
+  const playGlitch = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(100, ctx.currentTime);
+    osc.frequency.setValueAtTime(400, ctx.currentTime + 0.05);
+    osc.frequency.setValueAtTime(100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  };
+
+  const playRugSiren = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.4);
+    osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.8);
+    gain.gain.setValueAtTime(0.7, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.6);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.6);
+  };
+
   const playOverlordActivate = () => {
     if (!soundEnabledRef.current || !audioCtxRef.current) return;
     const ctx = audioCtxRef.current;
@@ -163,6 +246,22 @@ function App() {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 1.0);
+  };
+
+  const playGasWar = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
   };
 
   useEffect(() => {
@@ -183,6 +282,12 @@ function App() {
           
           if (data.msg_type === 'OVERLORD_STATUS') {
             setOverlordState(data.data);
+            return;
+          }
+
+          if (data.msg_type === 'GAS_WAR_ALERT') {
+            setGasWars(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            playGasWar();
             return;
           }
 
@@ -787,228 +892,6 @@ function App() {
 
   return (
     <div className="dashboard-container">
-      {flashSimulator.isOpen && flashSimulator.route && (
-        <div className="modal-overlay" onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>
-          <div className="flash-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="flash-header">
-              <h2>⚡ Flashloan Attack Simulator</h2>
-              <button className="close-btn" onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>✕</button>
-            </div>
-            
-            <div className="flash-body">
-              <div className="flash-info-row">
-                <span>Target Route:</span>
-                <strong style={{color: '#c9d1d9'}}>{flashSimulator.route.route}</strong>
-              </div>
-              <div className="flash-info-row">
-                <span>Market Spread:</span>
-                <strong style={{color: '#10b981'}}>+{flashSimulator.route.spread}%</strong>
-              </div>
-              
-              <div className="flash-slider-container">
-                <label>Borrowed Capital (USD): <span style={{color: '#eab308', fontWeight: 'bold'}}>${flashSimulator.amount.toLocaleString()}</span></label>
-                <input 
-                  type="range" 
-                  min="10000" 
-                  max="5000000" 
-                  step="10000" 
-                  value={flashSimulator.amount} 
-                  className="flash-slider"
-                  onChange={(e) => setFlashSimulator({ ...flashSimulator, amount: Number(e.target.value) })}
-                  disabled={flashSimulator.status !== 'IDLE'}
-                />
-              </div>
-
-              {flashMath && (
-                <div className="flash-results">
-                  <div className="flash-res-item">
-                    <span>Gross Profit</span>
-                    <span style={{color: '#c9d1d9'}}>${flashMath.grossProfit.toFixed(2)}</span>
-                  </div>
-                  <div className="flash-res-item">
-                    <span>AAVE Fee (0.05%)</span>
-                    <span style={{color: '#f85149'}}>-${flashMath.fee.toFixed(2)}</span>
-                  </div>
-                  <div className="flash-res-item">
-                    <span>Network Gas</span>
-                    <span style={{color: '#f85149'}}>-${flashMath.gas.toFixed(2)}</span>
-                  </div>
-                  <div className="flash-res-item">
-                    <span>Est. Slippage ({flashMath.slippagePercent.toFixed(3)}%)</span>
-                    <span style={{color: '#ea580c'}}>-${flashMath.slippageCost.toFixed(2)}</span>
-                  </div>
-                  <hr style={{borderColor: '#30363d', margin: '12px 0'}} />
-                  <div className="flash-res-item" style={{fontSize: '1.2rem'}}>
-                    <span>Net Extractable Value</span>
-                    <span style={{color: flashMath.isProfitable ? '#3fb950' : '#dc2626', fontWeight: 'bold'}}>
-                      {flashMath.isProfitable ? '+' : ''}${flashMath.netProfit.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flash-action">
-                {flashSimulator.status === 'IDLE' && (
-                  <button 
-                    className="flash-btn pulse" 
-                    style={{backgroundColor: flashMath.isProfitable ? '#10b981' : '#dc2626'}}
-                    onClick={executeFlashloan}
-                  >
-                    {flashMath.isProfitable ? '⚡ EXECUTE ATTACK' : '⚠️ REVERT WARNING'}
-                  </button>
-                )}
-                {flashSimulator.status === 'SIMULATING' && (
-                  <button className="flash-btn" style={{backgroundColor: '#eab308', color: '#000'}} disabled>
-                    ⏳ BROADCASTING TO MEMPOOL...
-                  </button>
-                )}
-                {flashSimulator.status === 'SUCCESS' && (
-                  <button className="flash-btn" style={{backgroundColor: flashMath.isProfitable ? '#3fb950' : '#f85149'}} onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>
-                    {flashMath.isProfitable ? '✓ ATTACK SUCCESSFUL (CHECK MATRIX)' : '✕ TX REVERTED'}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedEntity && entityData && (
-        <div className="modal-overlay" onClick={() => setSelectedEntity(null)}>
-          <div className="xray-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="xray-header">
-              <div className="xray-title">
-                <h2>🕵️‍♂️ X-Ray Profiler: {entityData.label}</h2>
-                <span style={{ color: '#8b949e', fontSize: '0.9rem', marginTop: '8px', display: 'block' }}>{entityData.address}</span>
-              </div>
-              <button className="close-btn" onClick={() => setSelectedEntity(null)}>✕</button>
-            </div>
-            
-            <div className="xray-biometrics">
-              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>🧠 Behavioral Biometrics & Psych Profile</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="bio-stat">
-                  <span className="bio-label">Classification</span>
-                  <span className="bio-value">{entityData.biometrics.profile}</span>
-                </div>
-                <div className="bio-stat">
-                  <span className="bio-label">Active Timezone</span>
-                  <span className="bio-value">{entityData.biometrics.session}</span>
-                </div>
-                <div className="bio-stat">
-                  <span className="bio-label">Risk Tolerance</span>
-                  <span className="bio-value" style={{color: entityData.biometrics.risk.includes('Extreme') ? '#f85149' : '#eab308'}}>{entityData.biometrics.risk}</span>
-                </div>
-                <div className="bio-stat">
-                  <span className="bio-label">Fear/Greed Index ({entityData.biometrics.greed}/100)</span>
-                  <div className="greed-bar-bg">
-                    <div className="greed-bar-fill" style={{ width: `${entityData.biometrics.greed}%`, backgroundColor: entityData.biometrics.greed > 75 ? '#f85149' : entityData.biometrics.greed > 40 ? '#eab308' : '#3fb950' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="xray-metrics">
-              <div className="xray-card">
-                <div className="xray-card-title">Total Volume (USD)</div>
-                <div className="xray-card-value">${entityData.totalVolume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-              </div>
-              <div className="xray-card">
-                <div className="xray-card-title">Net Realized PnL</div>
-                <div className="xray-card-value">{renderPnL(entityData.netPnl)}</div>
-              </div>
-              <div className="xray-card">
-                <div className="xray-card-title">Top Asset Interacted</div>
-                <div className="xray-card-value" style={{ color: '#0ea5e9', fontSize: '1.1rem' }}>{entityData.topAsset}</div>
-              </div>
-              <div className="xray-card">
-                <div className="xray-card-title">Primary Counterparty</div>
-                <div className="xray-card-value" style={{ color: '#a371f7', fontSize: '1.1rem' }}>{entityData.topCounterparty}</div>
-              </div>
-            </div>
-            <div className="xray-history">
-              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>Recent Activity Fingerprint</h4>
-              <table className="accounting-table">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Network</th>
-                    <th>Action</th>
-                    <th>Value</th>
-                    <th>PnL / Impact</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entityData.history.map((tx, idx) => (
-                    <tr key={idx} style={getRowStyle(tx.status, tx.type, tx.flag)}>
-                      <td style={{ color: '#8b949e' }}>{tx.time}</td>
-                      <td>{renderNetworkBadge(tx.network)}</td>
-                      <td>{renderTypeBadge(tx.type)}</td>
-                      <td style={{ fontWeight: 'bold' }}>{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
-                      <td>{renderPnL(tx.pnl)}</td>
-                    </tr>
-                  ))}
-                  {entityData.history.length === 0 && (
-                    <tr><td colSpan="5" style={{ textAlign: 'center', color: '#8b949e', padding: '20px' }}>No direct history found in current matrix state.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedTx && !selectedEntity && (
-        <div className="modal-overlay" onClick={() => setSelectedTx(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>🔍 Deep Trace: {selectedTx.tx_hash}</h2>
-              <button className="close-btn" onClick={() => setSelectedTx(null)}>✕</button>
-            </div>
-            <div className="modal-grid">
-              <div className="modal-card">
-                <h4>Execution Trace</h4>
-                <p><strong>Network:</strong> {renderNetworkBadge(selectedTx.network)}</p>
-                <p><strong>Gas Consumed:</strong> {selectedTx.gas_used} Gwei</p>
-                <p><strong>Execution Depth:</strong> Level {selectedTx.execution_depth}</p>
-                <p><strong>Block Status:</strong> {selectedTx.status}</p>
-                <p><strong>Timestamp:</strong> {selectedTx.time}</p>
-              </div>
-              <div className="modal-card">
-                <h4>Financials & Alpha</h4>
-                <p><strong>Asset Transfer:</strong> {selectedTx.amount} {selectedTx.asset}</p>
-                <p><strong>Total Value:</strong> ${(selectedTx.amount * selectedTx.price_usd).toFixed(2)}</p>
-                <p><strong>Realized P&L:</strong> {renderPnL(selectedTx.pnl)}</p>
-                <p><strong>Price Impact:</strong> {selectedTx.price_impact > 0 ? `${selectedTx.price_impact}%` : 'N/A'}</p>
-                <p><strong>Alpha Extracted:</strong> {selectedTx.spread > 0 ? `Spread +${selectedTx.spread}%` : selectedTx.mev_extracted > 0 ? `MEV $${selectedTx.mev_extracted}` : 'N/A'}</p>
-              </div>
-              {selectedTx.decoded_payload && (
-                <div className="modal-card">
-                  <h4>🕵️‍♂️ Payload X-Ray</h4>
-                  <p><strong>Method ID:</strong> <span style={{color: '#a371f7', fontFamily: 'monospace'}}>{selectedTx.decoded_payload.method}</span></p>
-                  <p><strong>Deciphered:</strong> <span style={{color: '#58a6ff', fontWeight: 'bold'}}>{selectedTx.decoded_payload.name}</span></p>
-                  <p><strong>Payload Size:</strong> {selectedTx.decoded_payload.raw_length} bytes</p>
-                  <p><strong>Risk Profile:</strong>
-                    <span className="badge" style={{
-                      marginLeft: '8px',
-                      backgroundColor: selectedTx.decoded_payload.risk === 'CRITICAL' ? '#dc2626' : selectedTx.decoded_payload.risk === 'HIGH' ? '#ca8a04' : selectedTx.decoded_payload.risk === 'MEDIUM' ? '#2563eb' : '#3fb950',
-                      color: '#fff',
-                      boxShadow: selectedTx.decoded_payload.risk === 'CRITICAL' ? '0 0 8px rgba(220, 38, 38, 0.6)' : 'none'
-                    }}>
-                      {selectedTx.decoded_payload.risk}
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="modal-json">
-              <h4>Raw Hex Payload & State Matrix</h4>
-              <pre>{JSON.stringify(selectedTx, null, 2)}</pre>
-            </div>
-          </div>
-        </div>
-      )}
-      
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
@@ -1094,6 +977,47 @@ function App() {
             </div>
           </div>
         </div>
+
+        {gasWars.length > 0 && (
+          <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(234, 88, 12, 0.05)', borderColor: '#ea580c', boxShadow: 'inset 0 0 40px rgba(234, 88, 12, 0.15)' }}>
+            <div className="panel-header">
+              <h2 style={{ color: '#ea580c' }}>⛽🪓 FLASHBOTS BRIBE OPTIMIZER & GAS WAR ENGINE</h2>
+              <span className="pulse-text" style={{ color: '#ea580c', fontWeight: 'bold' }}>ACTIVE GAS WARS DETECTED...</span>
+            </div>
+            <div className="table-container">
+              <table className="accounting-table">
+                <thead>
+                  <tr>
+                    <th style={{ color: '#fdba74' }}>Time</th>
+                    <th style={{ color: '#fdba74' }}>Target Hash</th>
+                    <th style={{ color: '#fdba74' }}>Rival MEV Bot</th>
+                    <th style={{ color: '#fdba74' }}>Rival Bid (Gwei)</th>
+                    <th style={{ color: '#fdba74' }}>A.S.M.O. Optimized Bid</th>
+                    <th style={{ color: '#fdba74' }}>Capital Saved (USD)</th>
+                    <th style={{ color: '#fdba74' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gasWars.map((war, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid rgba(234, 88, 12, 0.2)' }}>
+                      <td style={{ color: '#8b949e' }}>{war.time}</td>
+                      <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{war.target_hash.substring(0, 10)}...</td>
+                      <td style={{ fontFamily: 'monospace', color: '#fca5a5' }}>{war.rival_bot}</td>
+                      <td style={{ color: '#f85149' }}>{war.rival_bid}</td>
+                      <td style={{ color: '#10b981', fontWeight: 'bold' }}>{war.asmo_bid}</td>
+                      <td style={{ color: '#3fb950', fontWeight: 'bold' }}>+${war.saved_capital}</td>
+                      <td>
+                        <span className="badge pulse" style={{ backgroundColor: '#ea580c', color: '#fff' }}>
+                          {war.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {autoEjectAlerts.length > 0 && (
           <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444', boxShadow: 'inset 0 0 40px rgba(239, 68, 68, 0.2)', animation: 'pulse-danger 1s infinite' }}>
@@ -1784,7 +1708,6 @@ function App() {
                   <th>Entry Price</th>
                   <th>Exit Price</th>
                   <th>Spread %</th>
-                  <th>Est. Net Profit (50k Vol)</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -1797,12 +1720,19 @@ function App() {
                     <td>${route.buy_price.toFixed(4)}</td>
                     <td>${route.sell_price.toFixed(4)}</td>
                     <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td><button className="export-btn pulse" style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }} onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}>⚡ SIMULATE</button></td>
+                    <td>
+                      <button 
+                        className="export-btn pulse" 
+                        style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }}
+                        onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                      >
+                        ⚡ SIMULATE
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {arbitrageRoutes.length === 0 && (
-                  <tr><td colSpan="8" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
+                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
                 )}
               </tbody>
             </table>
