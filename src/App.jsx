@@ -62,7 +62,7 @@ function App() {
   });
   
   const [arbitrageRoutes, setArbitrageRoutes] = useState([]);
-  const [flashSimulator, setFlashSimulator] = useState({ isOpen: false, route: null, amount: 50000, status: 'IDLE', result: null });
+  const [atomicSimulator, setAtomicSimulator] = useState({ isOpen: false, route: null, amount: 50000, status: 'IDLE', result: null });
   
   const wsRef = useRef(null);
   const containerRef = useRef(null);
@@ -262,6 +262,22 @@ function App() {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 0.3);
+  };
+
+  const playAtomicZap = () => {
+    if (!soundEnabledRef.current || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(3000, ctx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.2);
   };
 
   useEffect(() => {
@@ -559,33 +575,34 @@ function App() {
     }
   };
 
-  const flashMath = useMemo(() => {
-    if (!flashSimulator.route) return null;
-    const amount = flashSimulator.amount;
-    const spread = flashSimulator.route.spread;
+  const atomicMath = useMemo(() => {
+    if (!atomicSimulator.route) return null;
+    const amount = atomicSimulator.amount;
+    const spread = atomicSimulator.route.spread;
     const grossProfit = amount * (spread / 100);
-    const fee = amount * 0.0005; 
-    const gas = 85.50; 
-    const slippagePercent = (amount / 5000000) * 1.5; 
-    const slippageCost = amount * (slippagePercent / 100);
-    const netProfit = grossProfit - fee - gas - slippageCost;
+    const flashFee = amount * 0.0005; 
+    const l0BridgeFee = 15.50; 
+    const gasSrc = 45.20; 
+    const gasDst = 22.10; 
+    const slippageCost = amount * ((amount / 5000000) * 1.5 / 100);
+    const netProfit = grossProfit - flashFee - l0BridgeFee - gasSrc - gasDst - slippageCost;
     const isProfitable = netProfit > 0;
     
-    return { grossProfit, fee, gas, slippagePercent, slippageCost, netProfit, isProfitable };
-  }, [flashSimulator.amount, flashSimulator.route]);
+    return { grossProfit, flashFee, l0BridgeFee, totalGas: gasSrc + gasDst, slippageCost, netProfit, isProfitable };
+  }, [atomicSimulator.amount, atomicSimulator.route]);
 
-  const executeFlashloan = () => {
-    setFlashSimulator(prev => ({ ...prev, status: 'SIMULATING' }));
-    playFlashZap();
+  const executeAtomicArb = () => {
+    setAtomicSimulator(prev => ({ ...prev, status: 'BRIDGING' }));
+    playAtomicZap();
     setTimeout(() => {
-      setFlashSimulator(prev => ({ ...prev, status: 'SUCCESS' }));
+      setAtomicSimulator(prev => ({ ...prev, status: 'SUCCESS' }));
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ 
-          action: 'EXECUTE_FLASHLOAN', 
-          data: { amount: flashSimulator.amount, netProfit: flashMath.netProfit, spread: flashSimulator.route.spread } 
+          action: 'EXECUTE_ATOMIC_ARB', 
+          data: { route: atomicSimulator.route.route, amount: atomicSimulator.amount, netProfit: atomicMath.netProfit, spread: atomicSimulator.route.spread } 
         }));
       }
-    }, 1500);
+    }, 2000);
   };
 
   const projectAnalysis = useMemo(() => {
@@ -892,6 +909,233 @@ function App() {
 
   return (
     <div className="dashboard-container">
+      {atomicSimulator.isOpen && atomicSimulator.route && (
+        <div className="modal-overlay" onClick={() => setAtomicSimulator({ ...atomicSimulator, isOpen: false })}>
+          <div className="flash-modal" style={{ borderColor: '#3b82f6', boxShadow: '0 0 40px rgba(59, 130, 246, 0.2)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="flash-header" style={{ borderBottomColor: '#3b82f6' }}>
+              <h2 style={{ color: '#3b82f6' }}>⚛️ Atomic Cross-Chain Router</h2>
+              <button className="close-btn" onClick={() => setAtomicSimulator({ ...atomicSimulator, isOpen: false })}>✕</button>
+            </div>
+            
+            <div className="flash-body">
+              <div className="flash-info-row">
+                <span>Target Bridge Route:</span>
+                <strong style={{color: '#c9d1d9'}}>{atomicSimulator.route.route}</strong>
+              </div>
+              <div className="flash-info-row">
+                <span>Inter-Chain Spread:</span>
+                <strong style={{color: '#10b981'}}>+{atomicSimulator.route.spread}%</strong>
+              </div>
+              
+              <div className="flash-slider-container">
+                <label>Atomic Flash Capital (USD): <span style={{color: '#38bdf8', fontWeight: 'bold'}}>${atomicSimulator.amount.toLocaleString()}</span></label>
+                <input 
+                  type="range" 
+                  min="10000" 
+                  max="5000000" 
+                  step="10000" 
+                  value={atomicSimulator.amount} 
+                  className="flash-slider"
+                  style={{ background: '#0c4a6e' }}
+                  onChange={(e) => setAtomicSimulator({ ...atomicSimulator, amount: Number(e.target.value) })}
+                  disabled={atomicSimulator.status !== 'IDLE'}
+                />
+              </div>
+
+              {atomicMath && (
+                <div className="flash-results">
+                  <div className="flash-res-item">
+                    <span>Gross Arbitrage Yield</span>
+                    <span style={{color: '#c9d1d9'}}>${atomicMath.grossProfit.toFixed(2)}</span>
+                  </div>
+                  <div className="flash-res-item">
+                    <span>Flashloan Base Fee (0.05%)</span>
+                    <span style={{color: '#f85149'}}>-${atomicMath.flashFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flash-res-item">
+                    <span>L0 Bridge Routing Fee</span>
+                    <span style={{color: '#f85149'}}>-${atomicMath.l0BridgeFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flash-res-item">
+                    <span>Dual-Chain Gas Tx</span>
+                    <span style={{color: '#f85149'}}>-${atomicMath.totalGas.toFixed(2)}</span>
+                  </div>
+                  <div className="flash-res-item">
+                    <span>Est. Dex Slippage ({atomicMath.slippagePercent.toFixed(3)}%)</span>
+                    <span style={{color: '#ea580c'}}>-${atomicMath.slippageCost.toFixed(2)}</span>
+                  </div>
+                  <hr style={{borderColor: '#30363d', margin: '12px 0'}} />
+                  <div className="flash-res-item" style={{fontSize: '1.2rem'}}>
+                    <span>Net Extracted Value</span>
+                    <span style={{color: atomicMath.isProfitable ? '#3fb950' : '#dc2626', fontWeight: 'bold'}}>
+                      {atomicMath.isProfitable ? '+' : ''}${atomicMath.netProfit.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flash-action">
+                {atomicSimulator.status === 'IDLE' && (
+                  <button 
+                    className="flash-btn pulse" 
+                    style={{backgroundColor: atomicMath.isProfitable ? '#3b82f6' : '#dc2626', color: '#fff'}}
+                    onClick={executeAtomicArb}
+                  >
+                    {atomicMath.isProfitable ? '⚛️ INITIATE ATOMIC HOP' : '⚠️ SPREAD TOO NARROW'}
+                  </button>
+                )}
+                {atomicSimulator.status === 'BRIDGING' && (
+                  <button className="flash-btn" style={{backgroundColor: '#0ea5e9', color: '#fff'}} disabled>
+                    ⏳ ROUTING L0 PACKETS...
+                  </button>
+                )}
+                {atomicSimulator.status === 'SUCCESS' && (
+                  <button className="flash-btn" style={{backgroundColor: atomicMath.isProfitable ? '#3fb950' : '#f85149'}} onClick={() => setAtomicSimulator({ ...atomicSimulator, isOpen: false })}>
+                    {atomicMath.isProfitable ? '✓ ATOMIC ARBITRAGE CLEARED' : '✕ TX REVERTED'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedEntity && entityData && (
+        <div className="modal-overlay" onClick={() => setSelectedEntity(null)}>
+          <div className="xray-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="xray-header">
+              <div className="xray-title">
+                <h2>🕵️‍♂️ X-Ray Profiler: {entityData.label}</h2>
+                <span style={{ color: '#8b949e', fontSize: '0.9rem', marginTop: '8px', display: 'block' }}>{entityData.address}</span>
+              </div>
+              <button className="close-btn" onClick={() => setSelectedEntity(null)}>✕</button>
+            </div>
+            
+            <div className="xray-biometrics">
+              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>🧠 Behavioral Biometrics & Psych Profile</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="bio-stat">
+                  <span className="bio-label">Classification</span>
+                  <span className="bio-value">{entityData.biometrics.profile}</span>
+                </div>
+                <div className="bio-stat">
+                  <span className="bio-label">Active Timezone</span>
+                  <span className="bio-value">{entityData.biometrics.session}</span>
+                </div>
+                <div className="bio-stat">
+                  <span className="bio-label">Risk Tolerance</span>
+                  <span className="bio-value" style={{color: entityData.biometrics.risk.includes('Extreme') ? '#f85149' : '#eab308'}}>{entityData.biometrics.risk}</span>
+                </div>
+                <div className="bio-stat">
+                  <span className="bio-label">Fear/Greed Index ({entityData.biometrics.greed}/100)</span>
+                  <div className="greed-bar-bg">
+                    <div className="greed-bar-fill" style={{ width: `${entityData.biometrics.greed}%`, backgroundColor: entityData.biometrics.greed > 75 ? '#f85149' : entityData.biometrics.greed > 40 ? '#eab308' : '#3fb950' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="xray-metrics">
+              <div className="xray-card">
+                <div className="xray-card-title">Total Volume (USD)</div>
+                <div className="xray-card-value">${entityData.totalVolume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+              </div>
+              <div className="xray-card">
+                <div className="xray-card-title">Net Realized PnL</div>
+                <div className="xray-card-value">{renderPnL(entityData.netPnl)}</div>
+              </div>
+              <div className="xray-card">
+                <div className="xray-card-title">Top Asset Interacted</div>
+                <div className="xray-card-value" style={{ color: '#0ea5e9', fontSize: '1.1rem' }}>{entityData.topAsset}</div>
+              </div>
+              <div className="xray-card">
+                <div className="xray-card-title">Primary Counterparty</div>
+                <div className="xray-card-value" style={{ color: '#a371f7', fontSize: '1.1rem' }}>{entityData.topCounterparty}</div>
+              </div>
+            </div>
+            <div className="xray-history">
+              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>Recent Activity Fingerprint</h4>
+              <table className="accounting-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Network</th>
+                    <th>Action</th>
+                    <th>Value</th>
+                    <th>PnL / Impact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entityData.history.map((tx, idx) => (
+                    <tr key={idx} style={getRowStyle(tx.status, tx.type, tx.flag)}>
+                      <td style={{ color: '#8b949e' }}>{tx.time}</td>
+                      <td>{renderNetworkBadge(tx.network)}</td>
+                      <td>{renderTypeBadge(tx.type)}</td>
+                      <td style={{ fontWeight: 'bold' }}>{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</td>
+                      <td>{renderPnL(tx.pnl)}</td>
+                    </tr>
+                  ))}
+                  {entityData.history.length === 0 && (
+                    <tr><td colSpan="5" style={{ textAlign: 'center', color: '#8b949e', padding: '20px' }}>No direct history found in current matrix state.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedTx && !selectedEntity && (
+        <div className="modal-overlay" onClick={() => setSelectedTx(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🔍 Deep Trace: {selectedTx.tx_hash}</h2>
+              <button className="close-btn" onClick={() => setSelectedTx(null)}>✕</button>
+            </div>
+            <div className="modal-grid">
+              <div className="modal-card">
+                <h4>Execution Trace</h4>
+                <p><strong>Network:</strong> {renderNetworkBadge(selectedTx.network)}</p>
+                <p><strong>Gas Consumed:</strong> {selectedTx.gas_used} Gwei</p>
+                <p><strong>Execution Depth:</strong> Level {selectedTx.execution_depth}</p>
+                <p><strong>Block Status:</strong> {selectedTx.status}</p>
+                <p><strong>Timestamp:</strong> {selectedTx.time}</p>
+              </div>
+              <div className="modal-card">
+                <h4>Financials & Alpha</h4>
+                <p><strong>Asset Transfer:</strong> {selectedTx.amount} {selectedTx.asset}</p>
+                <p><strong>Total Value:</strong> ${(selectedTx.amount * selectedTx.price_usd).toFixed(2)}</p>
+                <p><strong>Realized P&L:</strong> {renderPnL(selectedTx.pnl)}</p>
+                <p><strong>Price Impact:</strong> {selectedTx.price_impact > 0 ? `${selectedTx.price_impact}%` : 'N/A'}</p>
+                <p><strong>Alpha Extracted:</strong> {selectedTx.spread > 0 ? `Spread +${selectedTx.spread}%` : selectedTx.mev_extracted > 0 ? `MEV $${selectedTx.mev_extracted}` : 'N/A'}</p>
+              </div>
+              {selectedTx.decoded_payload && (
+                <div className="modal-card">
+                  <h4>🕵️‍♂️ Payload X-Ray</h4>
+                  <p><strong>Method ID:</strong> <span style={{color: '#a371f7', fontFamily: 'monospace'}}>{selectedTx.decoded_payload.method}</span></p>
+                  <p><strong>Deciphered:</strong> <span style={{color: '#58a6ff', fontWeight: 'bold'}}>{selectedTx.decoded_payload.name}</span></p>
+                  <p><strong>Payload Size:</strong> {selectedTx.decoded_payload.raw_length} bytes</p>
+                  <p><strong>Risk Profile:</strong>
+                    <span className="badge" style={{
+                      marginLeft: '8px',
+                      backgroundColor: selectedTx.decoded_payload.risk === 'CRITICAL' ? '#dc2626' : selectedTx.decoded_payload.risk === 'HIGH' ? '#ca8a04' : selectedTx.decoded_payload.risk === 'MEDIUM' ? '#2563eb' : '#3fb950',
+                      color: '#fff',
+                      boxShadow: selectedTx.decoded_payload.risk === 'CRITICAL' ? '0 0 8px rgba(220, 38, 38, 0.6)' : 'none'
+                    }}>
+                      {selectedTx.decoded_payload.risk}
+                    </span>
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="modal-json">
+              <h4>Raw Hex Payload & State Matrix</h4>
+              <pre>{JSON.stringify(selectedTx, null, 2)}</pre>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <header className="header">
         <div className="logo-section">
           <h1>A.S.M.O.</h1>
@@ -920,7 +1164,7 @@ function App() {
                 🤖 OVERLORD AUTONOMOUS AI
                 {overlordState.active && <span className="badge" style={{ backgroundColor: '#d946ef', color: '#000', fontSize: '0.8rem', animation: 'pulse-danger 2s infinite' }}>SYSTEM LIVE</span>}
               </h2>
-              <span style={{ fontSize: '0.85rem', color: '#8b949e' }}>Hand over control to the AI. A.S.M.O. will automatically execute snipes, front-runs, and flashloans if constraints are met.</span>
+              <span style={{ fontSize: '0.85rem', color: '#8b949e' }}>Hand over control to the AI. A.S.M.O. will automatically execute snipes, front-runs, and cross-chain flashloans if constraints are met.</span>
             </div>
             <button 
               onClick={handleOverlordToggle}
@@ -1108,6 +1352,54 @@ function App() {
             </div>
           </div>
         )}
+
+        <div className="panel" style={{ marginBottom: '24px' }}>
+          <div className="panel-header">
+            <h2 style={{ color: '#3b82f6' }}>⚛️ Atomic Cross-Chain Execution Radar</h2>
+            <span className="pulse-text" style={{ color: '#3b82f6' }}>Scanning Layer-0 Bridge Arbitrage Opportunities...</span>
+          </div>
+          <div className="table-container">
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Detection Time</th>
+                  <th>Target Asset</th>
+                  <th>Inter-Chain Route</th>
+                  <th>Base Entry Price</th>
+                  <th>Exit Price</th>
+                  <th>Spread %</th>
+                  <th>Est. Net Yield</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {arbitrageRoutes.map((route, idx) => (
+                  <tr key={idx} style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
+                    <td style={{ color: '#8b949e' }}>{route.time}</td>
+                    <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
+                    <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
+                    <td>${route.buy_price.toFixed(4)}</td>
+                    <td>${route.sell_price.toFixed(4)}</td>
+                    <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
+                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td>
+                      <button 
+                        className="export-btn pulse" 
+                        style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#3b82f6', color: '#fff', fontWeight: 'bold' }}
+                        onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                      >
+                        ⚛️ ATOMIC EXECUTE
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {arbitrageRoutes.length === 0 && (
+                  <tr><td colSpan="8" className="empty-state">Awaiting profitable cross-chain spreads...</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <div className="leaderboard-container">
           <div className="leaderboard-card">
@@ -1517,228 +1809,6 @@ function App() {
           </div>
         </div>
 
-        <div className="panel" style={{ marginBottom: '24px', borderColor: '#64748b', boxShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.15)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics (Aklama Dedektifi)</h2>
-            <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC & Mixers...</span>
-          </div>
-          <div className="table-container">
-            <table className="accounting-table">
-              <thead>
-                <tr>
-                  <th>Detection Time</th>
-                  <th>Network</th>
-                  <th>Suspect Hash</th>
-                  <th>Source Entity</th>
-                  <th>Wash Protocol</th>
-                  <th>Est. Laundered (USD)</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {darkPoolAlerts.map((alert, idx) => (
-                  <tr key={idx} style={{ backgroundColor: 'rgba(100, 116, 139, 0.1)' }}>
-                    <td style={{ color: '#8b949e' }}>{alert.time}</td>
-                    <td>{renderNetworkBadge(alert.network)}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 15)}...</td>
-                    <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(alert.from_addr)} className="entity-link">{formatAddress(alert.from_addr)}</td>
-                    <td style={{ color: '#f85149', fontWeight: 'bold' }}>{alert.protocol}</td>
-                    <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td>
-                      <button className="export-btn pulse" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#475569', border: '1px solid #94a3b8' }}>
-                        INITIATE TRACE
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {darkPoolAlerts.length === 0 && (
-                  <tr><td colSpan="7" className="empty-state">No active laundering or Dark Pool flows detected currently.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="panel" style={{ marginBottom: '24px', borderColor: '#a371f7', boxShadow: 'inset 0 0 20px rgba(163, 113, 247, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper (New Pair Radar)</h2>
-            <span className="pulse-text" style={{ color: '#a371f7' }}>Scanning Factory Contracts...</span>
-          </div>
-          <div className="table-container">
-            <table className="accounting-table">
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Network</th>
-                  <th>Target Token</th>
-                  <th>Pool Pair</th>
-                  <th>Dev/Creator</th>
-                  <th>Security Report</th>
-                  <th>System Verdict</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snipeTargets.map((target, idx) => (
-                  <tr key={idx} style={{ backgroundColor: 'rgba(163, 113, 247, 0.05)' }}>
-                    <td style={{ color: '#8b949e' }}>{target.time}</td>
-                    <td>{renderNetworkBadge(target.network)}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(target.token0)} className="entity-link">{formatAddress(target.token0)}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(target.pair)}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
-                    <td>{renderSecurityBadge(target.score, target.label)}</td>
-                    <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
-                    <td>
-                      <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: target.score >= 80 ? '#3fb950' : '#30363d', cursor: target.score >= 80 ? 'pointer' : 'not-allowed' }}>
-                        {target.score >= 80 ? 'EXECUTE SNIPE' : 'LOCKED'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {snipeTargets.length === 0 && (
-                  <tr><td colSpan="8" className="empty-state">No new liquidity pools detected in recent blocks. Sniper standing by...</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone (Heatmap)</h2>
-            <span className="pulse-text" style={{ color: '#ef4444' }}>Tracking Vulnerable Collateral...</span>
-          </div>
-          <div className="table-container">
-            <table className="accounting-table">
-              <thead>
-                <tr>
-                  <th>Target Entity</th>
-                  <th>Locked Collateral</th>
-                  <th>Active Debt</th>
-                  <th>Health Factor</th>
-                  <th>Status</th>
-                  <th>Est. Liq. Reward</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {killZone.map((kz, i) => (
-                  <tr key={i} style={{ backgroundColor: kz.hf < 1.05 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.1)' }}>
-                    <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(kz.address)} className="entity-link">{formatAddress(kz.address)}</td>
-                    <td>${kz.collateral.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td style={{ color: '#f85149' }}>${kz.debt.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td style={{ fontWeight: 'bold', color: kz.hf < 1.05 ? '#f85149' : '#eab308' }}>{kz.hf}</td>
-                    <td>
-                      <span className="badge" style={{ backgroundColor: kz.hf < 1.05 ? '#dc2626' : '#ca8a04', color: '#fff' }}>
-                        {kz.hf < 1.05 ? 'CRITICAL' : 'AT RISK'}
-                      </span>
-                    </td>
-                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td><button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#dc2626' }}>Flash Liquidate</button></td>
-                  </tr>
-                ))}
-                {killZone.length === 0 && (
-                  <tr><td colSpan="7" className="empty-state">All monitored entities are currently over-collateralized. No immediate liquidation risks.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="panel" style={{ marginBottom: '24px', borderColor: '#ca8a04', boxShadow: 'inset 0 0 20px rgba(202, 138, 4, 0.05)' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter (Klon Cüzdan Ağ Örümceği)</h2>
-            <span className="pulse-text" style={{ color: '#eab308' }}>Detecting Wash Trading & Sybil Rings...</span>
-          </div>
-          <div className="table-container">
-            <table className="accounting-table">
-              <thead>
-                <tr>
-                  <th>Sybil Cluster ID</th>
-                  <th>Connected Entities</th>
-                  <th>Network Dominance (PnL)</th>
-                  <th>Risk Profile</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sybilClusters.map((cluster, idx) => (
-                  <tr key={idx} style={{ backgroundColor: 'rgba(202, 138, 4, 0.05)' }}>
-                    <td style={{ color: '#eab308', fontWeight: 'bold' }}>{cluster.name}</td>
-                    <td style={{ color: '#c9d1d9' }}>{cluster.wallets.length} Wallets Linked</td>
-                    <td style={{ color: cluster.total_pnl >= 0 ? '#3fb950' : '#f85149', fontWeight: 'bold' }}>
-                      {cluster.total_pnl >= 0 ? '+' : '-'}${Math.abs(cluster.total_pnl).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </td>
-                    <td>
-                      <span className="badge" style={{ backgroundColor: cluster.wallets.length > 5 ? '#dc2626' : '#ea580c', color: '#fff' }}>
-                        {cluster.wallets.length > 5 ? 'HIGH RISK (SYBIL)' : 'SUSPICIOUS RING'}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#ca8a04' }} onClick={() => {
-                        const addresses = cluster.wallets.join('\n');
-                        navigator.clipboard.writeText(addresses);
-                        alert('Sybil cüzdan adresleri panoya kopyalandı:\n\n' + addresses.substring(0, 100) + '...');
-                      }}>
-                        Extract Addrs
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {sybilClusters.length === 0 && (
-                  <tr><td colSpan="5" className="empty-state">No active Sybil rings detected in the current matrix state.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="panel" style={{ marginBottom: '24px' }}>
-          <div className="panel-header">
-            <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
-            <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
-          </div>
-          <div className="table-container">
-            <table className="accounting-table">
-              <thead>
-                <tr>
-                  <th>Detection Time</th>
-                  <th>Target Asset</th>
-                  <th>Execution Route</th>
-                  <th>Entry Price</th>
-                  <th>Exit Price</th>
-                  <th>Spread %</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {arbitrageRoutes.map((route, idx) => (
-                  <tr key={idx} style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}>
-                    <td style={{ color: '#8b949e' }}>{route.time}</td>
-                    <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
-                    <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
-                    <td>${route.buy_price.toFixed(4)}</td>
-                    <td>${route.sell_price.toFixed(4)}</td>
-                    <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                    <td>
-                      <button 
-                        className="export-btn pulse" 
-                        style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }}
-                        onClick={() => setFlashSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
-                      >
-                        ⚡ SIMULATE
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {arbitrageRoutes.length === 0 && (
-                  <tr><td colSpan="7" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         <div className="panel mempool-panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
             <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü (Next-Block Prediction)</h2>
@@ -1789,7 +1859,7 @@ function App() {
 
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panel-header">
-            <h2 style={{ color: '#58a6ff' }}>🗄️ Proje Analiz Paneli & Felaket Kurtarma</h2>
+            <h2 style={{ color: '#58a6ff' }}>🗄️ System Backup & Restore</h2>
           </div>
           <div className="project-analysis-grid">
             <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
@@ -1814,22 +1884,22 @@ function App() {
                     </tr>
                   ))}
                   {projectAnalysis.length === 0 && (
-                    <tr><td colSpan="5" className="empty-state">Proje verisi bekleniyor...</td></tr>
+                    <tr><td colSpan="5" className="empty-state">Awaiting project data...</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
             <div className="recovery-card" style={{ flex: 1 }}>
-              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Sistem Yedekleme & Geri Yükleme</h3>
-              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>A.S.M.O. veritabanını şifreli JSON formatında dışa aktarın veya mevcut bir yedeği anında motora enjekte edin.</p>
+              <h3 style={{ marginTop: 0, color: '#e6edf3' }}>System Backup & Restore</h3>
+              <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>Export the A.S.M.O. database in encrypted JSON format or instantly inject an existing backup into the engine.</p>
               
               <button className="recovery-btn backup-btn" onClick={handleBackup}>
-                📥 A.S.M.O. Veritabanını Yedekle
+                📥 Backup A.S.M.O. Database
               </button>
               
               <div style={{ marginTop: '24px' }}>
                 <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
-                  📤 Sistem Geri Yükle (Restore)
+                  📤 Restore System
                 </button>
                 <input 
                   type="file" 
