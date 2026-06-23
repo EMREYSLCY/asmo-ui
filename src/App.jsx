@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ForceGraph3D from 'react-force-graph-3d';
-import ForceGraph2D from 'react-force-graph-2d';
 import './App.css';
 
 const getWsUrl = () => {
@@ -24,17 +23,16 @@ const Dashboard = ({
   shadowLogs, bridgeTsunamis, shadowRelayAlerts, autoEjectAlerts,
   vestingDumps, gasWars, overlordState, handleOverlordToggle,
   handleBackup, handleRestore, handleAudit, handleDecompile,
-  handleCabalScan, executeAutoEject, executeShortDump, executeFlashloan,
+  executeAutoEject, executeShortDump, executeFlashloan,
   executeAtomicArb, toggleShadow, auditInput, setAuditInput,
   auditData, isAuditing, decompileInput, setDecompileInput,
-  decompileData, isDecompiling, cabalInput, setCabalInput,
-  cabalData, isScanningCabal, auditNetwork, setAuditNetwork,
+  decompileData, isDecompiling, auditNetwork, setAuditNetwork,
   flashSimulator, setFlashSimulator, atomicSimulator, setAtomicSimulator,
   arbitrageRoutes, displayMempool, projectAnalysis, networkData, chartData,
-  fileInputRef, containerRef, cabalRef, exportToCSV, getRowStyle,
+  fileInputRef, containerRef, exportToCSV, getRowStyle,
   renderNetworkBadge, renderTypeBadge, renderPnL, renderAgentBadge,
   renderHealthFactor, renderSecurityBadge, renderTwapBadge, renderLogicTree,
-  formatAddress, entityData, PIE_COLORS, graphDimensions, cabalDimensions
+  formatAddress, entityData, PIE_COLORS, graphDimensions
 }) => {
   return (
     <>
@@ -42,7 +40,7 @@ const Dashboard = ({
         <div className="modal-overlay" onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>
           <div className="flash-modal" onClick={(e) => e.stopPropagation()}>
             <div className="flash-header">
-              <h2>⚡ Flashloan Attack Simulator</h2>
+              <h2>⚡ FLASHLOAN ATTACK SIMULATOR</h2>
               <button className="close-btn" onClick={() => setFlashSimulator({ ...flashSimulator, isOpen: false })}>✕</button>
             </div>
             
@@ -120,7 +118,7 @@ const Dashboard = ({
         <div className="modal-overlay" onClick={() => setAtomicSimulator({ ...atomicSimulator, isOpen: false })}>
           <div className="flash-modal" style={{ borderColor: '#3b82f6', boxShadow: '0 0 40px rgba(59, 130, 246, 0.2)' }} onClick={(e) => e.stopPropagation()}>
             <div className="flash-header" style={{ borderBottomColor: '#3b82f6' }}>
-              <h2 style={{ color: '#3b82f6' }}>⚛️ Atomic Cross-Chain Router</h2>
+              <h2 style={{ color: '#3b82f6' }}>⚛️ ATOMIC CROSS-CHAIN ROUTER</h2>
               <button className="close-btn" onClick={() => setAtomicSimulator({ ...atomicSimulator, isOpen: false })}>✕</button>
             </div>
             
@@ -189,14 +187,14 @@ const Dashboard = ({
           <div className="xray-modal" onClick={(e) => e.stopPropagation()}>
             <div className="xray-header">
               <div className="xray-title">
-                <h2>🕵️‍♂️ X-Ray Profiler: {entityData.label}</h2>
+                <h2>🕵️‍♂️ X-RAY PROFILER: {entityData.label}</h2>
                 <span style={{ color: '#8b949e', fontSize: '0.9rem', marginTop: '8px', display: 'block' }}>{entityData.address}</span>
               </div>
               <button className="close-btn" onClick={() => setSelectedEntity(null)}>✕</button>
             </div>
             
             <div className="xray-biometrics">
-              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>🧠 Behavioral Biometrics & Psych Profile</h4>
+              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>🧠 BEHAVIORAL BIOMETRICS & PSYCH PROFILE</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="bio-stat">
                   <span className="bio-label">Classification</span>
@@ -238,7 +236,7 @@ const Dashboard = ({
               </div>
             </div>
             <div className="xray-history">
-              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>Recent Activity Fingerprint</h4>
+              <h4 style={{ color: '#e6edf3', marginTop: 0, borderBottom: '1px solid #30363d', paddingBottom: '12px' }}>RECENT ACTIVITY FINGERPRINT</h4>
               <table className="accounting-table">
                 <thead>
                   <tr>
@@ -273,12 +271,12 @@ const Dashboard = ({
         <div className="modal-overlay" onClick={() => setSelectedTx(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>🔍 Deep Trace: {selectedTx.tx_hash}</h2>
+              <h2>🔍 DEEP TRACE: {selectedTx.tx_hash}</h2>
               <button className="close-btn" onClick={() => setSelectedTx(null)}>✕</button>
             </div>
             <div className="modal-grid">
               <div className="modal-card">
-                <h4>Execution Trace</h4>
+                <h4>EXECUTION TRACE</h4>
                 <p><strong>Network:</strong> {renderNetworkBadge(selectedTx.network)}</p>
                 <p><strong>Gas Consumed:</strong> {selectedTx.gas_used} Gwei</p>
                 <p><strong>Execution Depth:</strong> Level {selectedTx.execution_depth}</p>
@@ -286,7 +284,7 @@ const Dashboard = ({
                 <p><strong>Timestamp:</strong> {selectedTx.time}</p>
               </div>
               <div className="modal-card">
-                <h4>Financials & Alpha</h4>
+                <h4>FINANCIALS & ALPHA</h4>
                 <p><strong>Asset Transfer:</strong> {selectedTx.amount} {selectedTx.asset}</p>
                 <p><strong>Total Value:</strong> ${(selectedTx.amount * selectedTx.price_usd).toFixed(2)}</p>
                 <p><strong>Realized P&L:</strong> {renderPnL(selectedTx.pnl)}</p>
@@ -295,7 +293,7 @@ const Dashboard = ({
               </div>
               {selectedTx.decoded_payload && (
                 <div className="modal-card">
-                  <h4>🕵️‍♂️ Payload X-Ray</h4>
+                  <h4>🕵️‍♂️ PAYLOAD X-RAY</h4>
                   <p><strong>Method ID:</strong> <span style={{color: '#a371f7', fontFamily: 'monospace'}}>{selectedTx.decoded_payload.method}</span></p>
                   <p><strong>Deciphered:</strong> <span style={{color: '#58a6ff', fontWeight: 'bold'}}>{selectedTx.decoded_payload.name}</span></p>
                   <p><strong>Payload Size:</strong> {selectedTx.decoded_payload.raw_length} bytes</p>
@@ -313,7 +311,7 @@ const Dashboard = ({
               )}
             </div>
             <div className="modal-json">
-              <h4>Raw Hex Payload & State Matrix</h4>
+              <h4>RAW HEX PAYLOAD & STATE MATRIX</h4>
               <pre>{JSON.stringify(selectedTx, null, 2)}</pre>
             </div>
           </div>
@@ -579,73 +577,6 @@ const Dashboard = ({
         </div>
       </div>
 
-      <div className="panel cabal-panel" style={{ marginBottom: '24px', borderColor: '#ec4899', boxShadow: 'inset 0 0 20px rgba(236, 72, 153, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#ec4899' }}>🕸️ Insider Cabal Profiler (Bubble Map)</h2>
-          <span className="pulse-text" style={{ color: '#ec4899' }}>Awaiting Target Token Hash...</span>
-        </div>
-        <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-          <input type="text" className="search-input" style={{flex: 1, borderColor: '#ec4899'}} placeholder="Enter Token Address to expose hidden monopolies..." value={cabalInput} onChange={e => setCabalInput(e.target.value)} />
-          <button className="export-btn" style={{backgroundColor: '#db2777', color: '#fff'}} onClick={handleCabalScan}>{isScanningCabal ? 'TRACING NODES...' : 'EXTRACT CABAL MAP'}</button>
-        </div>
-        
-        {cabalData && (
-          <div className="cabal-results">
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-              <div className="mempool-stat-card" style={{ flex: 1, borderColor: cabalData.total_cabal_dominance > 50 ? '#f85149' : '#eab308' }}>
-                <h4>Total Insider Dominance</h4>
-                <div className="mempool-value" style={{ color: cabalData.total_cabal_dominance > 50 ? '#f85149' : '#eab308' }}>
-                  {cabalData.total_cabal_dominance}%
-                </div>
-              </div>
-              <div className="mempool-stat-card" style={{ flex: 1 }}>
-                <h4>Identified Syndicates</h4>
-                <div className="mempool-value" style={{ color: '#c9d1d9' }}>
-                  {cabalData.syndicates.length} Clusters
-                </div>
-              </div>
-              <div className="mempool-stat-card" style={{ flex: 1, borderColor: cabalData.risk_level === 'CRITICAL' ? '#f85149' : '#eab308' }}>
-                <h4>Centralization Risk</h4>
-                <div className="mempool-value" style={{ color: cabalData.risk_level === 'CRITICAL' ? '#f85149' : '#eab308' }}>
-                  {cabalData.risk_level}
-                </div>
-              </div>
-            </div>
-            
-            <div className="graph-container" ref={cabalRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10, background: 'rgba(13,17,23,0.8)', padding: '8px', borderRadius: '4px', border: '1px solid #30363d' }}>
-                <h4 style={{ margin: '0 0 8px 0', color: '#e6edf3', fontSize: '0.8rem' }}>Syndicate Legend</h4>
-                {cabalData.syndicates.map((syn, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: '#8b949e', marginBottom: '4px' }}>
-                    <div style={{ width: '10px', height: '10px', backgroundColor: syn.color, borderRadius: '50%' }}></div>
-                    {syn.name} ({syn.control_pct}%)
-                  </div>
-                ))}
-              </div>
-              {cabalDimensions.width > 0 && (
-                <ForceGraph2D
-                  width={cabalDimensions.width}
-                  height={400}
-                  graphData={cabalData.graph}
-                  nodeLabel="name"
-                  nodeColor="color"
-                  nodeVal="val"
-                  linkColor="color"
-                  linkWidth={1.5}
-                  linkDirectionalParticles={2}
-                  linkDirectionalParticleSpeed={0.005}
-                  backgroundColor="#010409"
-                  onNodeClick={(node) => {
-                     navigator.clipboard.writeText(node.id);
-                     alert('Entity address copied: ' + node.id);
-                  }}
-                />
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
       <div className="panel shadow-panel" style={{ marginBottom: '24px', borderColor: '#14b8a6', boxShadow: 'inset 0 0 20px rgba(20, 184, 166, 0.05)' }}>
         <div className="panel-header">
           <h2 style={{ color: '#14b8a6' }}>🥷 MEV Shadow-Relay Interceptor</h2>
@@ -687,24 +618,20 @@ const Dashboard = ({
 
       <div className="panel shadow-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#0ea5e9' }}>🤖 Institutional Copy-Trade Engine (Shadow Mode)</h2>
+          <h2 style={{ color: '#0ea5e9' }}>🤖 Institutional Copy-Trade Engine</h2>
           <span className="pulse-text" style={{ color: '#0ea5e9' }}>Awaiting Target Execution...</span>
         </div>
         <div className="project-analysis-grid">
           <div className="recovery-card" style={{ flex: 1, marginRight: '16px' }}>
             <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Active Targets</h3>
-            {shadowTargets.length === 0 ? (
-              <p style={{ fontSize: '0.85rem', color: '#8b949e' }}>Select a target from the leaderboard to initiate Shadow Protocol.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {shadowTargets.map((addr, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#010409', padding: '8px 12px', borderRadius: '4px', border: '1px solid #30363d' }}>
-                    <span style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{formatAddress(addr)}</span>
-                    <button className="close-btn" style={{ fontSize: '1rem' }} onClick={() => toggleShadow(addr)}>✕</button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {shadowTargets.map((addr, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#010409', padding: '8px 12px', borderRadius: '4px', border: '1px solid #30363d' }}>
+                  <span style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{formatAddress(addr)}</span>
+                  <button className="close-btn" style={{ fontSize: '1rem' }} onClick={() => toggleShadow(addr)}>✕</button>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="table-container" style={{ flex: 2 }}>
             <table className="accounting-table">
@@ -774,7 +701,7 @@ const Dashboard = ({
 
       <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel (Manual Audit)</h2>
+          <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel</h2>
           <span className="pulse-text" style={{ color: '#3b82f6' }}>Awaiting Target Hash...</span>
         </div>
         <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
@@ -823,7 +750,7 @@ const Dashboard = ({
       <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
         <div className="panel-header">
           <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster & Social Sentiment Matrix</h2>
-          <span className="pulse-text" style={{ color: '#8b5cf6' }}>Cross-Referencing On-Chain Vol w/ Off-Chain Hype...</span>
+          <span className="pulse-text" style={{ color: '#8b5cf6' }}>Cross-Referencing On-Chain Vol...</span>
         </div>
         <div className="table-container">
           <table className="accounting-table">
@@ -836,7 +763,6 @@ const Dashboard = ({
                 <th>Mentions/Hr</th>
                 <th>Hype Score</th>
                 <th>Status</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -853,9 +779,6 @@ const Dashboard = ({
                       {data.status}
                     </span>
                   </td>
-                  <td>
-                    <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#8b5cf6' }}>Track Trend</button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -865,7 +788,7 @@ const Dashboard = ({
 
       <div className="panel bridge-tsunami-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#0ea5e9' }}>🌉 Multi-Hop Bridge Vacuum (Liquidity Radar)</h2>
+          <h2 style={{ color: '#0ea5e9' }}>🌉 Multi-Hop Bridge Vacuum</h2>
           <span className="pulse-text" style={{ color: '#0ea5e9' }}>Monitoring Cross-Chain Portals...</span>
         </div>
         <div className="table-container">
@@ -905,7 +828,7 @@ const Dashboard = ({
       <div className="panel" style={{ marginBottom: '24px', borderColor: '#64748b', boxShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.15)' }}>
         <div className="panel-header">
           <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics</h2>
-          <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC & Mixers...</span>
+          <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC...</span>
         </div>
         <div className="table-container">
           <table className="accounting-table">
@@ -917,7 +840,6 @@ const Dashboard = ({
                 <th>Source Entity</th>
                 <th>Wash Protocol</th>
                 <th>Est. Laundered (USD)</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -929,11 +851,6 @@ const Dashboard = ({
                   <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(alert.from_addr)} className="entity-link">{formatAddress(alert.from_addr)}</td>
                   <td style={{ color: '#f85149', fontWeight: 'bold' }}>{alert.protocol}</td>
                   <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td>
-                    <button className="export-btn pulse" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#475569', border: '1px solid #94a3b8' }}>
-                      INITIATE TRACE
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -957,7 +874,6 @@ const Dashboard = ({
                 <th>Dev/Creator</th>
                 <th>Security Report</th>
                 <th>System Verdict</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -970,11 +886,6 @@ const Dashboard = ({
                   <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
                   <td>{renderSecurityBadge(target.score, target.label)}</td>
                   <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
-                  <td>
-                    <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: target.score >= 80 ? '#3fb950' : '#30363d', cursor: target.score >= 80 ? 'pointer' : 'not-allowed' }}>
-                      {target.score >= 80 ? 'EXECUTE SNIPE' : 'LOCKED'}
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -997,7 +908,6 @@ const Dashboard = ({
                 <th>Health Factor</th>
                 <th>Status</th>
                 <th>Est. Liq. Reward</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -1013,7 +923,6 @@ const Dashboard = ({
                     </span>
                   </td>
                   <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td><button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#dc2626' }}>Flash Liquidate</button></td>
                 </tr>
               ))}
             </tbody>
@@ -1034,7 +943,6 @@ const Dashboard = ({
                 <th>Connected Entities</th>
                 <th>Network Dominance (PnL)</th>
                 <th>Risk Profile</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -1049,15 +957,6 @@ const Dashboard = ({
                     <span className="badge" style={{ backgroundColor: cluster.wallets.length > 5 ? '#dc2626' : '#ea580c', color: '#fff' }}>
                       {cluster.wallets.length > 5 ? 'HIGH RISK (SYBIL)' : 'SUSPICIOUS RING'}
                     </span>
-                  </td>
-                  <td>
-                    <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#ca8a04' }} onClick={() => {
-                      const addresses = cluster.wallets.join('\n');
-                      navigator.clipboard.writeText(addresses);
-                      alert('Sybil addresses copied.');
-                    }}>
-                      Extract Addrs
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -1449,13 +1348,97 @@ const OracleMachine = ({ wsRef }) => {
   );
 };
 
+const NexusCartographer = ({ wsRef, cabalData, isScanningCabal, setCabalData, activeNetwork }) => {
+  const [input, setInput] = useState('');
+  const containerRef = useRef(null);
+  const [dim, setDim] = useState({ width: 800, height: 600 });
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setDim({ width: containerRef.current.offsetWidth, height: containerRef.current.offsetHeight });
+      }
+    };
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  const handleScan = () => {
+    if (!input || !wsRef.current) return;
+    setCabalData(null);
+    wsRef.current.send(JSON.stringify({ action: 'CABAL_SCAN', address: input, network: activeNetwork === 'ALL' ? 'ARC' : activeNetwork }));
+  };
+
+  return (
+    <div className="nexus-container" ref={containerRef}>
+      <div className="nexus-overlay">
+        <h2>🕸️ NEXUS CARTOGRAPHER</h2>
+        <span>Full-Scale Inter-Node Syndicate Tracing</span>
+        
+        <div className="nexus-search">
+          <input 
+            type="text" 
+            placeholder="Target Address (0x...)" 
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <button onClick={handleScan} disabled={isScanningCabal}>
+            {isScanningCabal ? 'SCANNING DEEP SPACE...' : 'INITIALIZE TRACE'}
+          </button>
+        </div>
+
+        {cabalData && (
+          <div className="nexus-stats">
+            <div className="nexus-stat-box" style={{ borderColor: cabalData.total_cabal_dominance > 50 ? '#f85149' : '#eab308' }}>
+              <span>Total Insider Control</span>
+              <strong style={{ color: cabalData.total_cabal_dominance > 50 ? '#f85149' : '#eab308' }}>{cabalData.total_cabal_dominance}%</strong>
+            </div>
+            <div className="nexus-stat-box">
+              <span>Syndicates Found</span>
+              <strong>{cabalData.syndicates.length}</strong>
+            </div>
+            <div className="nexus-stat-box" style={{ borderColor: cabalData.risk_level === 'CRITICAL' ? '#f85149' : '#eab308' }}>
+              <span>Risk Level</span>
+              <strong style={{ color: cabalData.risk_level === 'CRITICAL' ? '#f85149' : '#eab308' }}>{cabalData.risk_level}</strong>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="nexus-graph">
+        {cabalData ? (
+          <ForceGraph3D
+            width={dim.width}
+            height={dim.height}
+            graphData={cabalData.graph}
+            nodeLabel="name"
+            nodeColor="color"
+            nodeVal="val"
+            linkColor="color"
+            linkWidth={1.5}
+            linkDirectionalParticles={2}
+            linkDirectionalParticleSpeed={0.005}
+            backgroundColor="#010409"
+            onNodeClick={(node) => {
+               navigator.clipboard.writeText(node.id);
+               alert('Node hash secured to clipboard: ' + node.id);
+            }}
+          />
+        ) : (
+          <div className="nexus-empty">AWAITING TARGET COORDINATES...</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ==========================================
 // MAIN LAYOUT WRAPPER
 // ==========================================
 export default function AppWrapper() {
   const [activeTab, setActiveTab] = useState('DASHBOARD');
   
-  // Lifted States needed across the app or for websocket sync
   const [transactions, setTransactions] = useState([]);
   const [leaderboard, setLeaderboard] = useState({ wallets: [], agents: [] });
   const [isConnected, setIsConnected] = useState(false);
@@ -1503,8 +1486,7 @@ export default function AppWrapper() {
   
   const wsRef = useRef(null);
   
-  // Props bundle for Dashboard
-  const dashboardProps = { /* All the state variables passed down */
+  const dashboardProps = { 
     transactions, setTransactions, leaderboard, setLeaderboard, activeNetwork, setActiveNetwork,
     graphDimensions, setGraphDimensions, cabalDimensions, setCabalDimensions, searchTerm, setSearchTerm,
     filterType, setFilterType, selectedTx, setSelectedTx, selectedEntity, setSelectedEntity, soundEnabled, setSoundEnabled,
@@ -1521,7 +1503,7 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v2.4.1</span>
+          <span>v3.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
@@ -1530,8 +1512,8 @@ export default function AppWrapper() {
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
           </button>
-          <button className="nav-btn locked" disabled>
-            <span>🕸️</span> NEXUS CARTOGRAPHER 🔒
+          <button className={`nav-btn ${activeTab === 'NEXUS' ? 'active' : ''}`} onClick={() => setActiveTab('NEXUS')}>
+            <span>🕸️</span> NEXUS CARTOGRAPHER
           </button>
           <button className="nav-btn locked" disabled>
             <span>🛠️</span> OVERLORD FORGE 🔒
@@ -1552,8 +1534,9 @@ export default function AppWrapper() {
       </aside>
 
       <main className="os-main-content">
-        {activeTab === 'DASHBOARD' && <App {...dashboardProps} setIsConnected={setIsConnected} />}
+        {activeTab === 'DASHBOARD' && <Dashboard {...dashboardProps} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
+        {activeTab === 'NEXUS' && <NexusCartographer wsRef={wsRef} cabalData={cabalData} isScanningCabal={isScanningCabal} setCabalData={setCabalData} activeNetwork={activeNetwork} />}
       </main>
     </div>
   );

@@ -1447,3 +1447,367 @@ a:hover {
   background: #e879f9;
   box-shadow: 0 0 20px rgba(217, 70, 239, 0.5);
 }
+
+.os-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: #010409;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: #0d1117;
+  border-right: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  z-index: 100;
+}
+
+.sidebar-logo h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  color: #c9d1d9;
+  text-shadow: 0 0 10px rgba(201, 209, 217, 0.3);
+}
+
+.sidebar-logo span {
+  font-size: 0.7rem;
+  color: #3fb950;
+  font-family: monospace;
+}
+
+.sidebar-nav {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.nav-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #8b949e;
+  text-align: left;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-btn:hover:not(.locked) {
+  background-color: rgba(201, 209, 217, 0.05);
+  color: #c9d1d9;
+}
+
+.nav-btn.active {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid #3b82f6;
+  color: #58a6ff;
+  box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2);
+}
+
+.nav-btn.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+.sidebar-footer {
+  padding-top: 20px;
+  border-top: 1px solid #30363d;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.os-main-content {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.oracle-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.oracle-header {
+  border-bottom: 1px solid #d946ef;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.oracle-header h2 {
+  color: #d946ef;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(217, 70, 239, 0.4);
+}
+
+.oracle-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.oracle-chat-window {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-right: 16px;
+}
+
+.chat-message {
+  display: flex;
+  gap: 16px;
+  max-width: 80%;
+}
+
+.oracle-msg {
+  align-self: flex-start;
+}
+
+.user-msg {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.msg-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.user-msg .msg-avatar {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.oracle-msg .msg-avatar {
+  border-color: #d946ef;
+  background: rgba(217, 70, 239, 0.1);
+}
+
+.msg-content {
+  background: #0d1117;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  line-height: 1.5;
+}
+
+.user-msg .msg-content {
+  background: #1f2937;
+  border-color: #3b82f6;
+}
+
+.oracle-msg .msg-content {
+  background: #2e1065;
+  border-color: #d946ef;
+}
+
+.confidence-badge {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid #d946ef;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #e879f9;
+}
+
+.typing-indicator p {
+  margin: 0;
+  animation: pulse-danger 1.5s infinite;
+  color: #d946ef;
+  font-family: monospace;
+}
+
+.oracle-input-area {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #30363d;
+}
+
+.oracle-input-area input {
+  flex: 1;
+  background: #0d1117;
+  border: 1px solid #d946ef;
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.oracle-input-area input:focus {
+  box-shadow: 0 0 15px rgba(217, 70, 239, 0.3);
+}
+
+.oracle-input-area button {
+  background: #d946ef;
+  color: #000;
+  border: none;
+  padding: 0 32px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.oracle-input-area button:hover {
+  background: #e879f9;
+  box-shadow: 0 0 20px rgba(217, 70, 239, 0.5);
+}
+
+.nexus-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: #010409;
+  overflow: hidden;
+}
+
+.nexus-graph {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.nexus-overlay {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid #ec4899;
+  border-radius: 8px;
+  padding: 24px;
+  width: 400px;
+  box-shadow: 0 0 30px rgba(236, 72, 153, 0.15);
+}
+
+.nexus-overlay h2 {
+  margin: 0 0 4px 0;
+  color: #ec4899;
+  font-size: 1.5rem;
+}
+
+.nexus-overlay span {
+  color: #8b949e;
+  font-size: 0.85rem;
+  font-family: monospace;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.nexus-search {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.nexus-search input {
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  outline: none;
+}
+
+.nexus-search input:focus {
+  border-color: #ec4899;
+}
+
+.nexus-search button {
+  background: #db2777;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nexus-search button:hover:not(:disabled) {
+  background: #f472b6;
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+}
+
+.nexus-search button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nexus-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nexus-stat-box {
+  background: #161b22;
+  border: 1px solid #30363d;
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nexus-stat-box span {
+  margin: 0;
+  color: #8b949e;
+  font-size: 0.85rem;
+}
+
+.nexus-stat-box strong {
+  color: #c9d1d9;
+  font-size: 1.1rem;
+}
+
+.nexus-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b949e;
+  font-family: monospace;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+}
