@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ForceGraph3D from 'react-force-graph-3d';
+import ForceGraph2D from 'react-force-graph-2d';
 import './App.css';
 
 const getWsUrl = () => {
@@ -345,39 +346,6 @@ const Dashboard = ({
           >
             {overlordState.active ? 'DISENGAGE' : 'ENGAGE OVERLORD'}
           </button>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '20px' }}>
-          <div className="flash-slider-container" style={{ margin: 0 }}>
-            <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Max Execution Capital (USD): <span style={{color: '#eab308', fontWeight: 'bold'}}>${overlordState.max_spend.toLocaleString()}</span></label>
-            <input 
-              type="range" min="1000" max="500000" step="1000" 
-              value={overlordState.max_spend} 
-              className="flash-slider"
-              onChange={(e) => {
-                if(!overlordState.active) {
-                  handleOverlordToggle({ ...overlordState, max_spend: Number(e.target.value) });
-                }
-              }}
-              disabled={overlordState.active}
-              style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
-            />
-          </div>
-          <div className="flash-slider-container" style={{ margin: 0 }}>
-            <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Min Expected Profit (USD): <span style={{color: '#3fb950', fontWeight: 'bold'}}>${overlordState.min_profit.toLocaleString()}</span></label>
-            <input 
-              type="range" min="100" max="10000" step="100" 
-              value={overlordState.min_profit} 
-              className="flash-slider"
-              onChange={(e) => {
-                if(!overlordState.active) {
-                  handleOverlordToggle({ ...overlordState, min_profit: Number(e.target.value) });
-                }
-              }}
-              disabled={overlordState.active}
-              style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
-            />
-          </div>
         </div>
       </div>
 
@@ -749,7 +717,7 @@ const Dashboard = ({
 
       <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster & Social Sentiment Matrix</h2>
+          <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster Sentiment Matrix</h2>
           <span className="pulse-text" style={{ color: '#8b5cf6' }}>Cross-Referencing On-Chain Vol...</span>
         </div>
         <div className="table-container">
@@ -965,51 +933,6 @@ const Dashboard = ({
         </div>
       </div>
 
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
-          <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Target Asset</th>
-                <th>Execution Route</th>
-                <th>Entry Price</th>
-                <th>Exit Price</th>
-                <th>Spread %</th>
-                <th>Est. Net Yield</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {arbitrageRoutes.map((route, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
-                  <td style={{ color: '#8b949e' }}>{route.time}</td>
-                  <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
-                  <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
-                  <td>${route.buy_price.toFixed(4)}</td>
-                  <td>${route.sell_price.toFixed(4)}</td>
-                  <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td>
-                    <button 
-                      className="export-btn pulse" 
-                      style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#3b82f6', color: '#fff', fontWeight: 'bold' }}
-                      onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
-                    >
-                      ⚛️ ATOMIC EXECUTE
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       <div className="panel mempool-panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header">
           <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü</h2>
@@ -1096,67 +1019,6 @@ const Dashboard = ({
               <input type="file" accept=".json" ref={fileInputRef} style={{ display: 'none' }} onChange={handleRestore} />
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="panel-header">
-          <h2>Orbital Liquidity Map ({activeNetwork})</h2>
-        </div>
-        <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
-          {networkData.nodes.length > 0 && (
-            <ForceGraph3D
-              width={graphDimensions.width}
-              height={graphDimensions.height}
-              graphData={networkData}
-              nodeLabel="name"
-              nodeColor="color"
-              nodeRelSize={6}
-              linkColor="color"
-              linkWidth={1}
-              linkDirectionalParticles={3}
-              linkDirectionalParticleWidth={2}
-              linkDirectionalParticleSpeed={0.006}
-              backgroundColor="#010409"
-              onNodeClick={(node) => setSelectedEntity(node.id)}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="analytics-dashboard">
-        <div className="chart-box">
-          <h3>Protocol Activity Distribution</h3>
-          {chartData.pie.length > 0 && (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={chartData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {chartData.pie.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#0d1117', borderColor: '#30363d' }} itemStyle={{ color: '#c9d1d9' }} />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-        <div className="chart-box">
-          <h3>Intelligence Volume Metric ($)</h3>
-          {chartData.bar.length > 0 && (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData.bar} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <XAxis type="number" stroke="#8b949e" tickFormatter={(value) => `$${value}`} />
-                <YAxis dataKey="name" type="category" stroke="#8b949e" width={80} />
-                <Tooltip contentStyle={{ backgroundColor: '#0d1117', borderColor: '#30363d' }} itemStyle={{ color: '#c9d1d9' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {chartData.bar.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
         </div>
       </div>
 
@@ -1264,170 +1126,119 @@ const Dashboard = ({
   );
 };
 
-const OracleMachine = ({ wsRef }) => {
-  const [messages, setMessages] = useState([
-    { role: 'oracle', content: 'INITIALIZING ORACLE CORE... I am the omniscient contract auditor. Provide a smart contract hash or protocol inquiry to begin forensic analysis.' }
+const OverlordForge = ({ wsRef, overlordState, setOverlordState }) => {
+  const [nodes, setNodes] = useState([
+    { id: 1, type: 'TRIGGER', key: 'Mempool Event', operator: '==', value: 'Any' }
   ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const endRef = useRef(null);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  const addCondition = () => {
+    setNodes([...nodes, { id: Date.now(), type: 'CONDITION', key: 'Whale Volume', operator: '>', value: '50000' }]);
+  };
 
-  useEffect(() => {
-    if (!wsRef.current) return;
-    const ws = wsRef.current;
-    
-    const handleOracleMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.msg_type === 'ORACLE_RESPONSE') {
-          setIsTyping(false);
-          setMessages(prev => [...prev, { role: 'oracle', content: data.data.response, confidence: data.data.confidence }]);
-        }
-      } catch (e) {}
-    };
+  const addAction = () => {
+    setNodes([...nodes, { id: Date.now(), type: 'ACTION', key: 'Execute', operator: '==', value: 'Snipe Pair' }]);
+  };
 
-    ws.addEventListener('message', handleOracleMessage);
-    return () => ws.removeEventListener('message', handleOracleMessage);
-  }, [wsRef]);
+  const removeNode = (id) => {
+    setNodes(nodes.filter(n => n.id !== id));
+  };
 
-  const handleSend = () => {
-    if (!input.trim() || !wsRef.current) return;
-    setMessages(prev => [...prev, { role: 'user', content: input }]);
-    setIsTyping(true);
-    
-    const possibleHashMatch = input.match(/0x[a-fA-F0-9]{40}/);
-    const target = possibleHashMatch ? possibleHashMatch[0] : "GLOBAL_STATE";
+  const updateNode = (id, field, val) => {
+    setNodes(nodes.map(n => n.id === id ? { ...n, [field]: val } : n));
+  };
 
-    wsRef.current.send(JSON.stringify({
-      action: 'ORACLE_QUERY',
-      query: input,
-      target: target
-    }));
-    setInput('');
+  const handleSaveStrategy = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'SAVE_STRATEGY', data: nodes }));
+      alert("OVERLORD STRATEGY SAVED AND DEPLOYED.");
+    }
   };
 
   return (
-    <div className="oracle-container">
-      <div className="oracle-header">
-        <h2>🔮 THE ORACLE MACHINE</h2>
-        <span>Advanced LLM Smart Contract Forensics</span>
+    <div className="forge-container">
+      <div className="forge-header">
+        <h2>🛠️ OVERLORD STRATEGY FORGE</h2>
+        <span>Visual Node-Based Autonomous Rule Builder</span>
       </div>
-      <div className="oracle-chat-window">
-        {messages.map((msg, i) => (
-          <div key={i} className={`chat-message ${msg.role === 'oracle' ? 'oracle-msg' : 'user-msg'}`}>
-            <div className="msg-avatar">{msg.role === 'oracle' ? '🔮' : '👤'}</div>
-            <div className="msg-content">
-              <p>{msg.content}</p>
-              {msg.confidence && <span className="confidence-badge">Confidence: {msg.confidence}%</span>}
+      
+      <div className="forge-workspace">
+        <div className="forge-palette">
+          <h3>Toolbox</h3>
+          <button className="forge-btn condition-btn" onClick={addCondition}>+ Add Condition (IF)</button>
+          <button className="forge-btn action-btn" onClick={addAction}>+ Add Action (THEN)</button>
+          
+          <div className="forge-global-settings">
+            <h4>Global Execution Limits</h4>
+            <div className="forge-setting-row">
+              <label>Max Spend ($)</label>
+              <input type="number" value={overlordState.max_spend} onChange={e => setOverlordState({...overlordState, max_spend: Number(e.target.value)})} />
             </div>
+            <div className="forge-setting-row">
+              <label>Min Profit ($)</label>
+              <input type="number" value={overlordState.min_profit} onChange={e => setOverlordState({...overlordState, min_profit: Number(e.target.value)})} />
+            </div>
+            <button className="forge-save-btn pulse" onClick={handleSaveStrategy}>DEPLOY STRATEGY</button>
           </div>
-        ))}
-        {isTyping && (
-          <div className="chat-message oracle-msg typing-indicator">
-            <div className="msg-avatar">🔮</div>
-            <div className="msg-content"><p>Synthesizing bytecode logic...</p></div>
-          </div>
-        )}
-        <div ref={endRef} />
-      </div>
-      <div className="oracle-input-area">
-        <input 
-          type="text" 
-          placeholder="Query a token hash, address, or vulnerability pattern..." 
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-        />
-        <button onClick={handleSend}>EXECUTE QUERY</button>
-      </div>
-    </div>
-  );
-};
-
-const NexusCartographer = ({ wsRef, cabalData, isScanningCabal, setCabalData, activeNetwork }) => {
-  const [input, setInput] = useState('');
-  const containerRef = useRef(null);
-  const [dim, setDim] = useState({ width: 800, height: 600 });
-
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        setDim({ width: containerRef.current.offsetWidth, height: containerRef.current.offsetHeight });
-      }
-    };
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
-
-  const handleScan = () => {
-    if (!input || !wsRef.current) return;
-    setCabalData(null);
-    wsRef.current.send(JSON.stringify({ action: 'CABAL_SCAN', address: input, network: activeNetwork === 'ALL' ? 'ARC' : activeNetwork }));
-  };
-
-  return (
-    <div className="nexus-container" ref={containerRef}>
-      <div className="nexus-overlay">
-        <h2>🕸️ NEXUS CARTOGRAPHER</h2>
-        <span>Full-Scale Inter-Node Syndicate Tracing</span>
-        
-        <div className="nexus-search">
-          <input 
-            type="text" 
-            placeholder="Target Address (0x...)" 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <button onClick={handleScan} disabled={isScanningCabal}>
-            {isScanningCabal ? 'SCANNING DEEP SPACE...' : 'INITIALIZE TRACE'}
-          </button>
         </div>
 
-        {cabalData && (
-          <div className="nexus-stats">
-            <div className="nexus-stat-box" style={{ borderColor: cabalData.total_cabal_dominance > 50 ? '#f85149' : '#eab308' }}>
-              <span>Total Insider Control</span>
-              <strong style={{ color: cabalData.total_cabal_dominance > 50 ? '#f85149' : '#eab308' }}>{cabalData.total_cabal_dominance}%</strong>
-            </div>
-            <div className="nexus-stat-box">
-              <span>Syndicates Found</span>
-              <strong>{cabalData.syndicates.length}</strong>
-            </div>
-            <div className="nexus-stat-box" style={{ borderColor: cabalData.risk_level === 'CRITICAL' ? '#f85149' : '#eab308' }}>
-              <span>Risk Level</span>
-              <strong style={{ color: cabalData.risk_level === 'CRITICAL' ? '#f85149' : '#eab308' }}>{cabalData.risk_level}</strong>
-            </div>
-          </div>
-        )}
-      </div>
+        <div className="forge-canvas">
+          {nodes.map((node, index) => (
+            <React.Fragment key={node.id}>
+              <div className={`forge-node node-${node.type.toLowerCase()}`}>
+                <div className="node-header">
+                  <span>{node.type}</span>
+                  {index > 0 && <button className="node-del-btn" onClick={() => removeNode(node.id)}>✕</button>}
+                </div>
+                <div className="node-body">
+                  <select value={node.key} onChange={(e) => updateNode(node.id, 'key', e.target.value)}>
+                    {node.type === 'TRIGGER' && <option value="Mempool Event">Mempool Event</option>}
+                    {node.type === 'CONDITION' && (
+                      <>
+                        <option value="Whale Volume">Whale Volume ($)</option>
+                        <option value="Security Score">Security Score</option>
+                        <option value="Sybil Dominance">Sybil Dominance (%)</option>
+                        <option value="Social Hype">Social Hype Index</option>
+                      </>
+                    )}
+                    {node.type === 'ACTION' && (
+                      <>
+                        <option value="Execute">Execute Command</option>
+                      </>
+                    )}
+                  </select>
+                  
+                  {node.type !== 'ACTION' && node.type !== 'TRIGGER' && (
+                    <select className="op-select" value={node.operator} onChange={(e) => updateNode(node.id, 'operator', e.target.value)}>
+                      <option value=">">&gt;</option>
+                      <option value="<">&lt;</option>
+                      <option value="==">==</option>
+                    </select>
+                  )}
 
-      <div className="nexus-graph">
-        {cabalData ? (
-          <ForceGraph3D
-            width={dim.width}
-            height={dim.height}
-            graphData={cabalData.graph}
-            nodeLabel="name"
-            nodeColor="color"
-            nodeVal="val"
-            linkColor="color"
-            linkWidth={1.5}
-            linkDirectionalParticles={2}
-            linkDirectionalParticleSpeed={0.005}
-            backgroundColor="#010409"
-            onNodeClick={(node) => {
-               navigator.clipboard.writeText(node.id);
-               alert('Node hash secured to clipboard: ' + node.id);
-            }}
-          />
-        ) : (
-          <div className="nexus-empty">AWAITING TARGET COORDINATES...</div>
-        )}
+                  {node.type !== 'TRIGGER' ? (
+                    node.type === 'ACTION' ? (
+                      <select value={node.value} onChange={(e) => updateNode(node.id, 'value', e.target.value)}>
+                        <option value="Snipe Pair">Snipe New Pair</option>
+                        <option value="Flashloan Arb">Flashloan Arbitrage</option>
+                        <option value="Auto-Eject Front-Run">Auto-Eject Front-Run</option>
+                        <option value="Short Dump">Short Vesting Dump</option>
+                      </select>
+                    ) : (
+                      <input type="text" value={node.value} onChange={(e) => updateNode(node.id, 'value', e.target.value)} />
+                    )
+                  ) : (
+                    <span style={{color: '#8b949e', fontSize: '0.9rem', marginTop: '8px', display: 'block'}}>Listens to Live RPC</span>
+                  )}
+                </div>
+              </div>
+              {index < nodes.length - 1 && (
+                <div className="forge-connector">
+                  ↓ AND
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1503,7 +1314,7 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v3.0.0.1</span>
+          <span>v4.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
@@ -1512,11 +1323,11 @@ export default function AppWrapper() {
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
           </button>
-          <button className={`nav-btn ${activeTab === 'NEXUS' ? 'active' : ''}`} onClick={() => setActiveTab('NEXUS')}>
-            <span>🕸️</span> NEXUS CARTOGRAPHER
-          </button>
           <button className="nav-btn locked" disabled>
-            <span>🛠️</span> OVERLORD FORGE 🔒
+            <span>🕸️</span> NEXUS MAP 🔒
+          </button>
+          <button className={`nav-btn ${activeTab === 'FORGE' ? 'active' : ''}`} onClick={() => setActiveTab('FORGE')}>
+            <span>🛠️</span> OVERLORD FORGE
           </button>
           <button className="nav-btn locked" disabled>
             <span>⏱️</span> CHRONOS TESTER 🔒
@@ -1536,7 +1347,7 @@ export default function AppWrapper() {
       <main className="os-main-content">
         {activeTab === 'DASHBOARD' && <Dashboard {...dashboardProps} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
-        {activeTab === 'NEXUS' && <NexusCartographer wsRef={wsRef} cabalData={cabalData} isScanningCabal={isScanningCabal} setCabalData={setCabalData} activeNetwork={activeNetwork} />}
+        {activeTab === 'FORGE' && <OverlordForge wsRef={wsRef} overlordState={overlordState} setOverlordState={setOverlordState} />}
       </main>
     </div>
   );
