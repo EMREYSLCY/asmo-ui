@@ -319,36 +319,6 @@ const Dashboard = ({
         </div>
       )}
 
-      <div className="panel overlord-panel" style={{ marginBottom: '24px', background: overlordState.active ? 'linear-gradient(90deg, #1f0535 0%, #0d1117 100%)' : '#010409', borderColor: overlordState.active ? '#d946ef' : '#30363d', boxShadow: overlordState.active ? 'inset 0 0 40px rgba(217, 70, 239, 0.15)' : 'none', transition: 'all 0.4s ease' }}>
-        <div className="panel-header" style={{ borderBottom: '1px solid #30363d', paddingBottom: '16px' }}>
-          <div>
-            <h2 style={{ color: overlordState.active ? '#d946ef' : '#8b949e', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              🤖 OVERLORD AUTONOMOUS AI
-              {overlordState.active && <span className="badge" style={{ backgroundColor: '#d946ef', color: '#000', fontSize: '0.8rem', animation: 'pulse-danger 2s infinite' }}>SYSTEM LIVE</span>}
-            </h2>
-            <span style={{ fontSize: '0.85rem', color: '#8b949e' }}>Hand over control to the AI. A.S.M.O. will automatically execute snipes, front-runs, and cross-chain flashloans.</span>
-          </div>
-          <button 
-            onClick={handleOverlordToggle}
-            style={{
-              padding: '12px 32px',
-              fontSize: '1.2rem',
-              fontWeight: '900',
-              letterSpacing: '2px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              border: overlordState.active ? '2px solid #d946ef' : '2px solid #8b949e',
-              backgroundColor: overlordState.active ? 'rgba(217, 70, 239, 0.2)' : 'transparent',
-              color: overlordState.active ? '#fdf4ff' : '#8b949e',
-              boxShadow: overlordState.active ? '0 0 20px rgba(217, 70, 239, 0.5)' : 'none',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            {overlordState.active ? 'DISENGAGE' : 'ENGAGE OVERLORD'}
-          </button>
-        </div>
-      </div>
-
       {gasWars.length > 0 && (
         <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(234, 88, 12, 0.05)', borderColor: '#ea580c', boxShadow: 'inset 0 0 40px rgba(234, 88, 12, 0.15)' }}>
           <div className="panel-header">
@@ -592,14 +562,18 @@ const Dashboard = ({
         <div className="project-analysis-grid">
           <div className="recovery-card" style={{ flex: 1, marginRight: '16px' }}>
             <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Active Targets</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {shadowTargets.map((addr, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#010409', padding: '8px 12px', borderRadius: '4px', border: '1px solid #30363d' }}>
-                  <span style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{formatAddress(addr)}</span>
-                  <button className="close-btn" style={{ fontSize: '1rem' }} onClick={() => toggleShadow(addr)}>✕</button>
-                </div>
-              ))}
-            </div>
+            {shadowTargets.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: '#8b949e' }}>Select a target from the leaderboard to initiate Shadow Protocol.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {shadowTargets.map((addr, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#010409', padding: '8px 12px', borderRadius: '4px', border: '1px solid #30363d' }}>
+                    <span style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{formatAddress(addr)}</span>
+                    <button className="close-btn" style={{ fontSize: '1rem' }} onClick={() => toggleShadow(addr)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="table-container" style={{ flex: 2 }}>
             <table className="accounting-table">
@@ -715,45 +689,6 @@ const Dashboard = ({
         )}
       </div>
 
-      <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster Sentiment Matrix</h2>
-          <span className="pulse-text" style={{ color: '#8b5cf6' }}>Cross-Referencing On-Chain Vol...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Network</th>
-                <th>Target Contract</th>
-                <th>Social Narrative</th>
-                <th>Mentions/Hr</th>
-                <th>Hype Score</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sentimentData.map((data, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(139, 92, 246, 0.05)' }}>
-                  <td style={{ color: '#8b949e' }}>{data.time}</td>
-                  <td>{renderNetworkBadge(data.network)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(data.asset)} className="entity-link">{formatAddress(data.asset)}</td>
-                  <td style={{ fontWeight: 'bold', color: '#d2a8ff' }}>{data.narrative}</td>
-                  <td>{data.mentions.toLocaleString()}</td>
-                  <td style={{ fontWeight: 'bold', color: data.hype_score > 90 ? '#f85149' : '#3fb950' }}>{data.hype_score}/100</td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: data.hype_score > 90 ? '#dc2626' : '#238636', color: '#fff' }}>
-                      {data.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       <div className="panel bridge-tsunami-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
         <div className="panel-header">
           <h2 style={{ color: '#0ea5e9' }}>🌉 Multi-Hop Bridge Vacuum</h2>
@@ -786,39 +721,6 @@ const Dashboard = ({
                       {tsunami.status}
                     </span>
                   </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#64748b', boxShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.15)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics</h2>
-          <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Network</th>
-                <th>Suspect Hash</th>
-                <th>Source Entity</th>
-                <th>Wash Protocol</th>
-                <th>Est. Laundered (USD)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {darkPoolAlerts.map((alert, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(100, 116, 139, 0.1)' }}>
-                  <td style={{ color: '#8b949e' }}>{alert.time}</td>
-                  <td>{renderNetworkBadge(alert.network)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 15)}...</td>
-                  <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(alert.from_addr)} className="entity-link">{formatAddress(alert.from_addr)}</td>
-                  <td style={{ color: '#f85149', fontWeight: 'bold' }}>{alert.protocol}</td>
-                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                 </tr>
               ))}
             </tbody>
@@ -925,6 +827,51 @@ const Dashboard = ({
                     <span className="badge" style={{ backgroundColor: cluster.wallets.length > 5 ? '#dc2626' : '#ea580c', color: '#fff' }}>
                       {cluster.wallets.length > 5 ? 'HIGH RISK (SYBIL)' : 'SUSPICIOUS RING'}
                     </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: '24px' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
+          <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
+        </div>
+        <div className="table-container">
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Detection Time</th>
+                <th>Target Asset</th>
+                <th>Execution Route</th>
+                <th>Entry Price</th>
+                <th>Exit Price</th>
+                <th>Spread %</th>
+                <th>Est. Net Yield</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {arbitrageRoutes.map((route, idx) => (
+                <tr key={idx} style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
+                  <td style={{ color: '#8b949e' }}>{route.time}</td>
+                  <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
+                  <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
+                  <td>${route.buy_price.toFixed(4)}</td>
+                  <td>${route.sell_price.toFixed(4)}</td>
+                  <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
+                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td>
+                    <button 
+                      className="export-btn pulse" 
+                      style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#3b82f6', color: '#fff', fontWeight: 'bold' }}
+                      onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                    >
+                      ⚛️ ATOMIC EXECUTE
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -1126,127 +1073,74 @@ const Dashboard = ({
   );
 };
 
-const OverlordForge = ({ wsRef, overlordState, setOverlordState }) => {
-  const [nodes, setNodes] = useState([
-    { id: 1, type: 'TRIGGER', key: 'Mempool Event', operator: '==', value: 'Any' }
-  ]);
+const ChronosTester = ({ wsRef }) => {
+  const [target, setTarget] = useState('');
+  const [blockNum, setBlockNum] = useState('');
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [events, setEvents] = useState([]);
 
-  const addCondition = () => {
-    setNodes([...nodes, { id: Date.now(), type: 'CONDITION', key: 'Whale Volume', operator: '>', value: '50000' }]);
-  };
+  useEffect(() => {
+    if (!wsRef.current) return;
+    const ws = wsRef.current;
+    const handleChronosMsg = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.msg_type === 'CHRONOS_EVENT') {
+          setEvents(prev => [...prev, data.data]);
+          if (data.data.type === 'COMPLETE') setIsSimulating(false);
+        }
+      } catch (e) {}
+    };
+    ws.addEventListener('message', handleChronosMsg);
+    return () => ws.removeEventListener('message', handleChronosMsg);
+  }, [wsRef]);
 
-  const addAction = () => {
-    setNodes([...nodes, { id: Date.now(), type: 'ACTION', key: 'Execute', operator: '==', value: 'Snipe Pair' }]);
-  };
-
-  const removeNode = (id) => {
-    setNodes(nodes.filter(n => n.id !== id));
-  };
-
-  const updateNode = (id, field, val) => {
-    setNodes(nodes.map(n => n.id === id ? { ...n, [field]: val } : n));
-  };
-
-  const handleSaveStrategy = () => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: 'SAVE_STRATEGY', data: nodes }));
-      alert("OVERLORD STRATEGY SAVED AND DEPLOYED.");
-    }
+  const handleSimulate = () => {
+    if (!target || !blockNum || !wsRef.current) return;
+    setEvents([]);
+    setIsSimulating(true);
+    wsRef.current.send(JSON.stringify({
+      action: 'CHRONOS_SIMULATE',
+      data: { target: target, block: blockNum }
+    }));
   };
 
   return (
-    <div className="forge-container">
-      <div className="forge-header">
-        <h2>🛠️ OVERLORD STRATEGY FORGE</h2>
-        <span>Visual Node-Based Autonomous Rule Builder</span>
+    <div className="chronos-container">
+      <div className="chronos-header">
+        <h2>⏱️ CHRONOS BACKTESTER</h2>
+        <span>Historical Temporal Simulation Laboratory</span>
       </div>
       
-      <div className="forge-workspace">
-        <div className="forge-palette">
-          <h3>Toolbox</h3>
-          <button className="forge-btn condition-btn" onClick={addCondition}>+ Add Condition (IF)</button>
-          <button className="forge-btn action-btn" onClick={addAction}>+ Add Action (THEN)</button>
-          
-          <div className="forge-global-settings">
-            <h4>Global Execution Limits</h4>
-            <div className="forge-setting-row">
-              <label>Max Spend ($)</label>
-              <input type="number" value={overlordState.max_spend} onChange={e => setOverlordState({...overlordState, max_spend: Number(e.target.value)})} />
+      <div className="chronos-controls">
+        <div className="input-group">
+          <label>Target Asset Hash</label>
+          <input type="text" placeholder="0x..." value={target} onChange={e => setTarget(e.target.value)} disabled={isSimulating} />
+        </div>
+        <div className="input-group">
+          <label>Historical Block Number / Timestamp</label>
+          <input type="text" placeholder="e.g. 14300000" value={blockNum} onChange={e => setBlockNum(e.target.value)} disabled={isSimulating} />
+        </div>
+        <button className="chronos-btn" onClick={handleSimulate} disabled={isSimulating || !target || !blockNum}>
+          {isSimulating ? 'SIMULATING TIMELINE...' : 'INITIATE TEMPORAL SHIFT'}
+        </button>
+      </div>
+
+      <div className="chronos-timeline">
+        {events.map((ev, i) => (
+          <div key={i} className="timeline-event">
+            <div className="timeline-marker" style={{ backgroundColor: ev.color, boxShadow: `0 0 10px ${ev.color}` }}></div>
+            <div className="timeline-content" style={{ borderColor: ev.color }}>
+              <span className="event-type" style={{ color: ev.color }}>{ev.type}</span>
+              <p>{ev.desc}</p>
             </div>
-            <div className="forge-setting-row">
-              <label>Min Profit ($)</label>
-              <input type="number" value={overlordState.min_profit} onChange={e => setOverlordState({...overlordState, min_profit: Number(e.target.value)})} />
-            </div>
-            <button className="forge-save-btn pulse" onClick={handleSaveStrategy}>DEPLOY STRATEGY</button>
           </div>
-        </div>
-
-        <div className="forge-canvas">
-          {nodes.map((node, index) => (
-            <React.Fragment key={node.id}>
-              <div className={`forge-node node-${node.type.toLowerCase()}`}>
-                <div className="node-header">
-                  <span>{node.type}</span>
-                  {index > 0 && <button className="node-del-btn" onClick={() => removeNode(node.id)}>✕</button>}
-                </div>
-                <div className="node-body">
-                  <select value={node.key} onChange={(e) => updateNode(node.id, 'key', e.target.value)}>
-                    {node.type === 'TRIGGER' && <option value="Mempool Event">Mempool Event</option>}
-                    {node.type === 'CONDITION' && (
-                      <>
-                        <option value="Whale Volume">Whale Volume ($)</option>
-                        <option value="Security Score">Security Score</option>
-                        <option value="Sybil Dominance">Sybil Dominance (%)</option>
-                        <option value="Social Hype">Social Hype Index</option>
-                      </>
-                    )}
-                    {node.type === 'ACTION' && (
-                      <>
-                        <option value="Execute">Execute Command</option>
-                      </>
-                    )}
-                  </select>
-                  
-                  {node.type !== 'ACTION' && node.type !== 'TRIGGER' && (
-                    <select className="op-select" value={node.operator} onChange={(e) => updateNode(node.id, 'operator', e.target.value)}>
-                      <option value=">">&gt;</option>
-                      <option value="<">&lt;</option>
-                      <option value="==">==</option>
-                    </select>
-                  )}
-
-                  {node.type !== 'TRIGGER' ? (
-                    node.type === 'ACTION' ? (
-                      <select value={node.value} onChange={(e) => updateNode(node.id, 'value', e.target.value)}>
-                        <option value="Snipe Pair">Snipe New Pair</option>
-                        <option value="Flashloan Arb">Flashloan Arbitrage</option>
-                        <option value="Auto-Eject Front-Run">Auto-Eject Front-Run</option>
-                        <option value="Short Dump">Short Vesting Dump</option>
-                      </select>
-                    ) : (
-                      <input type="text" value={node.value} onChange={(e) => updateNode(node.id, 'value', e.target.value)} />
-                    )
-                  ) : (
-                    <span style={{color: '#8b949e', fontSize: '0.9rem', marginTop: '8px', display: 'block'}}>Listens to Live RPC</span>
-                  )}
-                </div>
-              </div>
-              {index < nodes.length - 1 && (
-                <div className="forge-connector">
-                  ↓ AND
-                </div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
+        ))}
       </div>
     </div>
   );
 };
 
-// ==========================================
-// MAIN LAYOUT WRAPPER
-// ==========================================
 export default function AppWrapper() {
   const [activeTab, setActiveTab] = useState('DASHBOARD');
   
@@ -1314,7 +1208,7 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v4.0.0.1</span>
+          <span>v5.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
@@ -1326,11 +1220,11 @@ export default function AppWrapper() {
           <button className="nav-btn locked" disabled>
             <span>🕸️</span> NEXUS MAP 🔒
           </button>
-          <button className={`nav-btn ${activeTab === 'FORGE' ? 'active' : ''}`} onClick={() => setActiveTab('FORGE')}>
-            <span>🛠️</span> OVERLORD FORGE
-          </button>
           <button className="nav-btn locked" disabled>
-            <span>⏱️</span> CHRONOS TESTER 🔒
+            <span>🛠️</span> OVERLORD FORGE 🔒
+          </button>
+          <button className={`nav-btn ${activeTab === 'CHRONOS' ? 'active' : ''}`} onClick={() => setActiveTab('CHRONOS')}>
+            <span>⏱️</span> CHRONOS TESTER
           </button>
           <button className="nav-btn locked" disabled>
             <span>🩸</span> DARK FORENSICS 🔒
@@ -1347,7 +1241,7 @@ export default function AppWrapper() {
       <main className="os-main-content">
         {activeTab === 'DASHBOARD' && <Dashboard {...dashboardProps} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
-        {activeTab === 'FORGE' && <OverlordForge wsRef={wsRef} overlordState={overlordState} setOverlordState={setOverlordState} />}
+        {activeTab === 'CHRONOS' && <ChronosTester wsRef={wsRef} />}
       </main>
     </div>
   );
