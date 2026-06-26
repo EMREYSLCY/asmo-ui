@@ -2164,3 +2164,101 @@ a:hover {
   font-size: 1.1rem;
 }
 
+.forensics-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.forensics-header {
+  border-bottom: 1px solid #f85149;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.forensics-header h2 {
+  color: #f85149;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(248, 81, 73, 0.4);
+}
+
+.forensics-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.forensics-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.forensics-select {
+  flex: 1;
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  outline: none;
+}
+
+.forensics-select:focus {
+  border-color: #f85149;
+}
+
+.forensics-controls button {
+  background: #f85149;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.forensics-controls button:hover:not(:disabled) {
+  background: #ff7b72;
+  box-shadow: 0 0 15px rgba(248, 81, 73, 0.4);
+}
+
+.forensics-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.forensics-results {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.forensics-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.f-stat-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.f-stat-card h4 {
+  margin: 0 0 8px 0;
+  color: #8b949e;
+  font-size: 0.85rem;
+}
+
