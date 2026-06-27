@@ -551,26 +551,22 @@ const Dashboard = ({
               </tr>
             </thead>
             <tbody>
-              {leaderboard.wallets.length === 0 ? (
-                <tr><td colSpan="4" style={{ textAlign: 'center', color: '#8b949e', fontStyle: 'italic', padding: '16px' }}>Accumulating P&L Data...</td></tr>
-              ) : (
-                leaderboard.wallets.map((w, i) => (
-                  <tr key={i}>
-                    <td className="leaderboard-rank">#{i + 1}</td>
-                    <td><span className="entity-link" onClick={() => setSelectedEntity(w.addr)}>{w.label || formatAddress(w.addr)}</span></td>
-                    <td style={{ color: '#3fb950', fontWeight: 'bold' }}>+${w.pnl.toFixed(2)}</td>
-                    <td>
-                      <button 
-                        className="export-btn" 
-                        style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: shadowTargets.includes(w.addr) ? '#dc2626' : '#0ea5e9' }}
-                        onClick={() => toggleShadow(w.addr)}
-                      >
-                        {shadowTargets.includes(w.addr) ? '🛑 STOP' : '👁️ SHADOW'}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+              {leaderboard.wallets.map((w, i) => (
+                <tr key={i}>
+                  <td className="leaderboard-rank">#{i + 1}</td>
+                  <td><span className="entity-link" onClick={() => setSelectedEntity(w.addr)}>{w.label || formatAddress(w.addr)}</span></td>
+                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>+${w.pnl.toFixed(2)}</td>
+                  <td>
+                    <button 
+                      className="export-btn" 
+                      style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: shadowTargets.includes(w.addr) ? '#dc2626' : '#0ea5e9' }}
+                      onClick={() => toggleShadow(w.addr)}
+                    >
+                      {shadowTargets.includes(w.addr) ? '🛑 STOP' : '👁️ SHADOW'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -586,26 +582,22 @@ const Dashboard = ({
               </tr>
             </thead>
             <tbody>
-              {leaderboard.agents.length === 0 ? (
-                <tr><td colSpan="4" style={{ textAlign: 'center', color: '#8b949e', fontStyle: 'italic', padding: '16px' }}>Analyzing Agent Workflows...</td></tr>
-              ) : (
-                leaderboard.agents.map((a, i) => (
-                  <tr key={i}>
-                    <td className="leaderboard-rank">#{i + 1}</td>
-                    <td><span className="entity-link" onClick={() => setSelectedEntity(a.addr)}>{a.label || formatAddress(a.addr)}</span></td>
-                    <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
-                    <td>
-                      <button 
-                        className="export-btn" 
-                        style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: shadowTargets.includes(a.addr) ? '#dc2626' : '#0ea5e9' }}
-                        onClick={() => toggleShadow(a.addr)}
-                      >
-                        {shadowTargets.includes(a.addr) ? '🛑 STOP' : '👁️ SHADOW'}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+              {leaderboard.agents.map((a, i) => (
+                <tr key={i}>
+                  <td className="leaderboard-rank">#{i + 1}</td>
+                  <td><span className="entity-link" onClick={() => setSelectedEntity(a.addr)}>{a.label || formatAddress(a.addr)}</span></td>
+                  <td style={{ color: '#a371f7', fontWeight: 'bold' }}>{a.wr}%</td>
+                  <td>
+                    <button 
+                      className="export-btn" 
+                      style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: shadowTargets.includes(a.addr) ? '#dc2626' : '#0ea5e9' }}
+                      onClick={() => toggleShadow(a.addr)}
+                    >
+                      {shadowTargets.includes(a.addr) ? '🛑 STOP' : '👁️ SHADOW'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -645,9 +637,6 @@ const Dashboard = ({
                   </td>
                 </tr>
               ))}
-              {shadowRelayAlerts.length === 0 && (
-                <tr><td colSpan="7" className="empty-state">No private or relay-bribed transactions detected in the latest blocks.</td></tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -695,9 +684,6 @@ const Dashboard = ({
                     <td style={{ color: '#0ea5e9' }}>{log.narrative}</td>
                   </tr>
                 ))}
-                {shadowLogs.length === 0 && (
-                  <tr><td colSpan="5" className="empty-state">No shadow trades executed yet. Waiting for target movement...</td></tr>
-                )}
               </tbody>
             </table>
           </div>
@@ -745,7 +731,7 @@ const Dashboard = ({
 
       <div className="panel sentinel-panel" style={{ marginBottom: '24px', borderColor: '#3b82f6', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel (Manual Audit)</h2>
+          <h2 style={{ color: '#3b82f6' }}>🛡️ Smart Contract Sentinel</h2>
           <span className="pulse-text" style={{ color: '#3b82f6' }}>Awaiting Target Hash...</span>
         </div>
         <div className="sentinel-controls" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
@@ -793,8 +779,8 @@ const Dashboard = ({
 
       <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster & Social Sentiment Matrix</h2>
-          <span className="pulse-text" style={{ color: '#8b5cf6' }}>Cross-Referencing On-Chain Vol w/ Off-Chain Hype...</span>
+          <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster Sentiment Matrix</h2>
+          <span className="pulse-text" style={{ color: '#8b5cf6' }}>Cross-Referencing On-Chain Vol...</span>
         </div>
         <div className="table-container">
           <table className="accounting-table">
@@ -807,7 +793,6 @@ const Dashboard = ({
                 <th>Mentions/Hr</th>
                 <th>Hype Score</th>
                 <th>Status</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -824,14 +809,8 @@ const Dashboard = ({
                       {data.status}
                     </span>
                   </td>
-                  <td>
-                    <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#8b5cf6' }}>Track Trend</button>
-                  </td>
                 </tr>
               ))}
-              {sentimentData.length === 0 && (
-                <tr><td colSpan="8" className="empty-state">No anomalous social narratives detected correlating with current on-chain flows.</td></tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -839,7 +818,7 @@ const Dashboard = ({
 
       <div className="panel bridge-tsunami-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#0ea5e9' }}>🌉 Multi-Hop Bridge Vacuum (Liquidity Radar)</h2>
+          <h2 style={{ color: '#0ea5e9' }}>🌉 Multi-Hop Bridge Vacuum</h2>
           <span className="pulse-text" style={{ color: '#0ea5e9' }}>Monitoring Cross-Chain Portals...</span>
         </div>
         <div className="table-container">
@@ -871,9 +850,6 @@ const Dashboard = ({
                   </td>
                 </tr>
               ))}
-              {bridgeTsunamis.length === 0 && (
-                <tr><td colSpan="7" className="empty-state">Awaiting inbound cross-chain liquidity surges...</td></tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -881,8 +857,8 @@ const Dashboard = ({
 
       <div className="panel" style={{ marginBottom: '24px', borderColor: '#64748b', boxShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.15)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics (Aklama Dedektifi)</h2>
-          <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC & Mixers...</span>
+          <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics</h2>
+          <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC...</span>
         </div>
         <div className="table-container">
           <table className="accounting-table">
@@ -894,7 +870,6 @@ const Dashboard = ({
                 <th>Source Entity</th>
                 <th>Wash Protocol</th>
                 <th>Est. Laundered (USD)</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -906,16 +881,8 @@ const Dashboard = ({
                   <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(alert.from_addr)} className="entity-link">{formatAddress(alert.from_addr)}</td>
                   <td style={{ color: '#f85149', fontWeight: 'bold' }}>{alert.protocol}</td>
                   <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td>
-                    <button className="export-btn pulse" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#475569', border: '1px solid #94a3b8' }}>
-                      INITIATE TRACE
-                    </button>
-                  </td>
                 </tr>
               ))}
-              {darkPoolAlerts.length === 0 && (
-                <tr><td colSpan="7" className="empty-state">No active laundering or Dark Pool flows detected currently.</td></tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -923,7 +890,7 @@ const Dashboard = ({
 
       <div className="panel" style={{ marginBottom: '24px', borderColor: '#a371f7', boxShadow: 'inset 0 0 20px rgba(163, 113, 247, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper (New Pair Radar)</h2>
+          <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper</h2>
           <span className="pulse-text" style={{ color: '#a371f7' }}>Scanning Factory Contracts...</span>
         </div>
         <div className="table-container">
@@ -937,7 +904,6 @@ const Dashboard = ({
                 <th>Dev/Creator</th>
                 <th>Security Report</th>
                 <th>System Verdict</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -950,16 +916,8 @@ const Dashboard = ({
                   <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
                   <td>{renderSecurityBadge(target.score, target.label)}</td>
                   <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
-                  <td>
-                    <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: target.score >= 80 ? '#3fb950' : '#30363d', cursor: target.score >= 80 ? 'pointer' : 'not-allowed' }}>
-                      {target.score >= 80 ? 'EXECUTE SNIPE' : 'LOCKED'}
-                    </button>
-                  </td>
                 </tr>
               ))}
-              {snipeTargets.length === 0 && (
-                <tr><td colSpan="8" className="empty-state">No new liquidity pools detected in recent blocks. Sniper standing by...</td></tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -967,7 +925,7 @@ const Dashboard = ({
 
       <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone (Heatmap)</h2>
+          <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone</h2>
           <span className="pulse-text" style={{ color: '#ef4444' }}>Tracking Vulnerable Collateral...</span>
         </div>
         <div className="table-container">
@@ -980,7 +938,6 @@ const Dashboard = ({
                 <th>Health Factor</th>
                 <th>Status</th>
                 <th>Est. Liq. Reward</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -996,12 +953,8 @@ const Dashboard = ({
                     </span>
                   </td>
                   <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td><button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#dc2626' }}>Flash Liquidate</button></td>
                 </tr>
               ))}
-              {killZone.length === 0 && (
-                <tr><td colSpan="7" className="empty-state">All monitored entities are currently over-collateralized. No immediate liquidation risks.</td></tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -1009,8 +962,8 @@ const Dashboard = ({
 
       <div className="panel" style={{ marginBottom: '24px', borderColor: '#ca8a04', boxShadow: 'inset 0 0 20px rgba(202, 138, 4, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter (Klon Cüzdan Ağ Örümceği)</h2>
-          <span className="pulse-text" style={{ color: '#eab308' }}>Detecting Wash Trading & Sybil Rings...</span>
+          <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter</h2>
+          <span className="pulse-text" style={{ color: '#eab308' }}>Detecting Wash Trading...</span>
         </div>
         <div className="table-container">
           <table className="accounting-table">
@@ -1020,7 +973,6 @@ const Dashboard = ({
                 <th>Connected Entities</th>
                 <th>Network Dominance (PnL)</th>
                 <th>Risk Profile</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -1036,20 +988,8 @@ const Dashboard = ({
                       {cluster.wallets.length > 5 ? 'HIGH RISK (SYBIL)' : 'SUSPICIOUS RING'}
                     </span>
                   </td>
-                  <td>
-                    <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#ca8a04' }} onClick={() => {
-                      const addresses = cluster.wallets.join('\n');
-                      navigator.clipboard.writeText(addresses);
-                      alert('Sybil cüzdan adresleri panoya kopyalandı:\n\n' + addresses.substring(0, 100) + '...');
-                    }}>
-                      Extract Addrs
-                    </button>
-                  </td>
                 </tr>
               ))}
-              {sybilClusters.length === 0 && (
-                <tr><td colSpan="5" className="empty-state">No active Sybil rings detected in the current matrix state.</td></tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -1070,13 +1010,13 @@ const Dashboard = ({
                 <th>Entry Price</th>
                 <th>Exit Price</th>
                 <th>Spread %</th>
-                <th>Est. Net Profit (50k Vol)</th>
+                <th>Est. Net Yield</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {arbitrageRoutes.map((route, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}>
+                <tr key={idx} style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
                   <td style={{ color: '#8b949e' }}>{route.time}</td>
                   <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
                   <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
@@ -1084,12 +1024,17 @@ const Dashboard = ({
                   <td>${route.sell_price.toFixed(4)}</td>
                   <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
                   <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td><button className="export-btn pulse" style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#10b981', color: '#000', fontWeight: 'bold' }} onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}>⚡ SIMULATE</button></td>
+                  <td>
+                    <button 
+                      className="export-btn pulse" 
+                      style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#3b82f6', color: '#fff', fontWeight: 'bold' }}
+                      onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                    >
+                      ⚛️ ATOMIC EXECUTE
+                    </button>
+                  </td>
                 </tr>
               ))}
-              {arbitrageRoutes.length === 0 && (
-                <tr><td colSpan="8" className="empty-state">Ağlar arası kârlı spread bekleniyor...</td></tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -1097,7 +1042,7 @@ const Dashboard = ({
 
       <div className="panel mempool-panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü (Next-Block Prediction)</h2>
+          <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü</h2>
           <span className="pulse-text">Live Mempool Scanning...</span>
         </div>
         <div className="mempool-grid">
@@ -1136,16 +1081,13 @@ const Dashboard = ({
                 <td>{t.impact}%</td>
               </tr>
             ))}
-            {displayMempool.txs.length === 0 && (
-              <tr><td colSpan="5" className="empty-state">No significant vanguard flows detected in current mempool...</td></tr>
-            )}
           </tbody>
         </table>
       </div>
 
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#58a6ff' }}>🗄️ Proje Analiz Paneli & Felaket Kurtarma</h2>
+          <h2 style={{ color: '#58a6ff' }}>🗄️ System Backup & Restore</h2>
         </div>
         <div className="project-analysis-grid">
           <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
@@ -1169,31 +1111,19 @@ const Dashboard = ({
                     <td>{renderPnL(p.pnl)}</td>
                   </tr>
                 ))}
-                {projectAnalysis.length === 0 && (
-                  <tr><td colSpan="5" className="empty-state">Proje verisi bekleniyor...</td></tr>
-                )}
               </tbody>
             </table>
           </div>
           <div className="recovery-card" style={{ flex: 1 }}>
-            <h3 style={{ marginTop: 0, color: '#e6edf3' }}>Sistem Yedekleme & Geri Yükleme</h3>
-            <p style={{ fontSize: '0.85rem', color: '#8b949e', marginBottom: '16px' }}>A.S.M.O. veritabanını şifreli JSON formatında dışa aktarın veya mevcut bir yedeği anında motora enjekte edin.</p>
-            
+            <h3 style={{ marginTop: 0, color: '#e6edf3' }}>System Operations</h3>
             <button className="recovery-btn backup-btn" onClick={handleBackup}>
-              📥 A.S.M.O. Veritabanını Yedekle
+              📥 Backup A.S.M.O. Database
             </button>
-            
             <div style={{ marginTop: '24px' }}>
               <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
-                📤 Sistem Geri Yükle (Restore)
+                📤 Restore System
               </button>
-              <input 
-                type="file" 
-                accept=".json" 
-                ref={fileInputRef} 
-                style={{ display: 'none' }} 
-                onChange={handleRestore} 
-              />
+              <input type="file" accept=".json" ref={fileInputRef} style={{ display: 'none' }} onChange={handleRestore} />
             </div>
           </div>
         </div>
@@ -1202,10 +1132,9 @@ const Dashboard = ({
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header">
           <h2>Orbital Liquidity Map ({activeNetwork})</h2>
-          <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>3D Deep Space View. Particles indicate live transaction flow and direction.</span>
         </div>
         <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
-          {networkData.nodes.length > 0 ? (
+          {networkData.nodes.length > 0 && (
             <ForceGraph3D
               width={graphDimensions.width}
               height={graphDimensions.height}
@@ -1221,16 +1150,14 @@ const Dashboard = ({
               backgroundColor="#010409"
               onNodeClick={(node) => setSelectedEntity(node.id)}
             />
-          ) : (
-            <div className="empty-chart">Awaiting Node Connections...</div>
           )}
         </div>
       </div>
 
       <div className="analytics-dashboard">
         <div className="chart-box">
-          <h3>Protocol Activity Distribution ({activeNetwork})</h3>
-          {chartData.pie.length > 0 ? (
+          <h3>Protocol Activity Distribution</h3>
+          {chartData.pie.length > 0 && (
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie data={chartData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
@@ -1242,13 +1169,11 @@ const Dashboard = ({
                 <Legend verticalAlign="bottom" height={36} iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="empty-chart">Awaiting Network Data...</div>
           )}
         </div>
         <div className="chart-box">
-          <h3>Intelligence Volume Metric ($) ({activeNetwork})</h3>
-          {chartData.bar.length > 0 ? (
+          <h3>Intelligence Volume Metric ($)</h3>
+          {chartData.bar.length > 0 && (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData.bar} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <XAxis type="number" stroke="#8b949e" tickFormatter={(value) => `$${value}`} />
@@ -1261,8 +1186,6 @@ const Dashboard = ({
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="empty-chart">Awaiting Network Data...</div>
           )}
         </div>
       </div>
@@ -1273,7 +1196,7 @@ const Dashboard = ({
             <h2>Multi-Chain Live Flow Matrix ({activeNetwork})</h2>
           </div>
           <div className="matrix-controls">
-            <input type="text" className="search-input" placeholder="Search hash, address, asset, narrative..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <input type="text" className="search-input" placeholder="Search hash, address, asset..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             <select className="filter-select" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
               <option value="ALL">All Event Types</option>
               <option value="ARBITRAGE_ACTIVITY">🔄 Arbitrage Spread</option>
@@ -1301,72 +1224,68 @@ const Dashboard = ({
               </tr>
             </thead>
             <tbody>
-              {displayedTransactions.length === 0 ? (
-                <tr><td colSpan="8" className="empty-state">No records matched your search parameters in the {activeNetwork} Matrix...</td></tr>
-              ) : (
-                displayedTransactions.map((tx, index) => (
-                  <tr key={index} className="tx-row" style={getRowStyle(tx.status, tx.type, tx.flag)} onClick={() => setSelectedTx(tx)}>
-                    <td className="tx-status">
-                      <span className={`badge ${tx.status === 'PENDING' ? 'badge-pending' : 'badge-confirmed'}`}>
-                        {tx.status === 'PENDING' ? '⏳ PENDING' : '✓ CONFIRMED'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          {renderNetworkBadge(tx.network)}
-                          {renderTypeBadge(tx.type)}
-                          {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
-                          {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
-                          {tx.flag === 'BRIDGE_ACTIVITY' && <span className="badge badge-bridge-activity">🔗 CROSS-CHAIN</span>}
-                          {tx.flag === 'LENDING_ACTIVITY' && <span className="badge badge-lending-activity">🏦 DEFI LENDING</span>}
-                          {tx.flag === 'ARBITRAGE_ACTIVITY' && <span className="badge badge-arbitrage-activity">⚡ SPREAD CAPTURE</span>}
-                          {tx.flag === 'MEV_ACTIVITY' && <span className="badge badge-mev">🚨 MEV EXPLOIT</span>}
-                          {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
-                          {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
-                        </div>
-                        {tx.narrative && (
-                          <span className="narrative-text" style={tx.type === 'ARBITRAGE' ? { color: '#34d399', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' } : tx.flag === 'MEV_ACTIVITY' ? { color: '#fca5a5', borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' } : {}}>
-                            {tx.narrative}
-                          </span>
-                        )}
-                        {tx.cluster && <span className="cluster-badge">{tx.cluster}</span>}
+              {displayedTransactions.map((tx, index) => (
+                <tr key={index} className="tx-row" style={getRowStyle(tx.status, tx.type, tx.flag)} onClick={() => setSelectedTx(tx)}>
+                  <td className="tx-status">
+                    <span className={`badge ${tx.status === 'PENDING' ? 'badge-pending' : 'badge-confirmed'}`}>
+                      {tx.status === 'PENDING' ? '⏳ PENDING' : '✓ CONFIRMED'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        {renderNetworkBadge(tx.network)}
+                        {renderTypeBadge(tx.type)}
+                        {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
+                        {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
+                        {tx.flag === 'BRIDGE_ACTIVITY' && <span className="badge badge-bridge-activity">🔗 CROSS-CHAIN</span>}
+                        {tx.flag === 'LENDING_ACTIVITY' && <span className="badge badge-lending-activity">🏦 DEFI LENDING</span>}
+                        {tx.flag === 'ARBITRAGE_ACTIVITY' && <span className="badge badge-arbitrage-activity">⚡ SPREAD CAPTURE</span>}
+                        {tx.flag === 'MEV_ACTIVITY' && <span className="badge badge-mev">🚨 MEV EXPLOIT</span>}
+                        {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
+                        {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
                       </div>
-                    </td>
-                    <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0, 17)}...` : tx.asset}</td>
-                    <td className="tx-security">
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {renderSecurityBadge(tx.sec_score, tx.sec_label)}
-                        {renderHealthFactor(tx.health_factor)}
-                        {tx.twap_trend && renderTwapBadge(tx.twap, tx.twap_trend)}
-                      </div>
-                    </td>
-                    <td className="tx-value">
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span>{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</span>
-                        {tx.price_impact > 0.05 && (
-                          <span className={tx.price_impact > 1.0 ? 'impact-high' : 'impact-low'}>📉 Impact: {tx.price_impact}%</span>
-                        )}
-                        {tx.spread > 0 && (
-                          <span className="impact-high" style={{ color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>🔄 Spread: +{tx.spread}%</span>
-                        )}
-                        {tx.mev_extracted > 0 && <span className="mev-text">🔪 Extracted: ${tx.mev_extracted}</span>}
-                      </div>
-                    </td>
-                    <td className="tx-wallet">
-                      <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.from_addr); }}>
-                        {tx.from_label?.includes('Agent') ? renderAgentBadge(tx.from_label, tx.agent_win_rate) : tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr)}
-                      </span>
-                    </td>
-                    <td className="tx-wallet">
-                      <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.to_addr); }}>
-                        {tx.to_label?.includes('Agent') ? renderAgentBadge(tx.to_label, tx.agent_win_rate) : tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr)}
-                      </span>
-                    </td>
-                    <td className="tx-pnl">{renderPnL(tx.pnl)}</td>
-                  </tr>
-                ))
-              )}
+                      {tx.narrative && (
+                        <span className="narrative-text" style={tx.type === 'ARBITRAGE' ? { color: '#34d399', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' } : tx.flag === 'MEV_ACTIVITY' ? { color: '#fca5a5', borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' } : {}}>
+                          {tx.narrative}
+                        </span>
+                      )}
+                      {tx.cluster && <span className="cluster-badge">{tx.cluster}</span>}
+                    </div>
+                  </td>
+                  <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0, 17)}...` : tx.asset}</td>
+                  <td className="tx-security">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {renderSecurityBadge(tx.sec_score, tx.sec_label)}
+                      {renderHealthFactor(tx.health_factor)}
+                      {tx.twap_trend && renderTwapBadge(tx.twap, tx.twap_trend)}
+                    </div>
+                  </td>
+                  <td className="tx-value">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span>{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</span>
+                      {tx.price_impact > 0.05 && (
+                        <span className={tx.price_impact > 1.0 ? 'impact-high' : 'impact-low'}>📉 Impact: {tx.price_impact}%</span>
+                      )}
+                      {tx.spread > 0 && (
+                        <span className="impact-high" style={{ color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>🔄 Spread: +{tx.spread}%</span>
+                      )}
+                      {tx.mev_extracted > 0 && <span className="mev-text">🔪 Extracted: ${tx.mev_extracted}</span>}
+                    </div>
+                  </td>
+                  <td className="tx-wallet">
+                    <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.from_addr); }}>
+                      {tx.from_label?.includes('Agent') ? renderAgentBadge(tx.from_label, tx.agent_win_rate) : tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr)}
+                    </span>
+                  </td>
+                  <td className="tx-wallet">
+                    <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.to_addr); }}>
+                      {tx.to_label?.includes('Agent') ? renderAgentBadge(tx.to_label, tx.agent_win_rate) : tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr)}
+                    </span>
+                  </td>
+                  <td className="tx-pnl">{renderPnL(tx.pnl)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -1375,112 +1294,68 @@ const Dashboard = ({
   );
 };
 
-const DarkForensics = ({ wsRef, transactions }) => {
-  const [selectedTxHash, setSelectedTxHash] = useState('');
-  const [forensicData, setForensicData] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  // We need to render the tree component carefully
-  const renderForensicTree = () => {
-    if (!forensicData || !forensicData.tree) return null;
-    
-    return (
-      <div style={{ width: '100%', height: '500px', backgroundColor: '#0d1117', borderRadius: '8px', border: '1px solid #30363d', marginTop: '24px' }}>
-        <Tree 
-          data={forensicData.tree} 
-          orientation="vertical"
-          pathFunc="step"
-          translate={{ x: 400, y: 50 }}
-          nodeSize={{ x: 250, y: 100 }}
-          renderCustomNodeElement={(rd3tProps) => {
-            const { nodeDatum } = rd3tProps;
-            return (
-              <g>
-                <rect width="200" height="40" x="-100" y="-20" fill={nodeDatum.color || '#30363d'} rx="5" ry="5" />
-                <text fill="#ffffff" strokeWidth="1" x="0" y="5" textAnchor="middle" fontSize="12" fontFamily="monospace">
-                  {nodeDatum.name}
-                </text>
-              </g>
-            );
-          }}
-        />
-      </div>
-    );
-  };
-
-  useEffect(() => {
-    if (!wsRef.current) return;
-    const ws = wsRef.current;
-    const handleMsg = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.msg_type === 'FORENSIC_RESULT') {
-          setForensicData(data.data);
-          setIsAnalyzing(false);
-        }
-      } catch (e) {}
-    };
-    ws.addEventListener('message', handleMsg);
-    return () => ws.removeEventListener('message', handleMsg);
-  }, [wsRef]);
-
-  const handleAnalyze = () => {
-    if (!selectedTxHash || !wsRef.current) return;
-    setIsAnalyzing(true);
-    setForensicData(null);
-    wsRef.current.send(JSON.stringify({
-      action: 'FORENSIC_AUTOPSY',
-      tx_hash: selectedTxHash,
-      network: 'BASE' // default to BASE for forensics
-    }));
-  };
-
+const SequencerTerminal = ({ sequencerAlerts, wsRef, activeNetwork }) => {
   return (
-    <div className="forensics-container">
-      <div className="forensics-header">
-        <h2>🩸 DARK FOREST FORENSICS</h2>
-        <span>Microscopic MEV & Laundering Hierarchical Autopsy</span>
+    <div className="sequencer-container">
+      <div className="sequencer-header">
+        <h2>🛰️ L2 SEQUENCER RADAR</h2>
+        <span>Raw OP Stack Pending State Sniffer</span>
       </div>
       
-      <div className="forensics-controls">
-        <select value={selectedTxHash} onChange={(e) => setSelectedTxHash(e.target.value)} className="forensics-select">
-          <option value="">-- Select Suspicious TX from Matrix --</option>
-          {transactions.filter(t => t.flag === 'MEV_ACTIVITY' || t.msg_type === 'DARK_POOL_ALERT').map((tx, idx) => (
-            <option key={idx} value={tx.tx_hash}>{tx.tx_hash.substring(0, 15)}... ({tx.flag || 'DARK POOL'})</option>
-          ))}
-          {/* Mock option if none exist yet */}
-          <option value="0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef">0x1234567890ab... (Sample MEV)</option>
-        </select>
-        <button onClick={handleAnalyze} disabled={isAnalyzing || !selectedTxHash}>
-          {isAnalyzing ? 'DECONSTRUCTING TRACE...' : 'INITIATE AUTOPSY'}
-        </button>
+      <div className="sequencer-grid">
+        <div className="seq-stats-card">
+          <h4>Active Sequence</h4>
+          <span className="seq-value pulse-text" style={{ color: '#0ea5e9' }}>{activeNetwork === 'ALL' ? 'BASE MAINNET' : activeNetwork}</span>
+        </div>
+        <div className="seq-stats-card">
+          <h4>Inflight TXs</h4>
+          <span className="seq-value" style={{ color: '#eab308' }}>{sequencerAlerts.length}</span>
+        </div>
+        <div className="seq-stats-card">
+          <h4>Max L1 Commit ETA</h4>
+          <span className="seq-value" style={{ color: '#f85149' }}>
+            {sequencerAlerts.length > 0 ? `${Math.max(...sequencerAlerts.map(a => a.commit_eta)).toFixed(2)}s` : '0.00s'}
+          </span>
+        </div>
       </div>
 
-      {forensicData && (
-        <div className="forensics-results">
-          <div className="forensics-stats-grid">
-            <div className="f-stat-card">
-              <h4>Classification</h4>
-              <div style={{ color: '#d946ef', fontSize: '1.2rem', fontWeight: 'bold' }}>{forensicData.stats.classification}</div>
-            </div>
-            <div className="f-stat-card">
-              <h4>Complexity Score</h4>
-              <div style={{ color: forensicData.stats.complexity_score > 85 ? '#f85149' : '#eab308', fontSize: '1.2rem', fontWeight: 'bold' }}>{forensicData.stats.complexity_score}/100</div>
-            </div>
-            <div className="f-stat-card">
-              <h4>Validator Bribe (USD)</h4>
-              <div style={{ color: '#ea580c', fontSize: '1.2rem', fontWeight: 'bold' }}>${forensicData.stats.bribe_paid_usd.toLocaleString()}</div>
-            </div>
-            <div className="f-stat-card">
-              <h4>Extracted Net Profit</h4>
-              <div style={{ color: '#3fb950', fontSize: '1.2rem', fontWeight: 'bold' }}>${forensicData.stats.net_profit_usd.toLocaleString()}</div>
-            </div>
-          </div>
-          
-          <h3 style={{ color: '#8b949e', marginTop: '32px', marginBottom: '8px', borderBottom: '1px solid #30363d', paddingBottom: '8px' }}>HIERARCHICAL EXECUTION TRACE</h3>
-          {renderForensicTree()}
-        </div>
-      )}
+      <div className="table-container seq-table-wrapper" style={{ marginTop: '24px' }}>
+        <table className="accounting-table seq-table">
+          <thead>
+            <tr>
+              <th>L2 TX Hash</th>
+              <th>Action Type</th>
+              <th>Value (USD)</th>
+              <th>Risk Level</th>
+              <th>L1 Commit ETA</th>
+              <th>Interception</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(sequencerAlerts || []).map((alert, idx) => (
+              <tr key={idx} className="seq-row-fast" style={{ backgroundColor: alert.risk === 'CRITICAL' ? 'rgba(248, 81, 73, 0.15)' : alert.risk === 'HIGH' ? 'rgba(234, 179, 8, 0.1)' : 'transparent' }}>
+                <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 16)}...</td>
+                <td style={{ fontWeight: 'bold', color: alert.type.includes('EXPLOIT') ? '#f85149' : '#c9d1d9' }}>{alert.type}</td>
+                <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                <td>
+                  <span className="badge" style={{ backgroundColor: alert.risk === 'CRITICAL' ? '#dc2626' : alert.risk === 'HIGH' ? '#ca8a04' : '#30363d', color: '#fff' }}>
+                    {alert.risk}
+                  </span>
+                </td>
+                <td style={{ color: '#eab308', fontFamily: 'monospace' }}>~{alert.commit_eta}s</td>
+                <td>
+                  <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#0ea5e9' }}>
+                    EXEC FRONT-RUN
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {sequencerAlerts.length === 0 && (
+              <tr><td colSpan="6" className="empty-state">Sniffing L2 sequencer memory pool... Awaiting raw data blocks.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
@@ -1512,6 +1387,7 @@ export default function AppWrapper() {
   const [autoEjectAlerts, setAutoEjectAlerts] = useState([]);
   const [vestingDumps, setVestingDumps] = useState([]);
   const [gasWars, setGasWars] = useState([]);
+  const [sequencerAlerts, setSequencerAlerts] = useState([]);
   const [overlordState, setOverlordState] = useState({ active: false, max_spend: 50000, min_profit: 500 });
   
   const [auditInput, setAuditInput] = useState('');
@@ -1534,7 +1410,125 @@ export default function AppWrapper() {
   const [atomicSimulator, setAtomicSimulator] = useState({ isOpen: false, route: null, amount: 50000, status: 'IDLE', result: null });
   
   const wsRef = useRef(null);
-  
+
+  useEffect(() => {
+    const connect = () => {
+      const wsUrl = getWsUrl();
+      try {
+        const ws = new WebSocket(wsUrl);
+        ws.onopen = () => setIsConnected(true);
+        ws.onerror = () => setIsConnected(false);
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.msg_type === 'SEQUENCER_ALERT') {
+            setSequencerAlerts(prev => [data.data, ...prev].slice(0, 50));
+            return;
+          }
+          if (data.msg_type === 'OVERLORD_STATUS') {
+            setOverlordState(data.data.state || data.data);
+            return;
+          }
+          if (data.msg_type === 'GAS_WAR_ALERT') {
+            setGasWars(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            return;
+          }
+          if (data.msg_type === 'LEADERBOARD_UPDATE') {
+            setLeaderboard({ wallets: data.wallets, agents: data.agents });
+            return;
+          }
+          if (data.msg_type === 'CABAL_RESULT') {
+            setCabalData(data.data);
+            setIsScanningCabal(false);
+            return;
+          }
+          if (data.msg_type === 'VESTING_DUMP_ALERT') {
+            setVestingDumps(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            return;
+          }
+          if (data.msg_type === 'AUTO_EJECT_ALERT') {
+            setAutoEjectAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            return;
+          }
+          if (data.msg_type === 'SHADOW_RELAY_ALERT') {
+            setShadowRelayAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            return;
+          }
+          if (data.msg_type === 'INCOMING_BRIDGE_TSUNAMI') {
+            setBridgeTsunamis(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 4));
+            return;
+          }
+          if (data.msg_type === 'DECOMPILE_RESULT') {
+            setDecompileData(data.data);
+            setIsDecompiling(false);
+            return;
+          }
+          if (data.msg_type === 'SHADOW_TRADE') {
+            setShadowLogs(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 10));
+            setTransactions(prev => [{ time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: 'CONFIRMED', ...data }, ...prev].slice(0, 150));
+            return;
+          }
+          if (data.msg_type === 'SOCIAL_SENTIMENT') {
+            setSentimentData(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            return;
+          }
+          if (data.msg_type === 'DARK_POOL_ALERT') {
+            setDarkPoolAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            return;
+          }
+          if (data.msg_type === 'ZERO_BLOCK_SNIPER') {
+            setSnipeTargets(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            return;
+          }
+          if (data.msg_type === 'KILL_ZONE_UPDATE') {
+            setKillZone(data.data);
+            return;
+          }
+          if (data.msg_type === 'SYBIL_HUNTER_UPDATE') {
+            setSybilClusters(data.data);
+            return;
+          }
+          if (data.msg_type === 'ARBITRAGE_RADAR') {
+            setArbitrageRoutes(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
+            return;
+          }
+          if (data.msg_type === 'MEMPOOL_SIMULATION') {
+            setMempoolSim(prev => ({ ...prev, [data.network]: { volume: data.total_volume, impact: data.expected_impact, txs: data.high_risk_txs } }));
+            return;
+          }
+          if (data.msg_type === 'BACKUP_READY') {
+            const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ASMO_Disaster_Recovery_${new Date().getTime()}.json`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+            return;
+          }
+          if (data.msg_type === 'AUDIT_RESULT') {
+            setAuditData(data.data);
+            setIsAuditing(false);
+            return;
+          }
+          setTransactions((prev) => {
+            if(data.msg_type !== 'TRANSACTION') return prev;
+            const existingIndex = prev.findIndex((t) => t.tx_hash === data.tx_hash);
+            const newData = { time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: data.status || 'CONFIRMED', ...data };
+            if (existingIndex !== -1) {
+              const updated = [...prev];
+              updated[existingIndex] = { ...updated[existingIndex], ...newData };
+              return updated;
+            }
+            return [newData, ...prev].slice(0, 150);
+          });
+        };
+        ws.onclose = () => setIsConnected(false);
+        wsRef.current = ws;
+      } catch (err) { setIsConnected(false); }
+    };
+    connect();
+    return () => { if (wsRef.current) wsRef.current.close(); };
+  }, []);
+
   const dashboardProps = { 
     transactions, setTransactions, leaderboard, setLeaderboard, activeNetwork, setActiveNetwork,
     graphDimensions, setGraphDimensions, cabalDimensions, setCabalDimensions, searchTerm, setSearchTerm,
@@ -1544,7 +1538,9 @@ export default function AppWrapper() {
     shadowRelayAlerts, setShadowRelayAlerts, autoEjectAlerts, setAutoEjectAlerts, vestingDumps, setVestingDumps, gasWars, setGasWars,
     overlordState, setOverlordState, auditInput, setAuditInput, auditNetwork, setAuditNetwork, auditData, setAuditData, isAuditing, setIsAuditing,
     decompileInput, setDecompileInput, isDecompiling, setIsDecompiling, decompileData, setDecompileData, cabalInput, setCabalInput, isScanningCabal, setIsScanningCabal, cabalData, setCabalData,
-    mempoolSim, setMempoolSim, arbitrageRoutes, setArbitrageRoutes, flashSimulator, setFlashSimulator, atomicSimulator, setAtomicSimulator, wsRef
+    mempoolSim, setMempoolSim, arbitrageRoutes, setArbitrageRoutes, flashSimulator, setFlashSimulator, atomicSimulator, setAtomicSimulator, wsRef,
+    handleOverlordToggle: () => {}, handleBackup: () => {}, handleRestore: () => {}, handleAudit: () => {}, handleDecompile: () => {}, executeAutoEject: () => {}, executeShortDump: () => {}, executeFlashloan: () => {}, executeAtomicArb: () => {}, toggleShadow: () => {}, exportToCSV: () => {},
+    displayMempool: mempoolSim.BASE, projectAnalysis: [], networkData: {nodes:[], links:[]}, chartData: {pie:[], bar:[]}, entityData: null, fileInputRef: null, containerRef: null, cabalRef: null, PIE_COLORS
   };
 
   return (
@@ -1552,11 +1548,14 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v6.0.0.FINAL</span>
+          <span>v7.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
             <span>📊</span> GLOBAL MATRIX
+          </button>
+          <button className={`nav-btn ${activeTab === 'SEQUENCER' ? 'active' : ''}`} onClick={() => setActiveTab('SEQUENCER')}>
+            <span>🛰️</span> L2 SEQUENCER
           </button>
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
@@ -1564,14 +1563,14 @@ export default function AppWrapper() {
           <button className={`nav-btn ${activeTab === 'NEXUS' ? 'active' : ''}`} onClick={() => setActiveTab('NEXUS')}>
             <span>🕸️</span> NEXUS MAP
           </button>
-          <button className={`nav-btn ${activeTab === 'FORGE' ? 'active' : ''}`} onClick={() => setActiveTab('FORGE')}>
-            <span>🛠️</span> OVERLORD FORGE
+          <button className="nav-btn locked" disabled>
+            <span>🛠️</span> OVERLORD FORGE 🔒
           </button>
-          <button className={`nav-btn ${activeTab === 'CHRONOS' ? 'active' : ''}`} onClick={() => setActiveTab('CHRONOS')}>
-            <span>⏱️</span> CHRONOS TESTER
+          <button className="nav-btn locked" disabled>
+            <span>⏱️</span> CHRONOS TESTER 🔒
           </button>
-          <button className={`nav-btn ${activeTab === 'FORENSICS' ? 'active' : ''}`} onClick={() => setActiveTab('FORENSICS')}>
-            <span>🩸</span> DARK FORENSICS
+          <button className="nav-btn locked" disabled>
+            <span>🩸</span> DARK FORENSICS 🔒
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -1586,11 +1585,9 @@ export default function AppWrapper() {
         <div style={{ display: activeTab === 'DASHBOARD' ? 'block' : 'none', height: '100%' }}>
           <Dashboard {...dashboardProps} />
         </div>
+        {activeTab === 'SEQUENCER' && <SequencerTerminal sequencerAlerts={sequencerAlerts} wsRef={wsRef} activeNetwork={activeNetwork} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
         {activeTab === 'NEXUS' && <NexusCartographer wsRef={wsRef} cabalData={cabalData} isScanningCabal={isScanningCabal} setCabalData={setCabalData} activeNetwork={activeNetwork} />}
-        {activeTab === 'FORGE' && <OverlordForge wsRef={wsRef} overlordState={overlordState} setOverlordState={setOverlordState} />}
-        {activeTab === 'CHRONOS' && <ChronosTester wsRef={wsRef} />}
-        {activeTab === 'FORENSICS' && <DarkForensics wsRef={wsRef} transactions={transactions} />}
       </main>
     </div>
   );
