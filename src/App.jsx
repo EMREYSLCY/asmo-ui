@@ -407,6 +407,69 @@ const Dashboard = ({
         </div>
       )}
 
+      <div className="panel overlord-panel" style={{ marginBottom: '24px', background: overlordState.active ? 'linear-gradient(90deg, #1f0535 0%, #0d1117 100%)' : '#010409', borderColor: overlordState.active ? '#d946ef' : '#30363d', boxShadow: overlordState.active ? 'inset 0 0 40px rgba(217, 70, 239, 0.15)' : 'none', transition: 'all 0.4s ease' }}>
+        <div className="panel-header" style={{ borderBottom: '1px solid #30363d', paddingBottom: '16px' }}>
+          <div>
+            <h2 style={{ color: overlordState.active ? '#d946ef' : '#8b949e', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              🤖 OVERLORD AUTONOMOUS AI
+              {overlordState.active && <span className="badge" style={{ backgroundColor: '#d946ef', color: '#000', fontSize: '0.8rem', animation: 'pulse-danger 2s infinite' }}>SYSTEM LIVE</span>}
+            </h2>
+            <span style={{ fontSize: '0.85rem', color: '#8b949e' }}>Hand over control to the AI. A.S.M.O. will automatically execute snipes, front-runs, and cross-chain flashloans.</span>
+          </div>
+          <button 
+            onClick={handleOverlordToggle}
+            style={{
+              padding: '12px 32px',
+              fontSize: '1.2rem',
+              fontWeight: '900',
+              letterSpacing: '2px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              border: overlordState.active ? '2px solid #d946ef' : '2px solid #8b949e',
+              backgroundColor: overlordState.active ? 'rgba(217, 70, 239, 0.2)' : 'transparent',
+              color: overlordState.active ? '#fdf4ff' : '#8b949e',
+              boxShadow: overlordState.active ? '0 0 20px rgba(217, 70, 239, 0.5)' : 'none',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {overlordState.active ? 'DISENGAGE' : 'ENGAGE OVERLORD'}
+          </button>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '20px' }}>
+          <div className="flash-slider-container" style={{ margin: 0 }}>
+            <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Max Execution Capital (USD): <span style={{color: '#eab308', fontWeight: 'bold'}}>${overlordState.max_spend.toLocaleString()}</span></label>
+            <input 
+              type="range" min="1000" max="500000" step="1000" 
+              value={overlordState.max_spend} 
+              className="flash-slider"
+              onChange={(e) => {
+                if(!overlordState.active) {
+                  handleOverlordToggle({ ...overlordState, max_spend: Number(e.target.value) });
+                }
+              }}
+              disabled={overlordState.active}
+              style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
+            />
+          </div>
+          <div className="flash-slider-container" style={{ margin: 0 }}>
+            <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Min Expected Profit (USD): <span style={{color: '#3fb950', fontWeight: 'bold'}}>${overlordState.min_profit.toLocaleString()}</span></label>
+            <input 
+              type="range" min="100" max="10000" step="100" 
+              value={overlordState.min_profit} 
+              className="flash-slider"
+              onChange={(e) => {
+                if(!overlordState.active) {
+                  handleOverlordToggle({ ...overlordState, min_profit: Number(e.target.value) });
+                }
+              }}
+              disabled={overlordState.active}
+              style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
+            />
+          </div>
+        </div>
+      </div>
+
       {gasWars.length > 0 && (
         <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(234, 88, 12, 0.05)', borderColor: '#ea580c', boxShadow: 'inset 0 0 40px rgba(234, 88, 12, 0.15)' }}>
           <div className="panel-header">
@@ -644,7 +707,7 @@ const Dashboard = ({
 
       <div className="panel shadow-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#0ea5e9' }}>🤖 Institutional Copy-Trade Engine (Shadow Mode)</h2>
+          <h2 style={{ color: '#0ea5e9' }}>🤖 Institutional Copy-Trade Engine</h2>
           <span className="pulse-text" style={{ color: '#0ea5e9' }}>Awaiting Target Execution...</span>
         </div>
         <div className="project-analysis-grid">
@@ -1360,6 +1423,62 @@ const SequencerTerminal = ({ sequencerAlerts, wsRef, activeNetwork }) => {
   );
 };
 
+const MultiSigRadar = ({ multiSigAlerts, wsRef }) => {
+  return (
+    <div className="multisig-container">
+      <div className="multisig-header">
+        <h2>🔐 MULTI-SIG PRECOGNITION RADAR</h2>
+        <span>Advanced Gnosis Safe Threshold Monitor</span>
+      </div>
+      
+      <div className="table-container multisig-table-wrapper" style={{ marginTop: '24px' }}>
+        <table className="accounting-table">
+          <thead>
+            <tr>
+              <th>Safe Contract</th>
+              <th>Target Action Hash</th>
+              <th>Signature Threshold</th>
+              <th>Transfer Volume (USD)</th>
+              <th>Status</th>
+              <th>Intervention</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(multiSigAlerts || []).map((alert, idx) => (
+              <tr key={idx} className="seq-row-fast" style={{ backgroundColor: 'rgba(248, 81, 73, 0.05)' }}>
+                <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{formatAddress(alert.safe_address)}</td>
+                <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(alert.target_contract)}</td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#eab308', fontWeight: 'bold' }}>{alert.current_sigs}/{alert.required_sigs}</span>
+                    <div className="sig-bar-bg" style={{ width: '80px', height: '6px', background: '#30363d', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div className="sig-bar-fill" style={{ width: `${(alert.current_sigs / alert.required_sigs) * 100}%`, height: '100%', background: '#f85149' }}></div>
+                    </div>
+                  </div>
+                </td>
+                <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                <td>
+                  <span className="badge pulse" style={{ backgroundColor: '#dc2626', color: '#fff' }}>
+                    {alert.status}
+                  </span>
+                </td>
+                <td>
+                  <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#f85149', fontWeight: 'bold' }}>
+                    PRE-EMPTIVE SHORT
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {multiSigAlerts.length === 0 && (
+              <tr><td colSpan="6" className="empty-state">Monitoring multi-sig threshold thresholds... Awaiting signature cascades.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 export default function AppWrapper() {
   const [activeTab, setActiveTab] = useState('DASHBOARD');
   
@@ -1388,6 +1507,7 @@ export default function AppWrapper() {
   const [vestingDumps, setVestingDumps] = useState([]);
   const [gasWars, setGasWars] = useState([]);
   const [sequencerAlerts, setSequencerAlerts] = useState([]);
+  const [multiSigAlerts, setMultiSigAlerts] = useState([]);
   const [overlordState, setOverlordState] = useState({ active: false, max_spend: 50000, min_profit: 500 });
   
   const [auditInput, setAuditInput] = useState('');
@@ -1422,6 +1542,10 @@ export default function AppWrapper() {
           const data = JSON.parse(event.data);
           if (data.msg_type === 'SEQUENCER_ALERT') {
             setSequencerAlerts(prev => [data.data, ...prev].slice(0, 50));
+            return;
+          }
+          if (data.msg_type === 'MULTISIG_ALERT') {
+            setMultiSigAlerts(prev => [data.data, ...prev].slice(0, 20));
             return;
           }
           if (data.msg_type === 'OVERLORD_STATUS') {
@@ -1548,7 +1672,7 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v7.0.0.1</span>
+          <span>v8.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
@@ -1556,6 +1680,9 @@ export default function AppWrapper() {
           </button>
           <button className={`nav-btn ${activeTab === 'SEQUENCER' ? 'active' : ''}`} onClick={() => setActiveTab('SEQUENCER')}>
             <span>🛰️</span> L2 SEQUENCER
+          </button>
+          <button className={`nav-btn ${activeTab === 'MULTISIG' ? 'active' : ''}`} onClick={() => setActiveTab('MULTISIG')}>
+            <span>🔐</span> MULTI-SIG RADAR
           </button>
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
@@ -1586,6 +1713,7 @@ export default function AppWrapper() {
           <Dashboard {...dashboardProps} />
         </div>
         {activeTab === 'SEQUENCER' && <SequencerTerminal sequencerAlerts={sequencerAlerts} wsRef={wsRef} activeNetwork={activeNetwork} />}
+        {activeTab === 'MULTISIG' && <MultiSigRadar multiSigAlerts={multiSigAlerts} wsRef={wsRef} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
         {activeTab === 'NEXUS' && <NexusCartographer wsRef={wsRef} cabalData={cabalData} isScanningCabal={isScanningCabal} setCabalData={setCabalData} activeNetwork={activeNetwork} />}
       </main>

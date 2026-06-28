@@ -2345,3 +2345,38 @@ a:hover {
     transform: translateY(0);
   }
 }
+
+.multisig-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.multisig-header {
+  border-bottom: 1px solid #f85149;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.multisig-header h2 {
+  color: #f85149;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(248, 81, 73, 0.4);
+}
+
+.multisig-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.multisig-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #0d1117;
+}
+
