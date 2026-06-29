@@ -2380,3 +2380,125 @@ a:hover {
   background: #0d1117;
 }
 
+.aa-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.aa-header {
+  border-bottom: 1px solid #a371f7;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.aa-header h2 {
+  color: #a371f7;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(163, 113, 247, 0.4);
+}
+
+.aa-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.aa-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.aa-controls input {
+  flex: 1;
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  outline: none;
+}
+
+.aa-controls input:focus {
+  border-color: #a371f7;
+}
+
+.aa-controls button {
+  background: #a371f7;
+  color: #000;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.aa-controls button:hover:not(:disabled) {
+  background: #c084fc;
+  box-shadow: 0 0 15px rgba(163, 113, 247, 0.4);
+}
+
+.aa-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aa-results {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.aa-main-type {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  padding: 32px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.aa-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.aa-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.aa-card h4 {
+  margin: 0 0 12px 0;
+  color: #8b949e;
+  font-size: 0.9rem;
+}
+
+.aa-infrastructure {
+  margin-top: 16px;
+}
+
+.aa-infrastructure table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.aa-infrastructure td {
+  padding: 16px;
+  border-bottom: 1px solid #30363d;
+}
+
+.aa-infrastructure tr:last-child td {
+  border-bottom: none;
+}

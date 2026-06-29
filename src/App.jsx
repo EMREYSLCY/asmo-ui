@@ -707,7 +707,7 @@ const Dashboard = ({
 
       <div className="panel shadow-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
         <div className="panel-header">
-          <h2 style={{ color: '#0ea5e9' }}>🤖 Institutional Copy-Trade Engine</h2>
+          <h2 style={{ color: '#0ea5e9' }}>🤖 Institutional Copy-Trade Engine (Shadow Mode)</h2>
           <span className="pulse-text" style={{ color: '#0ea5e9' }}>Awaiting Target Execution...</span>
         </div>
         <div className="project-analysis-grid">
@@ -1479,6 +1479,128 @@ const MultiSigRadar = ({ multiSigAlerts, wsRef }) => {
   );
 };
 
+const AccountAbstractionTerminal = ({ wsRef }) => {
+  const [targetAddr, setTargetAddr] = useState('');
+  const [aaData, setAaData] = useState(null);
+  const [isProfiling, setIsProfiling] = useState(false);
+
+  useEffect(() => {
+    if (!wsRef.current) return;
+    const ws = wsRef.current;
+    const handleAAMsg = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.msg_type === 'AA_RESULT') {
+          setAaData(data.data);
+          setIsProfiling(false);
+        }
+      } catch (e) {}
+    };
+    ws.addEventListener('message', handleAAMsg);
+    return () => ws.removeEventListener('message', handleAAMsg);
+  }, [wsRef]);
+
+  const handleProfile = () => {
+    if (!targetAddr || !wsRef.current) return;
+    setAaData(null);
+    setIsProfiling(true);
+    wsRef.current.send(JSON.stringify({
+      action: 'AA_PROFILE',
+      address: targetAddr,
+      network: 'BASE'
+    }));
+  };
+
+  return (
+    <div className="aa-container">
+      <div className="aa-header">
+        <h2>🪪 ERC-4337 ACCOUNT ABSTRACTION PROFILER</h2>
+        <span>Unmasking Institutional Paymasters and Bundler Activity</span>
+      </div>
+
+      <div className="aa-controls">
+        <input 
+          type="text" 
+          placeholder="Enter Target Wallet Address (0x...)" 
+          value={targetAddr} 
+          onChange={e => setTargetAddr(e.target.value)} 
+          disabled={isProfiling}
+        />
+        <button onClick={handleProfile} disabled={isProfiling || !targetAddr}>
+          {isProfiling ? 'INTERROGATING OP-STACK...' : 'INITIATE AA PROFILING'}
+        </button>
+      </div>
+
+      {aaData && (
+        <div className="aa-results">
+          <div className="aa-main-type">
+            <span style={{ fontSize: '1rem', color: '#8b949e' }}>Account Classification</span>
+            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: aaData.type === 'SCA' ? '#a371f7' : '#3fb950' }}>
+              {aaData.type === 'SCA' ? 'SMART CONTRACT ACCOUNT' : 'EXTERNALLY OWNED ACCOUNT'}
+            </div>
+            <p style={{ color: '#c9d1d9', marginTop: '8px' }}>{aaData.description}</p>
+          </div>
+
+          <div className="aa-grid">
+            <div className="aa-card">
+              <h4>Paymaster Sponsorship</h4>
+              <div style={{ fontSize: '1.2rem', color: aaData.paymaster_sponsored ? '#eab308' : '#8b949e', fontWeight: 'bold' }}>
+                {aaData.paymaster_sponsored ? 'ACTIVE (SPONSORED)' : 'NONE DETECTED'}
+              </div>
+              {aaData.paymaster_sponsored && (
+                <p style={{ color: '#c9d1d9', fontSize: '0.85rem', marginTop: '8px' }}>Entity: {aaData.paymaster_entity}</p>
+              )}
+            </div>
+
+            <div className="aa-card">
+              <h4>Bundler Interactions</h4>
+              <div style={{ fontSize: '1.5rem', color: '#38bdf8', fontWeight: 'bold' }}>
+                {aaData.bundler_activity.toLocaleString()} Ops
+              </div>
+            </div>
+
+            <div className="aa-card">
+              <h4>Estimated Gas Sponsored</h4>
+              <div style={{ fontSize: '1.5rem', color: '#3fb950', fontWeight: 'bold' }}>
+                ${aaData.gas_saved.toLocaleString()}
+              </div>
+            </div>
+
+            <div className="aa-card">
+              <h4>Institutional Risk Score</h4>
+              <div style={{ fontSize: '1.5rem', color: aaData.risk_score > 75 ? '#f85149' : '#3fb950', fontWeight: 'bold' }}>
+                {aaData.risk_score}/100
+              </div>
+            </div>
+          </div>
+
+          {aaData.type === 'SCA' && (
+            <div className="aa-infrastructure">
+              <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px' }}>Infrastructure Footprint</h3>
+              <table className="accounting-table">
+                <tbody>
+                  <tr>
+                    <td style={{ width: '200px', color: '#8b949e' }}>Factory Contract</td>
+                    <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{aaData.factory_address}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ color: '#8b949e' }}>Active Paymaster</td>
+                    <td style={{ fontFamily: 'monospace', color: '#eab308' }}>{aaData.paymaster_address}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ color: '#8b949e' }}>Primary Bundler</td>
+                    <td style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{aaData.bundler_address}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function AppWrapper() {
   const [activeTab, setActiveTab] = useState('DASHBOARD');
   
@@ -1672,7 +1794,7 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v8.0.0.1</span>
+          <span>v9.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
@@ -1683,6 +1805,9 @@ export default function AppWrapper() {
           </button>
           <button className={`nav-btn ${activeTab === 'MULTISIG' ? 'active' : ''}`} onClick={() => setActiveTab('MULTISIG')}>
             <span>🔐</span> MULTI-SIG RADAR
+          </button>
+          <button className={`nav-btn ${activeTab === 'AA_PROFILE' ? 'active' : ''}`} onClick={() => setActiveTab('AA_PROFILE')}>
+            <span>🪪</span> 4337 PROFILER
           </button>
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
@@ -1714,6 +1839,7 @@ export default function AppWrapper() {
         </div>
         {activeTab === 'SEQUENCER' && <SequencerTerminal sequencerAlerts={sequencerAlerts} wsRef={wsRef} activeNetwork={activeNetwork} />}
         {activeTab === 'MULTISIG' && <MultiSigRadar multiSigAlerts={multiSigAlerts} wsRef={wsRef} />}
+        {activeTab === 'AA_PROFILE' && <AccountAbstractionTerminal wsRef={wsRef} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
         {activeTab === 'NEXUS' && <NexusCartographer wsRef={wsRef} cabalData={cabalData} isScanningCabal={isScanningCabal} setCabalData={setCabalData} activeNetwork={activeNetwork} />}
       </main>
