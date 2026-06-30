@@ -2502,3 +2502,143 @@ a:hover {
 .aa-infrastructure tr:last-child td {
   border-bottom: none;
 }
+
+.enclave-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.enclave-header {
+  border-bottom: 1px solid #10b981;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.enclave-header h2 {
+  color: #10b981;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.enclave-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.enclave-status-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border: 1px solid;
+  border-radius: 8px;
+  margin-bottom: 32px;
+}
+
+.status-orb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.orb-secured {
+  background-color: #10b981;
+  box-shadow: 0 0 15px #10b981, inset 0 0 5px #fff;
+  animation: pulse-safe 2s infinite;
+}
+
+.orb-unlocked {
+  background-color: #f85149;
+  box-shadow: 0 0 15px #f85149, inset 0 0 5px #fff;
+  animation: pulse-danger 1s infinite;
+}
+
+@keyframes pulse-safe {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.enclave-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.enclave-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.enclave-card.active-card {
+  border-color: #10b981;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+.card-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+}
+
+.enclave-card h3 {
+  color: #c9d1d9;
+  margin: 0 0 16px 0;
+  font-size: 1.4rem;
+}
+
+.enclave-card p {
+  color: #8b949e;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+}
+
+.enclave-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px 0;
+  text-align: left;
+  width: 100%;
+  color: #8b949e;
+}
+
+.enclave-features li {
+  margin-bottom: 8px;
+  font-family: monospace;
+  font-size: 0.95rem;
+}
+
+.enclave-btn {
+  margin-top: auto;
+  width: 100%;
+  padding: 16px;
+  background: #238636;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 900;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.enclave-btn:hover:not(:disabled) {
+  filter: brightness(1.2);
+}
+
+.enclave-btn:disabled {
+  background: #30363d !important;
+  color: #8b949e;
+  cursor: not-allowed;
+}

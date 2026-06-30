@@ -113,8 +113,7 @@ const Dashboard = ({
   selectedEntity, setSelectedEntity, killZone, sybilClusters,
   snipeTargets, darkPoolAlerts, sentimentData, shadowTargets,
   shadowLogs, bridgeTsunamis, shadowRelayAlerts, autoEjectAlerts,
-  vestingDumps, gasWars, overlordState, handleOverlordToggle,
-  handleBackup, handleRestore, handleAudit, handleDecompile,
+  vestingDumps, gasWars, handleBackup, handleRestore, handleAudit, handleDecompile,
   executeAutoEject, executeShortDump, executeFlashloan,
   executeAtomicArb, toggleShadow, auditInput, setAuditInput,
   auditData, isAuditing, decompileInput, setDecompileInput,
@@ -406,69 +405,6 @@ const Dashboard = ({
           </div>
         </div>
       )}
-
-      <div className="panel overlord-panel" style={{ marginBottom: '24px', background: overlordState.active ? 'linear-gradient(90deg, #1f0535 0%, #0d1117 100%)' : '#010409', borderColor: overlordState.active ? '#d946ef' : '#30363d', boxShadow: overlordState.active ? 'inset 0 0 40px rgba(217, 70, 239, 0.15)' : 'none', transition: 'all 0.4s ease' }}>
-        <div className="panel-header" style={{ borderBottom: '1px solid #30363d', paddingBottom: '16px' }}>
-          <div>
-            <h2 style={{ color: overlordState.active ? '#d946ef' : '#8b949e', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              🤖 OVERLORD AUTONOMOUS AI
-              {overlordState.active && <span className="badge" style={{ backgroundColor: '#d946ef', color: '#000', fontSize: '0.8rem', animation: 'pulse-danger 2s infinite' }}>SYSTEM LIVE</span>}
-            </h2>
-            <span style={{ fontSize: '0.85rem', color: '#8b949e' }}>Hand over control to the AI. A.S.M.O. will automatically execute snipes, front-runs, and cross-chain flashloans.</span>
-          </div>
-          <button 
-            onClick={handleOverlordToggle}
-            style={{
-              padding: '12px 32px',
-              fontSize: '1.2rem',
-              fontWeight: '900',
-              letterSpacing: '2px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              border: overlordState.active ? '2px solid #d946ef' : '2px solid #8b949e',
-              backgroundColor: overlordState.active ? 'rgba(217, 70, 239, 0.2)' : 'transparent',
-              color: overlordState.active ? '#fdf4ff' : '#8b949e',
-              boxShadow: overlordState.active ? '0 0 20px rgba(217, 70, 239, 0.5)' : 'none',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            {overlordState.active ? 'DISENGAGE' : 'ENGAGE OVERLORD'}
-          </button>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '20px' }}>
-          <div className="flash-slider-container" style={{ margin: 0 }}>
-            <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Max Execution Capital (USD): <span style={{color: '#eab308', fontWeight: 'bold'}}>${overlordState.max_spend.toLocaleString()}</span></label>
-            <input 
-              type="range" min="1000" max="500000" step="1000" 
-              value={overlordState.max_spend} 
-              className="flash-slider"
-              onChange={(e) => {
-                if(!overlordState.active) {
-                  handleOverlordToggle({ ...overlordState, max_spend: Number(e.target.value) });
-                }
-              }}
-              disabled={overlordState.active}
-              style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
-            />
-          </div>
-          <div className="flash-slider-container" style={{ margin: 0 }}>
-            <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Min Expected Profit (USD): <span style={{color: '#3fb950', fontWeight: 'bold'}}>${overlordState.min_profit.toLocaleString()}</span></label>
-            <input 
-              type="range" min="100" max="10000" step="100" 
-              value={overlordState.min_profit} 
-              className="flash-slider"
-              onChange={(e) => {
-                if(!overlordState.active) {
-                  handleOverlordToggle({ ...overlordState, min_profit: Number(e.target.value) });
-                }
-              }}
-              disabled={overlordState.active}
-              style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
-            />
-          </div>
-        </div>
-      </div>
 
       {gasWars.length > 0 && (
         <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(234, 88, 12, 0.05)', borderColor: '#ea580c', boxShadow: 'inset 0 0 40px rgba(234, 88, 12, 0.15)' }}>
@@ -1058,51 +994,6 @@ const Dashboard = ({
         </div>
       </div>
 
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
-          <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Target Asset</th>
-                <th>Execution Route</th>
-                <th>Entry Price</th>
-                <th>Exit Price</th>
-                <th>Spread %</th>
-                <th>Est. Net Yield</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {arbitrageRoutes.map((route, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
-                  <td style={{ color: '#8b949e' }}>{route.time}</td>
-                  <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
-                  <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
-                  <td>${route.buy_price.toFixed(4)}</td>
-                  <td>${route.sell_price.toFixed(4)}</td>
-                  <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td>
-                    <button 
-                      className="export-btn pulse" 
-                      style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#3b82f6', color: '#fff', fontWeight: 'bold' }}
-                      onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
-                    >
-                      ⚛️ ATOMIC EXECUTE
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       <div className="panel mempool-panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header">
           <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü</h2>
@@ -1357,246 +1248,89 @@ const Dashboard = ({
   );
 };
 
-const SequencerTerminal = ({ sequencerAlerts, wsRef, activeNetwork }) => {
-  return (
-    <div className="sequencer-container">
-      <div className="sequencer-header">
-        <h2>🛰️ L2 SEQUENCER RADAR</h2>
-        <span>Raw OP Stack Pending State Sniffer</span>
-      </div>
-      
-      <div className="sequencer-grid">
-        <div className="seq-stats-card">
-          <h4>Active Sequence</h4>
-          <span className="seq-value pulse-text" style={{ color: '#0ea5e9' }}>{activeNetwork === 'ALL' ? 'BASE MAINNET' : activeNetwork}</span>
-        </div>
-        <div className="seq-stats-card">
-          <h4>Inflight TXs</h4>
-          <span className="seq-value" style={{ color: '#eab308' }}>{sequencerAlerts.length}</span>
-        </div>
-        <div className="seq-stats-card">
-          <h4>Max L1 Commit ETA</h4>
-          <span className="seq-value" style={{ color: '#f85149' }}>
-            {sequencerAlerts.length > 0 ? `${Math.max(...sequencerAlerts.map(a => a.commit_eta)).toFixed(2)}s` : '0.00s'}
-          </span>
-        </div>
-      </div>
-
-      <div className="table-container seq-table-wrapper" style={{ marginTop: '24px' }}>
-        <table className="accounting-table seq-table">
-          <thead>
-            <tr>
-              <th>L2 TX Hash</th>
-              <th>Action Type</th>
-              <th>Value (USD)</th>
-              <th>Risk Level</th>
-              <th>L1 Commit ETA</th>
-              <th>Interception</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(sequencerAlerts || []).map((alert, idx) => (
-              <tr key={idx} className="seq-row-fast" style={{ backgroundColor: alert.risk === 'CRITICAL' ? 'rgba(248, 81, 73, 0.15)' : alert.risk === 'HIGH' ? 'rgba(234, 179, 8, 0.1)' : 'transparent' }}>
-                <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 16)}...</td>
-                <td style={{ fontWeight: 'bold', color: alert.type.includes('EXPLOIT') ? '#f85149' : '#c9d1d9' }}>{alert.type}</td>
-                <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                <td>
-                  <span className="badge" style={{ backgroundColor: alert.risk === 'CRITICAL' ? '#dc2626' : alert.risk === 'HIGH' ? '#ca8a04' : '#30363d', color: '#fff' }}>
-                    {alert.risk}
-                  </span>
-                </td>
-                <td style={{ color: '#eab308', fontFamily: 'monospace' }}>~{alert.commit_eta}s</td>
-                <td>
-                  <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#0ea5e9' }}>
-                    EXEC FRONT-RUN
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {sequencerAlerts.length === 0 && (
-              <tr><td colSpan="6" className="empty-state">Sniffing L2 sequencer memory pool... Awaiting raw data blocks.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-const MultiSigRadar = ({ multiSigAlerts, wsRef }) => {
-  return (
-    <div className="multisig-container">
-      <div className="multisig-header">
-        <h2>🔐 MULTI-SIG PRECOGNITION RADAR</h2>
-        <span>Advanced Gnosis Safe Threshold Monitor</span>
-      </div>
-      
-      <div className="table-container multisig-table-wrapper" style={{ marginTop: '24px' }}>
-        <table className="accounting-table">
-          <thead>
-            <tr>
-              <th>Safe Contract</th>
-              <th>Target Action Hash</th>
-              <th>Signature Threshold</th>
-              <th>Transfer Volume (USD)</th>
-              <th>Status</th>
-              <th>Intervention</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(multiSigAlerts || []).map((alert, idx) => (
-              <tr key={idx} className="seq-row-fast" style={{ backgroundColor: 'rgba(248, 81, 73, 0.05)' }}>
-                <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{formatAddress(alert.safe_address)}</td>
-                <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(alert.target_contract)}</td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: '#eab308', fontWeight: 'bold' }}>{alert.current_sigs}/{alert.required_sigs}</span>
-                    <div className="sig-bar-bg" style={{ width: '80px', height: '6px', background: '#30363d', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div className="sig-bar-fill" style={{ width: `${(alert.current_sigs / alert.required_sigs) * 100}%`, height: '100%', background: '#f85149' }}></div>
-                    </div>
-                  </div>
-                </td>
-                <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                <td>
-                  <span className="badge pulse" style={{ backgroundColor: '#dc2626', color: '#fff' }}>
-                    {alert.status}
-                  </span>
-                </td>
-                <td>
-                  <button className="export-btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#f85149', fontWeight: 'bold' }}>
-                    PRE-EMPTIVE SHORT
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {multiSigAlerts.length === 0 && (
-              <tr><td colSpan="6" className="empty-state">Monitoring multi-sig threshold thresholds... Awaiting signature cascades.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-const AccountAbstractionTerminal = ({ wsRef }) => {
-  const [targetAddr, setTargetAddr] = useState('');
-  const [aaData, setAaData] = useState(null);
-  const [isProfiling, setIsProfiling] = useState(false);
-
-  useEffect(() => {
+const EnclaveTerminal = ({ enclaveState, wsRef }) => {
+  const handleConnect = (provider) => {
     if (!wsRef.current) return;
-    const ws = wsRef.current;
-    const handleAAMsg = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.msg_type === 'AA_RESULT') {
-          setAaData(data.data);
-          setIsProfiling(false);
-        }
-      } catch (e) {}
-    };
-    ws.addEventListener('message', handleAAMsg);
-    return () => ws.removeEventListener('message', handleAAMsg);
-  }, [wsRef]);
-
-  const handleProfile = () => {
-    if (!targetAddr || !wsRef.current) return;
-    setAaData(null);
-    setIsProfiling(true);
     wsRef.current.send(JSON.stringify({
-      action: 'AA_PROFILE',
-      address: targetAddr,
-      network: 'BASE'
+      action: 'CONNECT_ENCLAVE',
+      provider: provider
     }));
   };
 
+  const handleDisconnect = () => {
+    if (!wsRef.current) return;
+    wsRef.current.send(JSON.stringify({ action: 'DISCONNECT_ENCLAVE' }));
+  };
+
   return (
-    <div className="aa-container">
-      <div className="aa-header">
-        <h2>🪪 ERC-4337 ACCOUNT ABSTRACTION PROFILER</h2>
-        <span>Unmasking Institutional Paymasters and Bundler Activity</span>
+    <div className="enclave-container">
+      <div className="enclave-header">
+        <h2>🔐 HARDWARE ENCLAVE & KMS VAULT</h2>
+        <span>FIPS 140-2 Level 3 Validated Transaction Signing</span>
       </div>
 
-      <div className="aa-controls">
-        <input 
-          type="text" 
-          placeholder="Enter Target Wallet Address (0x...)" 
-          value={targetAddr} 
-          onChange={e => setTargetAddr(e.target.value)} 
-          disabled={isProfiling}
-        />
-        <button onClick={handleProfile} disabled={isProfiling || !targetAddr}>
-          {isProfiling ? 'INTERROGATING OP-STACK...' : 'INITIATE AA PROFILING'}
-        </button>
-      </div>
-
-      {aaData && (
-        <div className="aa-results">
-          <div className="aa-main-type">
-            <span style={{ fontSize: '1rem', color: '#8b949e' }}>Account Classification</span>
-            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: aaData.type === 'SCA' ? '#a371f7' : '#3fb950' }}>
-              {aaData.type === 'SCA' ? 'SMART CONTRACT ACCOUNT' : 'EXTERNALLY OWNED ACCOUNT'}
-            </div>
-            <p style={{ color: '#c9d1d9', marginTop: '8px' }}>{aaData.description}</p>
+      <div className="enclave-status-banner" style={{ 
+        backgroundColor: enclaveState.status === 'SECURED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(248, 81, 73, 0.1)',
+        borderColor: enclaveState.status === 'SECURED' ? '#10b981' : '#f85149'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className={`status-orb ${enclaveState.status === 'SECURED' ? 'orb-secured' : 'orb-unlocked'}`}></div>
+          <div>
+            <h3 style={{ margin: 0, color: enclaveState.status === 'SECURED' ? '#10b981' : '#f85149' }}>
+              VAULT STATUS: {enclaveState.status}
+            </h3>
+            <span style={{ fontFamily: 'monospace', color: '#8b949e', fontSize: '0.9rem' }}>
+              {enclaveState.status === 'SECURED' 
+                ? `Active Provider: ${enclaveState.provider} | Key ID: ${enclaveState.key_id}` 
+                : 'Warning: Overlord is currently operating with standard environment variables. Funds are exposed.'}
+            </span>
           </div>
-
-          <div className="aa-grid">
-            <div className="aa-card">
-              <h4>Paymaster Sponsorship</h4>
-              <div style={{ fontSize: '1.2rem', color: aaData.paymaster_sponsored ? '#eab308' : '#8b949e', fontWeight: 'bold' }}>
-                {aaData.paymaster_sponsored ? 'ACTIVE (SPONSORED)' : 'NONE DETECTED'}
-              </div>
-              {aaData.paymaster_sponsored && (
-                <p style={{ color: '#c9d1d9', fontSize: '0.85rem', marginTop: '8px' }}>Entity: {aaData.paymaster_entity}</p>
-              )}
-            </div>
-
-            <div className="aa-card">
-              <h4>Bundler Interactions</h4>
-              <div style={{ fontSize: '1.5rem', color: '#38bdf8', fontWeight: 'bold' }}>
-                {aaData.bundler_activity.toLocaleString()} Ops
-              </div>
-            </div>
-
-            <div className="aa-card">
-              <h4>Estimated Gas Sponsored</h4>
-              <div style={{ fontSize: '1.5rem', color: '#3fb950', fontWeight: 'bold' }}>
-                ${aaData.gas_saved.toLocaleString()}
-              </div>
-            </div>
-
-            <div className="aa-card">
-              <h4>Institutional Risk Score</h4>
-              <div style={{ fontSize: '1.5rem', color: aaData.risk_score > 75 ? '#f85149' : '#3fb950', fontWeight: 'bold' }}>
-                {aaData.risk_score}/100
-              </div>
-            </div>
-          </div>
-
-          {aaData.type === 'SCA' && (
-            <div className="aa-infrastructure">
-              <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px' }}>Infrastructure Footprint</h3>
-              <table className="accounting-table">
-                <tbody>
-                  <tr>
-                    <td style={{ width: '200px', color: '#8b949e' }}>Factory Contract</td>
-                    <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{aaData.factory_address}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ color: '#8b949e' }}>Active Paymaster</td>
-                    <td style={{ fontFamily: 'monospace', color: '#eab308' }}>{aaData.paymaster_address}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ color: '#8b949e' }}>Primary Bundler</td>
-                    <td style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{aaData.bundler_address}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
-      )}
+        {enclaveState.status === 'SECURED' && (
+          <button className="export-btn" style={{ backgroundColor: '#f85149', padding: '8px 24px' }} onClick={handleDisconnect}>
+            SEVER CONNECTION
+          </button>
+        )}
+      </div>
+
+      <div className="enclave-grid">
+        <div className={`enclave-card ${enclaveState.provider === 'AWS_KMS' ? 'active-card' : ''}`}>
+          <div className="card-icon">☁️</div>
+          <h3>Enterprise KMS Integration</h3>
+          <p>Route all autonomous signatures through Amazon Web Services Key Management System. Ideal for high-frequency cloud operations.</p>
+          <ul className="enclave-features">
+            <li>✓ HSM-Backed Security</li>
+            <li>✓ Auto-Scaling Throughput</li>
+            <li>✓ IAM Policy Enforcement</li>
+          </ul>
+          <button 
+            className="enclave-btn" 
+            onClick={() => handleConnect('AWS_KMS')}
+            disabled={enclaveState.status === 'SECURED'}
+          >
+            {enclaveState.provider === 'AWS_KMS' ? 'ACTIVE' : 'INITIALIZE KMS CLIENT'}
+          </button>
+        </div>
+
+        <div className={`enclave-card ${enclaveState.provider === 'HARDWARE_WALLET' ? 'active-card' : ''}`}>
+          <div className="card-icon">🗝️</div>
+          <h3>Physical Hardware Enclave</h3>
+          <p>Bridge A.S.M.O. to a local physical device via WebUSB. Requires manual approval for massive strategic deployments.</p>
+          <ul className="enclave-features">
+            <li>✓ Air-Gapped Key Storage</li>
+            <li>✓ Ledger / Trezor Support</li>
+            <li>✓ Blind Signing Prevention</li>
+          </ul>
+          <button 
+            className="enclave-btn" 
+            style={{ backgroundColor: '#0ea5e9' }}
+            onClick={() => handleConnect('HARDWARE_WALLET')}
+            disabled={enclaveState.status === 'SECURED'}
+          >
+            {enclaveState.provider === 'HARDWARE_WALLET' ? 'ACTIVE' : 'CONNECT LEDGER NANO X'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1630,7 +1364,8 @@ export default function AppWrapper() {
   const [gasWars, setGasWars] = useState([]);
   const [sequencerAlerts, setSequencerAlerts] = useState([]);
   const [multiSigAlerts, setMultiSigAlerts] = useState([]);
-  const [overlordState, setOverlordState] = useState({ active: false, max_spend: 50000, min_profit: 500 });
+  const [overlordState, setOverlordState] = useState({ active: false, max_spend: 50000, min_profit: 500, enclave_secured: false, signer_provider: 'NONE' });
+  const [enclaveState, setEnclaveState] = useState({ status: 'UNLOCKED', provider: 'NONE', key_id: 'N/A', fips_compliant: false });
   
   const [auditInput, setAuditInput] = useState('');
   const [auditNetwork, setAuditNetwork] = useState('BASE');
@@ -1662,6 +1397,10 @@ export default function AppWrapper() {
         ws.onerror = () => setIsConnected(false);
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
+          if (data.msg_type === 'ENCLAVE_STATUS') {
+            setEnclaveState(data.data);
+            return;
+          }
           if (data.msg_type === 'SEQUENCER_ALERT') {
             setSequencerAlerts(prev => [data.data, ...prev].slice(0, 50));
             return;
@@ -1794,11 +1533,14 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v9.0.0.1</span>
+          <span>v10.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
             <span>📊</span> GLOBAL MATRIX
+          </button>
+          <button className={`nav-btn ${activeTab === 'ENCLAVE' ? 'active' : ''}`} onClick={() => setActiveTab('ENCLAVE')} style={{ color: enclaveState.status === 'SECURED' ? '#10b981' : ''}}>
+            <span>{enclaveState.status === 'SECURED' ? '🔐' : '🔓'}</span> KMS ENCLAVE
           </button>
           <button className={`nav-btn ${activeTab === 'SEQUENCER' ? 'active' : ''}`} onClick={() => setActiveTab('SEQUENCER')}>
             <span>🛰️</span> L2 SEQUENCER
@@ -1806,23 +1548,14 @@ export default function AppWrapper() {
           <button className={`nav-btn ${activeTab === 'MULTISIG' ? 'active' : ''}`} onClick={() => setActiveTab('MULTISIG')}>
             <span>🔐</span> MULTI-SIG RADAR
           </button>
-          <button className={`nav-btn ${activeTab === 'AA_PROFILE' ? 'active' : ''}`} onClick={() => setActiveTab('AA_PROFILE')}>
-            <span>🪪</span> 4337 PROFILER
+          <button className="nav-btn locked" disabled>
+            <span>🪪</span> 4337 PROFILER 🔒
           </button>
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
           </button>
           <button className={`nav-btn ${activeTab === 'NEXUS' ? 'active' : ''}`} onClick={() => setActiveTab('NEXUS')}>
             <span>🕸️</span> NEXUS MAP
-          </button>
-          <button className="nav-btn locked" disabled>
-            <span>🛠️</span> OVERLORD FORGE 🔒
-          </button>
-          <button className="nav-btn locked" disabled>
-            <span>⏱️</span> CHRONOS TESTER 🔒
-          </button>
-          <button className="nav-btn locked" disabled>
-            <span>🩸</span> DARK FORENSICS 🔒
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -1837,9 +1570,9 @@ export default function AppWrapper() {
         <div style={{ display: activeTab === 'DASHBOARD' ? 'block' : 'none', height: '100%' }}>
           <Dashboard {...dashboardProps} />
         </div>
+        {activeTab === 'ENCLAVE' && <EnclaveTerminal enclaveState={enclaveState} wsRef={wsRef} />}
         {activeTab === 'SEQUENCER' && <SequencerTerminal sequencerAlerts={sequencerAlerts} wsRef={wsRef} activeNetwork={activeNetwork} />}
         {activeTab === 'MULTISIG' && <MultiSigRadar multiSigAlerts={multiSigAlerts} wsRef={wsRef} />}
-        {activeTab === 'AA_PROFILE' && <AccountAbstractionTerminal wsRef={wsRef} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
         {activeTab === 'NEXUS' && <NexusCartographer wsRef={wsRef} cabalData={cabalData} isScanningCabal={isScanningCabal} setCabalData={setCabalData} activeNetwork={activeNetwork} />}
       </main>
