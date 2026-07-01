@@ -994,6 +994,51 @@ const Dashboard = ({
         </div>
       </div>
 
+      <div className="panel" style={{ marginBottom: '24px' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
+          <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
+        </div>
+        <div className="table-container">
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Detection Time</th>
+                <th>Target Asset</th>
+                <th>Execution Route</th>
+                <th>Entry Price</th>
+                <th>Exit Price</th>
+                <th>Spread %</th>
+                <th>Est. Net Yield</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {arbitrageRoutes.map((route, idx) => (
+                <tr key={idx} style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
+                  <td style={{ color: '#8b949e' }}>{route.time}</td>
+                  <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
+                  <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
+                  <td>${route.buy_price.toFixed(4)}</td>
+                  <td>${route.sell_price.toFixed(4)}</td>
+                  <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
+                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td>
+                    <button 
+                      className="export-btn pulse" 
+                      style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#3b82f6', color: '#fff', fontWeight: 'bold' }}
+                      onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                    >
+                      ⚛️ ATOMIC EXECUTE
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="panel mempool-panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header">
           <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü</h2>
@@ -1248,87 +1293,53 @@ const Dashboard = ({
   );
 };
 
-const EnclaveTerminal = ({ enclaveState, wsRef }) => {
-  const handleConnect = (provider) => {
-    if (!wsRef.current) return;
-    wsRef.current.send(JSON.stringify({
-      action: 'CONNECT_ENCLAVE',
-      provider: provider
-    }));
-  };
-
-  const handleDisconnect = () => {
-    if (!wsRef.current) return;
-    wsRef.current.send(JSON.stringify({ action: 'DISCONNECT_ENCLAVE' }));
-  };
-
+const IndexerTerminal = ({ indexerData, wsRef }) => {
   return (
-    <div className="enclave-container">
-      <div className="enclave-header">
-        <h2>🔐 HARDWARE ENCLAVE & KMS VAULT</h2>
-        <span>FIPS 140-2 Level 3 Validated Transaction Signing</span>
+    <div className="indexer-container">
+      <div className="indexer-header">
+        <h2>🗄️ LOCAL TIMESCALEDB INDEXER</h2>
+        <span>High-Frequency State Telemetry & Ingestion Subgraphs</span>
+      </div>
+      
+      <div className="indexer-grid">
+        <div className="idx-stat-card">
+          <h4>Sync Status</h4>
+          <span className="idx-value pulse-text" style={{ color: '#3fb950' }}>
+            {indexerData ? indexerData.status : 'INITIALIZING...'}
+          </span>
+        </div>
+        <div className="idx-stat-card">
+          <h4>Ingestion Rate</h4>
+          <span className="idx-value" style={{ color: '#0ea5e9' }}>
+            {indexerData ? `${indexerData.sync_rate.toLocaleString()} TX/s` : '0 TX/s'}
+          </span>
+        </div>
+        <div className="idx-stat-card">
+          <h4>Query Latency</h4>
+          <span className="idx-value" style={{ color: '#eab308' }}>
+            {indexerData ? `${indexerData.latency} ms` : '0.0 ms'}
+          </span>
+        </div>
+        <div className="idx-stat-card">
+          <h4>Database Size</h4>
+          <span className="idx-value" style={{ color: '#a371f7' }}>
+            {indexerData ? `${indexerData.db_size.toFixed(3)} GB` : '0.000 GB'}
+          </span>
+        </div>
       </div>
 
-      <div className="enclave-status-banner" style={{ 
-        backgroundColor: enclaveState.status === 'SECURED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(248, 81, 73, 0.1)',
-        borderColor: enclaveState.status === 'SECURED' ? '#10b981' : '#f85149'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div className={`status-orb ${enclaveState.status === 'SECURED' ? 'orb-secured' : 'orb-unlocked'}`}></div>
-          <div>
-            <h3 style={{ margin: 0, color: enclaveState.status === 'SECURED' ? '#10b981' : '#f85149' }}>
-              VAULT STATUS: {enclaveState.status}
-            </h3>
-            <span style={{ fontFamily: 'monospace', color: '#8b949e', fontSize: '0.9rem' }}>
-              {enclaveState.status === 'SECURED' 
-                ? `Active Provider: ${enclaveState.provider} | Key ID: ${enclaveState.key_id}` 
-                : 'Warning: Overlord is currently operating with standard environment variables. Funds are exposed.'}
-            </span>
-          </div>
-        </div>
-        {enclaveState.status === 'SECURED' && (
-          <button className="export-btn" style={{ backgroundColor: '#f85149', padding: '8px 24px' }} onClick={handleDisconnect}>
-            SEVER CONNECTION
-          </button>
-        )}
-      </div>
-
-      <div className="enclave-grid">
-        <div className={`enclave-card ${enclaveState.provider === 'AWS_KMS' ? 'active-card' : ''}`}>
-          <div className="card-icon">☁️</div>
-          <h3>Enterprise KMS Integration</h3>
-          <p>Route all autonomous signatures through Amazon Web Services Key Management System. Ideal for high-frequency cloud operations.</p>
-          <ul className="enclave-features">
-            <li>✓ HSM-Backed Security</li>
-            <li>✓ Auto-Scaling Throughput</li>
-            <li>✓ IAM Policy Enforcement</li>
-          </ul>
-          <button 
-            className="enclave-btn" 
-            onClick={() => handleConnect('AWS_KMS')}
-            disabled={enclaveState.status === 'SECURED'}
-          >
-            {enclaveState.provider === 'AWS_KMS' ? 'ACTIVE' : 'INITIALIZE KMS CLIENT'}
-          </button>
-        </div>
-
-        <div className={`enclave-card ${enclaveState.provider === 'HARDWARE_WALLET' ? 'active-card' : ''}`}>
-          <div className="card-icon">🗝️</div>
-          <h3>Physical Hardware Enclave</h3>
-          <p>Bridge A.S.M.O. to a local physical device via WebUSB. Requires manual approval for massive strategic deployments.</p>
-          <ul className="enclave-features">
-            <li>✓ Air-Gapped Key Storage</li>
-            <li>✓ Ledger / Trezor Support</li>
-            <li>✓ Blind Signing Prevention</li>
-          </ul>
-          <button 
-            className="enclave-btn" 
-            style={{ backgroundColor: '#0ea5e9' }}
-            onClick={() => handleConnect('HARDWARE_WALLET')}
-            disabled={enclaveState.status === 'SECURED'}
-          >
-            {enclaveState.provider === 'HARDWARE_WALLET' ? 'ACTIVE' : 'CONNECT LEDGER NANO X'}
-          </button>
+      <div className="indexer-logs">
+        <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px', marginBottom: '16px' }}>
+          Active Subgraph Pipelines
+        </h3>
+        <div className="subgraph-list">
+          {Array.from({ length: indexerData ? indexerData.active_subgraphs : 0 }).map((_, i) => (
+            <div key={i} className="subgraph-item">
+              <span className="sg-name">Core_Matrix_V{i+1}</span>
+              <span className="sg-status">SYNCED</span>
+              <div className="sg-bar"><div className="sg-fill" style={{ width: '100%' }}></div></div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -1364,6 +1375,7 @@ export default function AppWrapper() {
   const [gasWars, setGasWars] = useState([]);
   const [sequencerAlerts, setSequencerAlerts] = useState([]);
   const [multiSigAlerts, setMultiSigAlerts] = useState([]);
+  const [indexerData, setIndexerData] = useState(null);
   const [overlordState, setOverlordState] = useState({ active: false, max_spend: 50000, min_profit: 500, enclave_secured: false, signer_provider: 'NONE' });
   const [enclaveState, setEnclaveState] = useState({ status: 'UNLOCKED', provider: 'NONE', key_id: 'N/A', fips_compliant: false });
   
@@ -1397,6 +1409,10 @@ export default function AppWrapper() {
         ws.onerror = () => setIsConnected(false);
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
+          if (data.msg_type === 'INDEXER_TELEMETRY') {
+            setIndexerData(data.data);
+            return;
+          }
           if (data.msg_type === 'ENCLAVE_STATUS') {
             setEnclaveState(data.data);
             return;
@@ -1533,11 +1549,14 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v10.0.0.1</span>
+          <span>v11.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
             <span>📊</span> GLOBAL MATRIX
+          </button>
+          <button className={`nav-btn ${activeTab === 'INDEXER' ? 'active' : ''}`} onClick={() => setActiveTab('INDEXER')}>
+            <span>🗄️</span> LOCAL INDEXER
           </button>
           <button className={`nav-btn ${activeTab === 'ENCLAVE' ? 'active' : ''}`} onClick={() => setActiveTab('ENCLAVE')} style={{ color: enclaveState.status === 'SECURED' ? '#10b981' : ''}}>
             <span>{enclaveState.status === 'SECURED' ? '🔐' : '🔓'}</span> KMS ENCLAVE
@@ -1548,8 +1567,8 @@ export default function AppWrapper() {
           <button className={`nav-btn ${activeTab === 'MULTISIG' ? 'active' : ''}`} onClick={() => setActiveTab('MULTISIG')}>
             <span>🔐</span> MULTI-SIG RADAR
           </button>
-          <button className="nav-btn locked" disabled>
-            <span>🪪</span> 4337 PROFILER 🔒
+          <button className={`nav-btn ${activeTab === 'AA_PROFILE' ? 'active' : ''}`} onClick={() => setActiveTab('AA_PROFILE')}>
+            <span>🪪</span> 4337 PROFILER
           </button>
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
@@ -1570,9 +1589,11 @@ export default function AppWrapper() {
         <div style={{ display: activeTab === 'DASHBOARD' ? 'block' : 'none', height: '100%' }}>
           <Dashboard {...dashboardProps} />
         </div>
+        {activeTab === 'INDEXER' && <IndexerTerminal indexerData={indexerData} wsRef={wsRef} />}
         {activeTab === 'ENCLAVE' && <EnclaveTerminal enclaveState={enclaveState} wsRef={wsRef} />}
         {activeTab === 'SEQUENCER' && <SequencerTerminal sequencerAlerts={sequencerAlerts} wsRef={wsRef} activeNetwork={activeNetwork} />}
         {activeTab === 'MULTISIG' && <MultiSigRadar multiSigAlerts={multiSigAlerts} wsRef={wsRef} />}
+        {activeTab === 'AA_PROFILE' && <AccountAbstractionTerminal wsRef={wsRef} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
         {activeTab === 'NEXUS' && <NexusCartographer wsRef={wsRef} cabalData={cabalData} isScanningCabal={isScanningCabal} setCabalData={setCabalData} activeNetwork={activeNetwork} />}
       </main>

@@ -2642,3 +2642,107 @@ a:hover {
   color: #8b949e;
   cursor: not-allowed;
 }
+
+.indexer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.indexer-header {
+  border-bottom: 1px solid #3fb950;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.indexer-header h2 {
+  color: #3fb950;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(63, 185, 80, 0.4);
+}
+
+.indexer-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.indexer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.idx-stat-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.idx-stat-card h4 {
+  margin: 0 0 12px 0;
+  color: #8b949e;
+  font-size: 0.9rem;
+}
+
+.idx-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.indexer-logs {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 24px;
+  flex: 1;
+}
+
+.subgraph-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subgraph-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sg-name {
+  color: #c9d1d9;
+  font-family: monospace;
+  width: 150px;
+}
+
+.sg-status {
+  color: #3fb950;
+  font-weight: bold;
+  font-size: 0.8rem;
+  width: 80px;
+}
+
+.sg-bar {
+  flex: 1;
+  height: 8px;
+  background: #21262d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sg-fill {
+  background: #3fb950;
+  height: 100%;
+  box-shadow: 0 0 10px #3fb950;
+}
