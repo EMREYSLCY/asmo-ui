@@ -993,355 +993,116 @@ const Dashboard = ({
           </table>
         </div>
       </div>
-
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
-          <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Target Asset</th>
-                <th>Execution Route</th>
-                <th>Entry Price</th>
-                <th>Exit Price</th>
-                <th>Spread %</th>
-                <th>Est. Net Yield</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {arbitrageRoutes.map((route, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
-                  <td style={{ color: '#8b949e' }}>{route.time}</td>
-                  <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
-                  <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
-                  <td>${route.buy_price.toFixed(4)}</td>
-                  <td>${route.sell_price.toFixed(4)}</td>
-                  <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
-                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td>
-                    <button 
-                      className="export-btn pulse" 
-                      style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#3b82f6', color: '#fff', fontWeight: 'bold' }}
-                      onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
-                    >
-                      ⚛️ ATOMIC EXECUTE
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel mempool-panel" style={{ marginBottom: '24px' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü</h2>
-          <span className="pulse-text">Live Mempool Scanning...</span>
-        </div>
-        <div className="mempool-grid">
-          <div className="mempool-stat-card">
-            <h4>Pending Block Volume</h4>
-            <div className="mempool-value">${displayMempool.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-          </div>
-          <div className="mempool-stat-card">
-            <h4>Expected Price Impact</h4>
-            <div className={`mempool-value ${displayMempool.impact > 1 ? 'impact-high' : ''}`}>{displayMempool.impact.toFixed(2)}%</div>
-          </div>
-          <div className="mempool-stat-card">
-            <h4>Volatility Forecast</h4>
-            <div className="mempool-value" style={{ color: displayMempool.impact > 2 ? '#f85149' : '#3fb950' }}>
-              {displayMempool.impact > 2 ? '⚠️ HIGH VOLATILITY' : '🌊 STABLE FLOW'}
-            </div>
-          </div>
-        </div>
-        <table className="accounting-table mempool-table">
-          <thead>
-            <tr>
-              <th>Vanguard Hash</th>
-              <th>From Entity</th>
-              <th>To Entity</th>
-              <th>Projected Size (USD)</th>
-              <th>Est. Impact</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayMempool.txs.map((t, i) => (
-              <tr key={i} className="mempool-row">
-                <td className="mempool-hash">{t.tx_hash.substring(0, 15)}...</td>
-                <td>{formatAddress(t.from_addr)}</td>
-                <td>{formatAddress(t.to_addr)}</td>
-                <td style={{ color: '#eab308', fontWeight: 'bold' }}>${t.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                <td>{t.impact}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#58a6ff' }}>🗄️ System Backup & Restore</h2>
-        </div>
-        <div className="project-analysis-grid">
-          <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
-            <table className="accounting-table">
-              <thead>
-                <tr>
-                  <th>Project / Asset Contract</th>
-                  <th>Total Volume (USD)</th>
-                  <th>Tx Count</th>
-                  <th>Unique Wallets</th>
-                  <th>Net PnL</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projectAnalysis.map((p, i) => (
-                  <tr key={i}>
-                    <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{p.asset.length > 20 ? `${p.asset.substring(0, 17)}...` : p.asset}</td>
-                    <td>${p.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td>{p.txCount}</td>
-                    <td>{p.uniqueWallets}</td>
-                    <td>{renderPnL(p.pnl)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="recovery-card" style={{ flex: 1 }}>
-            <h3 style={{ marginTop: 0, color: '#e6edf3' }}>System Operations</h3>
-            <button className="recovery-btn backup-btn" onClick={handleBackup}>
-              📥 Backup A.S.M.O. Database
-            </button>
-            <div style={{ marginTop: '24px' }}>
-              <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
-                📤 Restore System
-              </button>
-              <input type="file" accept=".json" ref={fileInputRef} style={{ display: 'none' }} onChange={handleRestore} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="panel-header">
-          <h2>Orbital Liquidity Map ({activeNetwork})</h2>
-        </div>
-        <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
-          {networkData.nodes.length > 0 && (
-            <ForceGraph3D
-              width={graphDimensions.width}
-              height={graphDimensions.height}
-              graphData={networkData}
-              nodeLabel="name"
-              nodeColor="color"
-              nodeRelSize={6}
-              linkColor="color"
-              linkWidth={1}
-              linkDirectionalParticles={3}
-              linkDirectionalParticleWidth={2}
-              linkDirectionalParticleSpeed={0.006}
-              backgroundColor="#010409"
-              onNodeClick={(node) => setSelectedEntity(node.id)}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="analytics-dashboard">
-        <div className="chart-box">
-          <h3>Protocol Activity Distribution</h3>
-          {chartData.pie.length > 0 && (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={chartData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {chartData.pie.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#0d1117', borderColor: '#30363d' }} itemStyle={{ color: '#c9d1d9' }} />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-        <div className="chart-box">
-          <h3>Intelligence Volume Metric ($)</h3>
-          {chartData.bar.length > 0 && (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData.bar} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <XAxis type="number" stroke="#8b949e" tickFormatter={(value) => `$${value}`} />
-                <YAxis dataKey="name" type="category" stroke="#8b949e" width={80} />
-                <Tooltip contentStyle={{ backgroundColor: '#0d1117', borderColor: '#30363d' }} itemStyle={{ color: '#c9d1d9' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {chartData.bar.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-
-      <div className="panel">
-        <div className="panel-header" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-            <h2>Multi-Chain Live Flow Matrix ({activeNetwork})</h2>
-          </div>
-          <div className="matrix-controls">
-            <input type="text" className="search-input" placeholder="Search hash, address, asset..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            <select className="filter-select" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-              <option value="ALL">All Event Types</option>
-              <option value="ARBITRAGE_ACTIVITY">🔄 Arbitrage Spread</option>
-              <option value="MEV_ACTIVITY">🚨 MEV Exploits</option>
-              <option value="WHALE">🐋 Whale Flows</option>
-              <option value="AGENT_FLOW">🤖 AI Agent Actions</option>
-              <option value="LENDING_ACTIVITY">🏦 Lending/Liquidations</option>
-              <option value="BRIDGE_ACTIVITY">🌉 Bridge Activity</option>
-            </select>
-            <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
-          </div>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Status</th>
-                <th>Action Protocol</th>
-                <th>Target Asset</th>
-                <th>Health & TWAP</th>
-                <th>Base Vol, MEV & Alpha</th>
-                <th>Initiator Entity</th>
-                <th>Receiver Entity</th>
-                <th>Realized P&L</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayedTransactions.map((tx, index) => (
-                <tr key={index} className="tx-row" style={getRowStyle(tx.status, tx.type, tx.flag)} onClick={() => setSelectedTx(tx)}>
-                  <td className="tx-status">
-                    <span className={`badge ${tx.status === 'PENDING' ? 'badge-pending' : 'badge-confirmed'}`}>
-                      {tx.status === 'PENDING' ? '⏳ PENDING' : '✓ CONFIRMED'}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        {renderNetworkBadge(tx.network)}
-                        {renderTypeBadge(tx.type)}
-                        {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
-                        {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
-                        {tx.flag === 'BRIDGE_ACTIVITY' && <span className="badge badge-bridge-activity">🔗 CROSS-CHAIN</span>}
-                        {tx.flag === 'LENDING_ACTIVITY' && <span className="badge badge-lending-activity">🏦 DEFI LENDING</span>}
-                        {tx.flag === 'ARBITRAGE_ACTIVITY' && <span className="badge badge-arbitrage-activity">⚡ SPREAD CAPTURE</span>}
-                        {tx.flag === 'MEV_ACTIVITY' && <span className="badge badge-mev">🚨 MEV EXPLOIT</span>}
-                        {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
-                        {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
-                      </div>
-                      {tx.narrative && (
-                        <span className="narrative-text" style={tx.type === 'ARBITRAGE' ? { color: '#34d399', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' } : tx.flag === 'MEV_ACTIVITY' ? { color: '#fca5a5', borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' } : {}}>
-                          {tx.narrative}
-                        </span>
-                      )}
-                      {tx.cluster && <span className="cluster-badge">{tx.cluster}</span>}
-                    </div>
-                  </td>
-                  <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0, 17)}...` : tx.asset}</td>
-                  <td className="tx-security">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {renderSecurityBadge(tx.sec_score, tx.sec_label)}
-                      {renderHealthFactor(tx.health_factor)}
-                      {tx.twap_trend && renderTwapBadge(tx.twap, tx.twap_trend)}
-                    </div>
-                  </td>
-                  <td className="tx-value">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span>{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</span>
-                      {tx.price_impact > 0.05 && (
-                        <span className={tx.price_impact > 1.0 ? 'impact-high' : 'impact-low'}>📉 Impact: {tx.price_impact}%</span>
-                      )}
-                      {tx.spread > 0 && (
-                        <span className="impact-high" style={{ color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>🔄 Spread: +{tx.spread}%</span>
-                      )}
-                      {tx.mev_extracted > 0 && <span className="mev-text">🔪 Extracted: ${tx.mev_extracted}</span>}
-                    </div>
-                  </td>
-                  <td className="tx-wallet">
-                    <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.from_addr); }}>
-                      {tx.from_label?.includes('Agent') ? renderAgentBadge(tx.from_label, tx.agent_win_rate) : tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr)}
-                    </span>
-                  </td>
-                  <td className="tx-wallet">
-                    <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.to_addr); }}>
-                      {tx.to_label?.includes('Agent') ? renderAgentBadge(tx.to_label, tx.agent_win_rate) : tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr)}
-                    </span>
-                  </td>
-                  <td className="tx-pnl">{renderPnL(tx.pnl)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </>
   );
 };
 
-const IndexerTerminal = ({ indexerData, wsRef }) => {
+const BribeSimulatorTerminal = ({ wsRef }) => {
+  const [baseBribe, setBaseBribe] = useState(5.0);
+  const [competitors, setCompetitors] = useState(3);
+  const [congestion, setCongestion] = useState(65);
+  const [simResults, setSimResults] = useState(null);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  useEffect(() => {
+    if (!wsRef.current) return;
+    const ws = wsRef.current;
+    const handleBribeMsg = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.msg_type === 'BRIBE_SIM_RESULT') {
+          setSimResults(data.data);
+          setIsSimulating(false);
+        }
+      } catch (e) {}
+    };
+    ws.addEventListener('message', handleBribeMsg);
+    return () => ws.removeEventListener('message', handleBribeMsg);
+  }, [wsRef]);
+
+  const handleSimulate = () => {
+    if (!wsRef.current) return;
+    setIsSimulating(true);
+    setSimResults(null);
+    wsRef.current.send(JSON.stringify({
+      action: 'SIMULATE_BRIBE',
+      base_bribe: baseBribe,
+      competitors: competitors,
+      congestion: congestion
+    }));
+  };
+
   return (
-    <div className="indexer-container">
-      <div className="indexer-header">
-        <h2>🗄️ LOCAL TIMESCALEDB INDEXER</h2>
-        <span>High-Frequency State Telemetry & Ingestion Subgraphs</span>
+    <div className="bribe-container">
+      <div className="bribe-header">
+        <h2>🎰 FLASHBOTS PROBABILISTIC SIMULATOR</h2>
+        <span>Dynamic Gas War Inclusion Forecasting</span>
       </div>
-      
-      <div className="indexer-grid">
-        <div className="idx-stat-card">
-          <h4>Sync Status</h4>
-          <span className="idx-value pulse-text" style={{ color: '#3fb950' }}>
-            {indexerData ? indexerData.status : 'INITIALIZING...'}
-          </span>
+
+      <div className="bribe-controls-grid">
+        <div className="bribe-input-card">
+          <label>Base Mempool Bribe (Gwei)</label>
+          <input type="number" value={baseBribe} onChange={(e) => setBaseBribe(e.target.value)} />
+          <span>The current standard execution tip.</span>
         </div>
-        <div className="idx-stat-card">
-          <h4>Ingestion Rate</h4>
-          <span className="idx-value" style={{ color: '#0ea5e9' }}>
-            {indexerData ? `${indexerData.sync_rate.toLocaleString()} TX/s` : '0 TX/s'}
-          </span>
+        <div className="bribe-input-card">
+          <label>Detected Competitors (Bots)</label>
+          <input type="number" value={competitors} onChange={(e) => setCompetitors(e.target.value)} />
+          <span>Active smart contracts targeting the same block.</span>
         </div>
-        <div className="idx-stat-card">
-          <h4>Query Latency</h4>
-          <span className="idx-value" style={{ color: '#eab308' }}>
-            {indexerData ? `${indexerData.latency} ms` : '0.0 ms'}
-          </span>
-        </div>
-        <div className="idx-stat-card">
-          <h4>Database Size</h4>
-          <span className="idx-value" style={{ color: '#a371f7' }}>
-            {indexerData ? `${indexerData.db_size.toFixed(3)} GB` : '0.000 GB'}
-          </span>
+        <div className="bribe-input-card">
+          <label>Network Congestion (%)</label>
+          <input type="number" value={congestion} onChange={(e) => setCongestion(e.target.value)} />
+          <span>Current block space saturation.</span>
         </div>
       </div>
 
-      <div className="indexer-logs">
-        <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px', marginBottom: '16px' }}>
-          Active Subgraph Pipelines
-        </h3>
-        <div className="subgraph-list">
-          {Array.from({ length: indexerData ? indexerData.active_subgraphs : 0 }).map((_, i) => (
-            <div key={i} className="subgraph-item">
-              <span className="sg-name">Core_Matrix_V{i+1}</span>
-              <span className="sg-status">SYNCED</span>
-              <div className="sg-bar"><div className="sg-fill" style={{ width: '100%' }}></div></div>
-            </div>
-          ))}
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0' }}>
+        <button className="bribe-run-btn pulse" onClick={handleSimulate} disabled={isSimulating}>
+          {isSimulating ? 'COMPUTING INCLUSION MATRIX...' : 'RUN MONTE CARLO SIMULATION'}
+        </button>
       </div>
+
+      {simResults && (
+        <div className="bribe-results-wrapper">
+          <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px', marginBottom: '16px' }}>
+            Inclusion Probability Matrix
+          </h3>
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Simulated Bribe (Gwei)</th>
+                <th>Increase vs Base</th>
+                <th>Inclusion Probability</th>
+                <th>System Verdict</th>
+              </tr>
+            </thead>
+            <tbody>
+              {simResults.map((res, idx) => (
+                <tr key={idx} style={{ backgroundColor: res.status === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.1)' : 'transparent' }}>
+                  <td style={{ color: '#c9d1d9', fontWeight: 'bold' }}>{res.bribe_amount}</td>
+                  <td style={{ color: '#8b949e' }}>+{((res.bribe_amount / baseBribe - 1) * 100).toFixed(1)}%</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: res.probability > 90 ? '#3fb950' : res.probability > 50 ? '#eab308' : '#f85149', fontWeight: 'bold' }}>
+                        {res.probability}%
+                      </span>
+                      <div className="sig-bar-bg" style={{ width: '100px', height: '6px', background: '#30363d', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div className="sig-bar-fill" style={{ width: `${res.probability}%`, height: '100%', background: res.probability > 90 ? '#3fb950' : res.probability > 50 ? '#eab308' : '#f85149' }}></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="badge" style={{ backgroundColor: res.status === 'OPTIMAL' ? '#10b981' : res.status === 'OVERPAID' ? '#ea580c' : '#dc2626', color: '#fff' }}>
+                      {res.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
@@ -1549,7 +1310,7 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v11.0.0.1</span>
+          <span>v12.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
@@ -1560,6 +1321,9 @@ export default function AppWrapper() {
           </button>
           <button className={`nav-btn ${activeTab === 'ENCLAVE' ? 'active' : ''}`} onClick={() => setActiveTab('ENCLAVE')} style={{ color: enclaveState.status === 'SECURED' ? '#10b981' : ''}}>
             <span>{enclaveState.status === 'SECURED' ? '🔐' : '🔓'}</span> KMS ENCLAVE
+          </button>
+          <button className={`nav-btn ${activeTab === 'SIMULATOR' ? 'active' : ''}`} onClick={() => setActiveTab('SIMULATOR')}>
+            <span>🎰</span> BRIBE SIMULATOR
           </button>
           <button className={`nav-btn ${activeTab === 'SEQUENCER' ? 'active' : ''}`} onClick={() => setActiveTab('SEQUENCER')}>
             <span>🛰️</span> L2 SEQUENCER
@@ -1591,6 +1355,7 @@ export default function AppWrapper() {
         </div>
         {activeTab === 'INDEXER' && <IndexerTerminal indexerData={indexerData} wsRef={wsRef} />}
         {activeTab === 'ENCLAVE' && <EnclaveTerminal enclaveState={enclaveState} wsRef={wsRef} />}
+        {activeTab === 'SIMULATOR' && <BribeSimulatorTerminal wsRef={wsRef} />}
         {activeTab === 'SEQUENCER' && <SequencerTerminal sequencerAlerts={sequencerAlerts} wsRef={wsRef} activeNetwork={activeNetwork} />}
         {activeTab === 'MULTISIG' && <MultiSigRadar multiSigAlerts={multiSigAlerts} wsRef={wsRef} />}
         {activeTab === 'AA_PROFILE' && <AccountAbstractionTerminal wsRef={wsRef} />}

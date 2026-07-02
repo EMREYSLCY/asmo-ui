@@ -2746,3 +2746,107 @@ a:hover {
   height: 100%;
   box-shadow: 0 0 10px #3fb950;
 }
+
+.bribe-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.bribe-header {
+  border-bottom: 1px solid #eab308;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.bribe-header h2 {
+  color: #eab308;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+}
+
+.bribe-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.bribe-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.bribe-input-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bribe-input-card label {
+  color: #c9d1d9;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.bribe-input-card input {
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #eab308;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  font-family: monospace;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+.bribe-input-card input:focus {
+  border-color: #eab308;
+}
+
+.bribe-input-card span {
+  color: #8b949e;
+  font-size: 0.85rem;
+}
+
+.bribe-run-btn {
+  background: #eab308;
+  color: #000;
+  border: none;
+  padding: 16px 40px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.2);
+}
+
+.bribe-run-btn:hover:not(:disabled) {
+  background: #fef08a;
+  box-shadow: 0 0 30px rgba(234, 179, 8, 0.4);
+}
+
+.bribe-run-btn:disabled {
+  background: #30363d;
+  color: #8b949e;
+  cursor: not-allowed;
+  box-shadow: none;
+  animation: none;
+}
+
+.bribe-results-wrapper {
+  flex: 1;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 24px;
+  overflow-y: auto;
+}
+
