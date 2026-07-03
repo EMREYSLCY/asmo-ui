@@ -853,254 +853,111 @@ const Dashboard = ({
           </table>
         </div>
       </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#64748b', boxShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.15)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics</h2>
-          <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Network</th>
-                <th>Suspect Hash</th>
-                <th>Source Entity</th>
-                <th>Wash Protocol</th>
-                <th>Est. Laundered (USD)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {darkPoolAlerts.map((alert, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(100, 116, 139, 0.1)' }}>
-                  <td style={{ color: '#8b949e' }}>{alert.time}</td>
-                  <td>{renderNetworkBadge(alert.network)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 15)}...</td>
-                  <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(alert.from_addr)} className="entity-link">{formatAddress(alert.from_addr)}</td>
-                  <td style={{ color: '#f85149', fontWeight: 'bold' }}>{alert.protocol}</td>
-                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#a371f7', boxShadow: 'inset 0 0 20px rgba(163, 113, 247, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper</h2>
-          <span className="pulse-text" style={{ color: '#a371f7' }}>Scanning Factory Contracts...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Network</th>
-                <th>Target Token</th>
-                <th>Pool Pair</th>
-                <th>Dev/Creator</th>
-                <th>Security Report</th>
-                <th>System Verdict</th>
-              </tr>
-            </thead>
-            <tbody>
-              {snipeTargets.map((target, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(163, 113, 247, 0.05)' }}>
-                  <td style={{ color: '#8b949e' }}>{target.time}</td>
-                  <td>{renderNetworkBadge(target.network)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(target.token0)} className="entity-link">{formatAddress(target.token0)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(target.pair)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
-                  <td>{renderSecurityBadge(target.score, target.label)}</td>
-                  <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone</h2>
-          <span className="pulse-text" style={{ color: '#ef4444' }}>Tracking Vulnerable Collateral...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Target Entity</th>
-                <th>Locked Collateral</th>
-                <th>Active Debt</th>
-                <th>Health Factor</th>
-                <th>Status</th>
-                <th>Est. Liq. Reward</th>
-              </tr>
-            </thead>
-            <tbody>
-              {killZone.map((kz, i) => (
-                <tr key={i} style={{ backgroundColor: kz.hf < 1.05 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.1)' }}>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(kz.address)} className="entity-link">{formatAddress(kz.address)}</td>
-                  <td>${kz.collateral.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td style={{ color: '#f85149' }}>${kz.debt.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td style={{ fontWeight: 'bold', color: kz.hf < 1.05 ? '#f85149' : '#eab308' }}>{kz.hf}</td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: kz.hf < 1.05 ? '#dc2626' : '#ca8a04', color: '#fff' }}>
-                      {kz.hf < 1.05 ? 'CRITICAL' : 'AT RISK'}
-                    </span>
-                  </td>
-                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#ca8a04', boxShadow: 'inset 0 0 20px rgba(202, 138, 4, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter</h2>
-          <span className="pulse-text" style={{ color: '#eab308' }}>Detecting Wash Trading...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Sybil Cluster ID</th>
-                <th>Connected Entities</th>
-                <th>Network Dominance (PnL)</th>
-                <th>Risk Profile</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sybilClusters.map((cluster, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(202, 138, 4, 0.05)' }}>
-                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>{cluster.name}</td>
-                  <td style={{ color: '#c9d1d9' }}>{cluster.wallets.length} Wallets Linked</td>
-                  <td style={{ color: cluster.total_pnl >= 0 ? '#3fb950' : '#f85149', fontWeight: 'bold' }}>
-                    {cluster.total_pnl >= 0 ? '+' : '-'}${Math.abs(cluster.total_pnl).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: cluster.wallets.length > 5 ? '#dc2626' : '#ea580c', color: '#fff' }}>
-                      {cluster.wallets.length > 5 ? 'HIGH RISK (SYBIL)' : 'SUSPICIOUS RING'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </>
   );
 };
 
-const BribeSimulatorTerminal = ({ wsRef }) => {
-  const [baseBribe, setBaseBribe] = useState(5.0);
-  const [competitors, setCompetitors] = useState(3);
-  const [congestion, setCongestion] = useState(65);
-  const [simResults, setSimResults] = useState(null);
-  const [isSimulating, setIsSimulating] = useState(false);
+const DynamicSlippageTerminal = ({ wsRef }) => {
+  const [tradeSize, setTradeSize] = useState(25000);
+  const [liquidity, setLiquidity] = useState(1500000);
+  const [volatility, setVolatility] = useState(45);
+  const [slipData, setSlipData] = useState(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   useEffect(() => {
     if (!wsRef.current) return;
     const ws = wsRef.current;
-    const handleBribeMsg = (event) => {
+    const handleSlipMsg = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.msg_type === 'BRIBE_SIM_RESULT') {
-          setSimResults(data.data);
-          setIsSimulating(false);
+        if (data.msg_type === 'SLIPPAGE_RESULT') {
+          setSlipData(data.data);
+          setIsCalculating(false);
         }
       } catch (e) {}
     };
-    ws.addEventListener('message', handleBribeMsg);
-    return () => ws.removeEventListener('message', handleBribeMsg);
+    ws.addEventListener('message', handleSlipMsg);
+    return () => ws.removeEventListener('message', handleSlipMsg);
   }, [wsRef]);
 
-  const handleSimulate = () => {
+  const handleCalculate = () => {
     if (!wsRef.current) return;
-    setIsSimulating(true);
-    setSimResults(null);
+    setIsCalculating(true);
+    setSlipData(null);
     wsRef.current.send(JSON.stringify({
-      action: 'SIMULATE_BRIBE',
-      base_bribe: baseBribe,
-      competitors: competitors,
-      congestion: congestion
+      action: 'CALCULATE_SLIPPAGE',
+      trade_size: tradeSize,
+      liquidity: liquidity,
+      volatility: volatility
     }));
   };
 
   return (
-    <div className="bribe-container">
-      <div className="bribe-header">
-        <h2>🎰 FLASHBOTS PROBABILISTIC SIMULATOR</h2>
-        <span>Dynamic Gas War Inclusion Forecasting</span>
+    <div className="slippage-container">
+      <div className="slippage-header">
+        <h2>🧠 DYNAMIC SLIPPAGE ML MODEL</h2>
+        <span>Neural-Net Driven Minimum Safe Slippage Execution</span>
       </div>
 
-      <div className="bribe-controls-grid">
-        <div className="bribe-input-card">
-          <label>Base Mempool Bribe (Gwei)</label>
-          <input type="number" value={baseBribe} onChange={(e) => setBaseBribe(e.target.value)} />
-          <span>The current standard execution tip.</span>
+      <div className="slippage-inputs-container">
+        <div className="slip-input-group">
+          <label>Target Trade Size (USD)</label>
+          <div className="slip-val-display">${Number(tradeSize).toLocaleString()}</div>
+          <input type="range" min="1000" max="1000000" step="1000" value={tradeSize} onChange={(e) => setTradeSize(e.target.value)} />
         </div>
-        <div className="bribe-input-card">
-          <label>Detected Competitors (Bots)</label>
-          <input type="number" value={competitors} onChange={(e) => setCompetitors(e.target.value)} />
-          <span>Active smart contracts targeting the same block.</span>
+        <div className="slip-input-group">
+          <label>DEX Pool Liquidity (USD)</label>
+          <div className="slip-val-display">${Number(liquidity).toLocaleString()}</div>
+          <input type="range" min="50000" max="10000000" step="50000" value={liquidity} onChange={(e) => setLiquidity(e.target.value)} />
         </div>
-        <div className="bribe-input-card">
-          <label>Network Congestion (%)</label>
-          <input type="number" value={congestion} onChange={(e) => setCongestion(e.target.value)} />
-          <span>Current block space saturation.</span>
+        <div className="slip-input-group">
+          <label>Mempool Volatility Index (1-100)</label>
+          <div className="slip-val-display" style={{ color: volatility > 75 ? '#f85149' : volatility > 40 ? '#eab308' : '#3fb950' }}>{volatility}</div>
+          <input type="range" min="1" max="100" step="1" value={volatility} onChange={(e) => setVolatility(e.target.value)} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0' }}>
-        <button className="bribe-run-btn pulse" onClick={handleSimulate} disabled={isSimulating}>
-          {isSimulating ? 'COMPUTING INCLUSION MATRIX...' : 'RUN MONTE CARLO SIMULATION'}
+      <div className="slippage-action-bar">
+        <button className="slip-calc-btn pulse" onClick={handleCalculate} disabled={isCalculating}>
+          {isCalculating ? 'RUNNING INFERENCE...' : 'CALCULATE OPTIMAL SLIPPAGE'}
         </button>
       </div>
 
-      {simResults && (
-        <div className="bribe-results-wrapper">
-          <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px', marginBottom: '16px' }}>
-            Inclusion Probability Matrix
-          </h3>
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Simulated Bribe (Gwei)</th>
-                <th>Increase vs Base</th>
-                <th>Inclusion Probability</th>
-                <th>System Verdict</th>
-              </tr>
-            </thead>
-            <tbody>
-              {simResults.map((res, idx) => (
-                <tr key={idx} style={{ backgroundColor: res.status === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.1)' : 'transparent' }}>
-                  <td style={{ color: '#c9d1d9', fontWeight: 'bold' }}>{res.bribe_amount}</td>
-                  <td style={{ color: '#8b949e' }}>+{((res.bribe_amount / baseBribe - 1) * 100).toFixed(1)}%</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: res.probability > 90 ? '#3fb950' : res.probability > 50 ? '#eab308' : '#f85149', fontWeight: 'bold' }}>
-                        {res.probability}%
-                      </span>
-                      <div className="sig-bar-bg" style={{ width: '100px', height: '6px', background: '#30363d', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div className="sig-bar-fill" style={{ width: `${res.probability}%`, height: '100%', background: res.probability > 90 ? '#3fb950' : res.probability > 50 ? '#eab308' : '#f85149' }}></div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: res.status === 'OPTIMAL' ? '#10b981' : res.status === 'OVERPAID' ? '#ea580c' : '#dc2626', color: '#fff' }}>
-                      {res.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {slipData && (
+        <div className="slippage-results-grid">
+          <div className="slip-result-card main-slip">
+            <h4>Recommended Slippage</h4>
+            <div className="slip-hero-value" style={{ color: slipData.recommended_slippage > 5 ? '#f85149' : '#3fb950' }}>
+              {slipData.recommended_slippage}%
+            </div>
+            <span className="slip-sub-text">To guarantee execution against MEV bots</span>
+          </div>
+          
+          <div className="slip-result-side">
+            <div className="slip-stat-row">
+              <span>Base Mathematical Impact:</span>
+              <strong style={{ color: '#0ea5e9' }}>{slipData.base_impact}%</strong>
+            </div>
+            <div className="slip-stat-row">
+              <span>Neural Confidence Score:</span>
+              <strong style={{ color: '#a371f7' }}>{slipData.confidence_score}%</strong>
+            </div>
+            <div className="slip-stat-row">
+              <span>Historical Success Rate:</span>
+              <strong style={{ color: '#10b981' }}>{slipData.historical_success}%</strong>
+            </div>
+            <div className="slip-stat-row">
+              <span>MEV Bait Risk Classification:</span>
+              <strong style={{ color: slipData.risk_classification.includes('HIGH') || slipData.risk_classification.includes('CRITICAL') ? '#f85149' : '#eab308' }}>
+                {slipData.risk_classification}
+              </strong>
+            </div>
+            <div style={{ marginTop: '20px' }}>
+              <button className="export-btn" style={{ width: '100%', backgroundColor: '#21262d', border: '1px solid #30363d', padding: '12px' }}>
+                EXPORT TO OVERLORD FORGE
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -1170,6 +1027,7 @@ export default function AppWrapper() {
         ws.onerror = () => setIsConnected(false);
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
+          if (data.msg_type === 'SLIPPAGE_RESULT') return;
           if (data.msg_type === 'INDEXER_TELEMETRY') {
             setIndexerData(data.data);
             return;
@@ -1310,7 +1168,7 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v12.0.0.1</span>
+          <span>v13.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
@@ -1321,6 +1179,9 @@ export default function AppWrapper() {
           </button>
           <button className={`nav-btn ${activeTab === 'ENCLAVE' ? 'active' : ''}`} onClick={() => setActiveTab('ENCLAVE')} style={{ color: enclaveState.status === 'SECURED' ? '#10b981' : ''}}>
             <span>{enclaveState.status === 'SECURED' ? '🔐' : '🔓'}</span> KMS ENCLAVE
+          </button>
+          <button className={`nav-btn ${activeTab === 'SLIPPAGE_AI' ? 'active' : ''}`} onClick={() => setActiveTab('SLIPPAGE_AI')}>
+            <span>🧠</span> ML SLIPPAGE AI
           </button>
           <button className={`nav-btn ${activeTab === 'SIMULATOR' ? 'active' : ''}`} onClick={() => setActiveTab('SIMULATOR')}>
             <span>🎰</span> BRIBE SIMULATOR
@@ -1337,9 +1198,6 @@ export default function AppWrapper() {
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
           </button>
-          <button className={`nav-btn ${activeTab === 'NEXUS' ? 'active' : ''}`} onClick={() => setActiveTab('NEXUS')}>
-            <span>🕸️</span> NEXUS MAP
-          </button>
         </nav>
         <div className="sidebar-footer">
           <div className="status-indicator" style={{ color: isConnected ? '#3fb950' : '#f85149' }}>
@@ -1355,12 +1213,12 @@ export default function AppWrapper() {
         </div>
         {activeTab === 'INDEXER' && <IndexerTerminal indexerData={indexerData} wsRef={wsRef} />}
         {activeTab === 'ENCLAVE' && <EnclaveTerminal enclaveState={enclaveState} wsRef={wsRef} />}
+        {activeTab === 'SLIPPAGE_AI' && <DynamicSlippageTerminal wsRef={wsRef} />}
         {activeTab === 'SIMULATOR' && <BribeSimulatorTerminal wsRef={wsRef} />}
         {activeTab === 'SEQUENCER' && <SequencerTerminal sequencerAlerts={sequencerAlerts} wsRef={wsRef} activeNetwork={activeNetwork} />}
         {activeTab === 'MULTISIG' && <MultiSigRadar multiSigAlerts={multiSigAlerts} wsRef={wsRef} />}
         {activeTab === 'AA_PROFILE' && <AccountAbstractionTerminal wsRef={wsRef} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
-        {activeTab === 'NEXUS' && <NexusCartographer wsRef={wsRef} cabalData={cabalData} isScanningCabal={isScanningCabal} setCabalData={setCabalData} activeNetwork={activeNetwork} />}
       </main>
     </div>
   );
