@@ -406,6 +406,69 @@ const Dashboard = ({
         </div>
       )}
 
+      <div className="panel overlord-panel" style={{ marginBottom: '24px', background: overlordState.active ? 'linear-gradient(90deg, #1f0535 0%, #0d1117 100%)' : '#010409', borderColor: overlordState.active ? '#d946ef' : '#30363d', boxShadow: overlordState.active ? 'inset 0 0 40px rgba(217, 70, 239, 0.15)' : 'none', transition: 'all 0.4s ease' }}>
+        <div className="panel-header" style={{ borderBottom: '1px solid #30363d', paddingBottom: '16px' }}>
+          <div>
+            <h2 style={{ color: overlordState.active ? '#d946ef' : '#8b949e', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              🤖 OVERLORD AUTONOMOUS AI
+              {overlordState.active && <span className="badge" style={{ backgroundColor: '#d946ef', color: '#000', fontSize: '0.8rem', animation: 'pulse-danger 2s infinite' }}>SYSTEM LIVE</span>}
+            </h2>
+            <span style={{ fontSize: '0.85rem', color: '#8b949e' }}>Hand over control to the AI. A.S.M.O. will automatically execute snipes, front-runs, and cross-chain flashloans.</span>
+          </div>
+          <button 
+            onClick={handleOverlordToggle}
+            style={{
+              padding: '12px 32px',
+              fontSize: '1.2rem',
+              fontWeight: '900',
+              letterSpacing: '2px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              border: overlordState.active ? '2px solid #d946ef' : '2px solid #8b949e',
+              backgroundColor: overlordState.active ? 'rgba(217, 70, 239, 0.2)' : 'transparent',
+              color: overlordState.active ? '#fdf4ff' : '#8b949e',
+              boxShadow: overlordState.active ? '0 0 20px rgba(217, 70, 239, 0.5)' : 'none',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {overlordState.active ? 'DISENGAGE' : 'ENGAGE OVERLORD'}
+          </button>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '20px' }}>
+          <div className="flash-slider-container" style={{ margin: 0 }}>
+            <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Max Execution Capital (USD): <span style={{color: '#eab308', fontWeight: 'bold'}}>${overlordState.max_spend.toLocaleString()}</span></label>
+            <input 
+              type="range" min="1000" max="500000" step="1000" 
+              value={overlordState.max_spend} 
+              className="flash-slider"
+              onChange={(e) => {
+                if(!overlordState.active) {
+                  handleOverlordToggle({ ...overlordState, max_spend: Number(e.target.value) });
+                }
+              }}
+              disabled={overlordState.active}
+              style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
+            />
+          </div>
+          <div className="flash-slider-container" style={{ margin: 0 }}>
+            <label style={{ color: overlordState.active ? '#e879f9' : '#8b949e' }}>Min Expected Profit (USD): <span style={{color: '#3fb950', fontWeight: 'bold'}}>${overlordState.min_profit.toLocaleString()}</span></label>
+            <input 
+              type="range" min="100" max="10000" step="100" 
+              value={overlordState.min_profit} 
+              className="flash-slider"
+              onChange={(e) => {
+                if(!overlordState.active) {
+                  handleOverlordToggle({ ...overlordState, min_profit: Number(e.target.value) });
+                }
+              }}
+              disabled={overlordState.active}
+              style={{ background: overlordState.active ? '#30363d' : '#21262d' }}
+            />
+          </div>
+        </div>
+      </div>
+
       {gasWars.length > 0 && (
         <div className="panel" style={{ marginBottom: '24px', backgroundColor: 'rgba(234, 88, 12, 0.05)', borderColor: '#ea580c', boxShadow: 'inset 0 0 40px rgba(234, 88, 12, 0.15)' }}>
           <div className="panel-header">
@@ -853,109 +916,553 @@ const Dashboard = ({
           </table>
         </div>
       </div>
+
+      <div className="panel" style={{ marginBottom: '24px', borderColor: '#64748b', boxShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.15)' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics</h2>
+          <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC...</span>
+        </div>
+        <div className="table-container">
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Detection Time</th>
+                <th>Network</th>
+                <th>Suspect Hash</th>
+                <th>Source Entity</th>
+                <th>Wash Protocol</th>
+                <th>Est. Laundered (USD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {darkPoolAlerts.map((alert, idx) => (
+                <tr key={idx} style={{ backgroundColor: 'rgba(100, 116, 139, 0.1)' }}>
+                  <td style={{ color: '#8b949e' }}>{alert.time}</td>
+                  <td>{renderNetworkBadge(alert.network)}</td>
+                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 15)}...</td>
+                  <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(alert.from_addr)} className="entity-link">{formatAddress(alert.from_addr)}</td>
+                  <td style={{ color: '#f85149', fontWeight: 'bold' }}>{alert.protocol}</td>
+                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: '24px', borderColor: '#a371f7', boxShadow: 'inset 0 0 20px rgba(163, 113, 247, 0.05)' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper</h2>
+          <span className="pulse-text" style={{ color: '#a371f7' }}>Scanning Factory Contracts...</span>
+        </div>
+        <div className="table-container">
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Network</th>
+                <th>Target Token</th>
+                <th>Pool Pair</th>
+                <th>Dev/Creator</th>
+                <th>Security Report</th>
+                <th>System Verdict</th>
+              </tr>
+            </thead>
+            <tbody>
+              {snipeTargets.map((target, idx) => (
+                <tr key={idx} style={{ backgroundColor: 'rgba(163, 113, 247, 0.05)' }}>
+                  <td style={{ color: '#8b949e' }}>{target.time}</td>
+                  <td>{renderNetworkBadge(target.network)}</td>
+                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(target.token0)} className="entity-link">{formatAddress(target.token0)}</td>
+                  <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }}>{formatAddress(target.pair)}</td>
+                  <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
+                  <td>{renderSecurityBadge(target.score, target.label)}</td>
+                  <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone</h2>
+          <span className="pulse-text" style={{ color: '#ef4444' }}>Tracking Vulnerable Collateral...</span>
+        </div>
+        <div className="table-container">
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Target Entity</th>
+                <th>Locked Collateral</th>
+                <th>Active Debt</th>
+                <th>Health Factor</th>
+                <th>Status</th>
+                <th>Est. Liq. Reward</th>
+              </tr>
+            </thead>
+            <tbody>
+              {killZone.map((kz, i) => (
+                <tr key={i} style={{ backgroundColor: kz.hf < 1.05 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.1)' }}>
+                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(kz.address)} className="entity-link">{formatAddress(kz.address)}</td>
+                  <td>${kz.collateral.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td style={{ color: '#f85149' }}>${kz.debt.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td style={{ fontWeight: 'bold', color: kz.hf < 1.05 ? '#f85149' : '#eab308' }}>{kz.hf}</td>
+                  <td>
+                    <span className="badge" style={{ backgroundColor: kz.hf < 1.05 ? '#dc2626' : '#ca8a04', color: '#fff' }}>
+                      {kz.hf < 1.05 ? 'CRITICAL' : 'AT RISK'}
+                    </span>
+                  </td>
+                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: '24px', borderColor: '#ca8a04', boxShadow: 'inset 0 0 20px rgba(202, 138, 4, 0.05)' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter</h2>
+          <span className="pulse-text" style={{ color: '#eab308' }}>Detecting Wash Trading...</span>
+        </div>
+        <div className="table-container">
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Sybil Cluster ID</th>
+                <th>Connected Entities</th>
+                <th>Network Dominance (PnL)</th>
+                <th>Risk Profile</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sybilClusters.map((cluster, idx) => (
+                <tr key={idx} style={{ backgroundColor: 'rgba(202, 138, 4, 0.05)' }}>
+                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>{cluster.name}</td>
+                  <td style={{ color: '#c9d1d9' }}>{cluster.wallets.length} Wallets Linked</td>
+                  <td style={{ color: cluster.total_pnl >= 0 ? '#3fb950' : '#f85149', fontWeight: 'bold' }}>
+                    {cluster.total_pnl >= 0 ? '+' : '-'}${Math.abs(cluster.total_pnl).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </td>
+                  <td>
+                    <span className="badge" style={{ backgroundColor: cluster.wallets.length > 5 ? '#dc2626' : '#ea580c', color: '#fff' }}>
+                      {cluster.wallets.length > 5 ? 'HIGH RISK (SYBIL)' : 'SUSPICIOUS RING'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: '24px' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#10b981' }}>🌉 Cross-Chain Arbitrage Radar</h2>
+          <span className="pulse-text" style={{ color: '#10b981' }}>Scanning Inter-Chain Spreads...</span>
+        </div>
+        <div className="table-container">
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Detection Time</th>
+                <th>Target Asset</th>
+                <th>Execution Route</th>
+                <th>Entry Price</th>
+                <th>Exit Price</th>
+                <th>Spread %</th>
+                <th>Est. Net Yield</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {arbitrageRoutes.map((route, idx) => (
+                <tr key={idx} style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
+                  <td style={{ color: '#8b949e' }}>{route.time}</td>
+                  <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
+                  <td style={{ fontWeight: 'bold', color: '#c9d1d9' }}>{route.route}</td>
+                  <td>${route.buy_price.toFixed(4)}</td>
+                  <td>${route.sell_price.toFixed(4)}</td>
+                  <td style={{ color: '#10b981', fontWeight: 'bold' }}>+{route.spread}%</td>
+                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${route.est_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td>
+                    <button 
+                      className="export-btn pulse" 
+                      style={{ padding: '4px 12px', fontSize: '0.75rem', backgroundColor: '#3b82f6', color: '#fff', fontWeight: 'bold' }}
+                      onClick={() => setAtomicSimulator({ isOpen: true, route: route, amount: 50000, status: 'IDLE', result: null })}
+                    >
+                      ⚛️ ATOMIC EXECUTE
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="panel mempool-panel" style={{ marginBottom: '24px' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#eab308' }}>🔮 Taktiksel Mempool Simülatörü</h2>
+          <span className="pulse-text">Live Mempool Scanning...</span>
+        </div>
+        <div className="mempool-grid">
+          <div className="mempool-stat-card">
+            <h4>Pending Block Volume</h4>
+            <div className="mempool-value">${displayMempool.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+          </div>
+          <div className="mempool-stat-card">
+            <h4>Expected Price Impact</h4>
+            <div className={`mempool-value ${displayMempool.impact > 1 ? 'impact-high' : ''}`}>{displayMempool.impact.toFixed(2)}%</div>
+          </div>
+          <div className="mempool-stat-card">
+            <h4>Volatility Forecast</h4>
+            <div className="mempool-value" style={{ color: displayMempool.impact > 2 ? '#f85149' : '#3fb950' }}>
+              {displayMempool.impact > 2 ? '⚠️ HIGH VOLATILITY' : '🌊 STABLE FLOW'}
+            </div>
+          </div>
+        </div>
+        <table className="accounting-table mempool-table">
+          <thead>
+            <tr>
+              <th>Vanguard Hash</th>
+              <th>From Entity</th>
+              <th>To Entity</th>
+              <th>Projected Size (USD)</th>
+              <th>Est. Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayMempool.txs.map((t, i) => (
+              <tr key={i} className="mempool-row">
+                <td className="mempool-hash">{t.tx_hash.substring(0, 15)}...</td>
+                <td>{formatAddress(t.from_addr)}</td>
+                <td>{formatAddress(t.to_addr)}</td>
+                <td style={{ color: '#eab308', fontWeight: 'bold' }}>${t.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                <td>{t.impact}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="panel" style={{ marginBottom: '24px' }}>
+        <div className="panel-header">
+          <h2 style={{ color: '#58a6ff' }}>🗄️ System Backup & Restore</h2>
+        </div>
+        <div className="project-analysis-grid">
+          <div className="table-container" style={{ flex: 2, marginRight: '16px' }}>
+            <table className="accounting-table">
+              <thead>
+                <tr>
+                  <th>Project / Asset Contract</th>
+                  <th>Total Volume (USD)</th>
+                  <th>Tx Count</th>
+                  <th>Unique Wallets</th>
+                  <th>Net PnL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {projectAnalysis.map((p, i) => (
+                  <tr key={i}>
+                    <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{p.asset.length > 20 ? `${p.asset.substring(0, 17)}...` : p.asset}</td>
+                    <td>${p.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td>{p.txCount}</td>
+                    <td>{p.uniqueWallets}</td>
+                    <td>{renderPnL(p.pnl)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="recovery-card" style={{ flex: 1 }}>
+            <h3 style={{ marginTop: 0, color: '#e6edf3' }}>System Operations</h3>
+            <button className="recovery-btn backup-btn" onClick={handleBackup}>
+              📥 Backup A.S.M.O. Database
+            </button>
+            <div style={{ marginTop: '24px' }}>
+              <button className="recovery-btn restore-btn" onClick={() => fileInputRef.current.click()}>
+                📤 Restore System
+              </button>
+              <input type="file" accept=".json" ref={fileInputRef} style={{ display: 'none' }} onChange={handleRestore} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: '24px' }}>
+        <div className="panel-header">
+          <h2>Orbital Liquidity Map ({activeNetwork})</h2>
+        </div>
+        <div className="graph-container" ref={containerRef} style={{ height: '400px', backgroundColor: '#010409', borderRadius: '8px', overflow: 'hidden', border: '1px solid #30363d' }}>
+          {networkData.nodes.length > 0 && (
+            <ForceGraph3D
+              width={graphDimensions.width}
+              height={graphDimensions.height}
+              graphData={networkData}
+              nodeLabel="name"
+              nodeColor="color"
+              nodeRelSize={6}
+              linkColor="color"
+              linkWidth={1}
+              linkDirectionalParticles={3}
+              linkDirectionalParticleWidth={2}
+              linkDirectionalParticleSpeed={0.006}
+              backgroundColor="#010409"
+              onNodeClick={(node) => setSelectedEntity(node.id)}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="analytics-dashboard">
+        <div className="chart-box">
+          <h3>Protocol Activity Distribution</h3>
+          {chartData.pie.length > 0 && (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={chartData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {chartData.pie.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#0d1117', borderColor: '#30363d' }} itemStyle={{ color: '#c9d1d9' }} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+        <div className="chart-box">
+          <h3>Intelligence Volume Metric ($)</h3>
+          {chartData.bar.length > 0 && (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={chartData.bar} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <XAxis type="number" stroke="#8b949e" tickFormatter={(value) => `$${value}`} />
+                <YAxis dataKey="name" type="category" stroke="#8b949e" width={80} />
+                <Tooltip contentStyle={{ backgroundColor: '#0d1117', borderColor: '#30363d' }} itemStyle={{ color: '#c9d1d9' }} />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {chartData.bar.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-header" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            <h2>Multi-Chain Live Flow Matrix ({activeNetwork})</h2>
+          </div>
+          <div className="matrix-controls">
+            <input type="text" className="search-input" placeholder="Search hash, address, asset..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <select className="filter-select" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              <option value="ALL">All Event Types</option>
+              <option value="ARBITRAGE_ACTIVITY">🔄 Arbitrage Spread</option>
+              <option value="MEV_ACTIVITY">🚨 MEV Exploits</option>
+              <option value="WHALE">🐋 Whale Flows</option>
+              <option value="AGENT_FLOW">🤖 AI Agent Actions</option>
+              <option value="LENDING_ACTIVITY">🏦 Lending/Liquidations</option>
+              <option value="BRIDGE_ACTIVITY">🌉 Bridge Activity</option>
+            </select>
+            <button className="export-btn" onClick={exportToCSV}>Backup Matrix Data</button>
+          </div>
+        </div>
+        <div className="table-container">
+          <table className="accounting-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Action Protocol</th>
+                <th>Target Asset</th>
+                <th>Health & TWAP</th>
+                <th>Base Vol, MEV & Alpha</th>
+                <th>Initiator Entity</th>
+                <th>Receiver Entity</th>
+                <th>Realized P&L</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayedTransactions.map((tx, index) => (
+                <tr key={index} className="tx-row" style={getRowStyle(tx.status, tx.type, tx.flag)} onClick={() => setSelectedTx(tx)}>
+                  <td className="tx-status">
+                    <span className={`badge ${tx.status === 'PENDING' ? 'badge-pending' : 'badge-confirmed'}`}>
+                      {tx.status === 'PENDING' ? '⏳ PENDING' : '✓ CONFIRMED'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        {renderNetworkBadge(tx.network)}
+                        {renderTypeBadge(tx.type)}
+                        {tx.flag === 'WHALE' && <span className="badge badge-whale-alert">🚨 WHALE</span>}
+                        {tx.flag === 'PENDING_WHALE' && <span className="badge badge-pending-whale">⚡ VANGUARD</span>}
+                        {tx.flag === 'BRIDGE_ACTIVITY' && <span className="badge badge-bridge-activity">🔗 CROSS-CHAIN</span>}
+                        {tx.flag === 'LENDING_ACTIVITY' && <span className="badge badge-lending-activity">🏦 DEFI LENDING</span>}
+                        {tx.flag === 'ARBITRAGE_ACTIVITY' && <span className="badge badge-arbitrage-activity">⚡ SPREAD CAPTURE</span>}
+                        {tx.flag === 'MEV_ACTIVITY' && <span className="badge badge-mev">🚨 MEV EXPLOIT</span>}
+                        {tx.flag === 'AGENT_FLOW' && <span className="badge badge-agent-flow">🤖 AI FLOW</span>}
+                        {tx.flag === 'DEX_ACTIVITY' && <span className="badge badge-dex-activity">⚡ CHORDSWAP</span>}
+                      </div>
+                      {tx.narrative && (
+                        <span className="narrative-text" style={tx.type === 'ARBITRAGE' ? { color: '#34d399', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' } : tx.flag === 'MEV_ACTIVITY' ? { color: '#fca5a5', borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' } : {}}>
+                          {tx.narrative}
+                        </span>
+                      )}
+                      {tx.cluster && <span className="cluster-badge">{tx.cluster}</span>}
+                    </div>
+                  </td>
+                  <td className="tx-asset">{tx.asset.length > 20 ? `${tx.asset.substring(0, 17)}...` : tx.asset}</td>
+                  <td className="tx-security">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {renderSecurityBadge(tx.sec_score, tx.sec_label)}
+                      {renderHealthFactor(tx.health_factor)}
+                      {tx.twap_trend && renderTwapBadge(tx.twap, tx.twap_trend)}
+                    </div>
+                  </td>
+                  <td className="tx-value">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span>{typeof tx.amount === 'number' && tx.price_usd > 0 ? `$${(tx.amount * tx.price_usd).toFixed(2)}` : '---'}</span>
+                      {tx.price_impact > 0.05 && (
+                        <span className={tx.price_impact > 1.0 ? 'impact-high' : 'impact-low'}>📉 Impact: {tx.price_impact}%</span>
+                      )}
+                      {tx.spread > 0 && (
+                        <span className="impact-high" style={{ color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>🔄 Spread: +{tx.spread}%</span>
+                      )}
+                      {tx.mev_extracted > 0 && <span className="mev-text">🔪 Extracted: ${tx.mev_extracted}</span>}
+                    </div>
+                  </td>
+                  <td className="tx-wallet">
+                    <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.from_addr); }}>
+                      {tx.from_label?.includes('Agent') ? renderAgentBadge(tx.from_label, tx.agent_win_rate) : tx.from_label ? <span className="entity-tag">{tx.from_label}</span> : formatAddress(tx.from_addr)}
+                    </span>
+                  </td>
+                  <td className="tx-wallet">
+                    <span className="entity-link" onClick={(e) => { e.stopPropagation(); setSelectedEntity(tx.to_addr); }}>
+                      {tx.to_label?.includes('Agent') ? renderAgentBadge(tx.to_label, tx.agent_win_rate) : tx.to_label ? <span className="entity-tag">{tx.to_label}</span> : formatAddress(tx.to_addr)}
+                    </span>
+                  </td>
+                  <td className="tx-pnl">{renderPnL(tx.pnl)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </>
   );
 };
 
-const DynamicSlippageTerminal = ({ wsRef }) => {
-  const [tradeSize, setTradeSize] = useState(25000);
-  const [liquidity, setLiquidity] = useState(1500000);
-  const [volatility, setVolatility] = useState(45);
-  const [slipData, setSlipData] = useState(null);
-  const [isCalculating, setIsCalculating] = useState(false);
+const FarcasterTerminal = ({ transactions, wsRef }) => {
+  const [selectedTxHash, setSelectedTxHash] = useState('');
+  const [frameData, setFrameData] = useState(null);
+  const [isDeploying, setIsDeploying] = useState(false);
+
+  // Filter for profitable transactions suitable for a "Victory Frame"
+  const winningTxs = useMemo(() => {
+    return transactions.filter(t => t.pnl && t.pnl > 0);
+  }, [transactions]);
 
   useEffect(() => {
     if (!wsRef.current) return;
     const ws = wsRef.current;
-    const handleSlipMsg = (event) => {
+    const handleFrameMsg = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.msg_type === 'SLIPPAGE_RESULT') {
-          setSlipData(data.data);
-          setIsCalculating(false);
+        if (data.msg_type === 'FARCASTER_FRAME_RESULT') {
+          setFrameData(data.data);
+          setIsDeploying(false);
         }
       } catch (e) {}
     };
-    ws.addEventListener('message', handleSlipMsg);
-    return () => ws.removeEventListener('message', handleSlipMsg);
+    ws.addEventListener('message', handleFrameMsg);
+    return () => ws.removeEventListener('message', handleFrameMsg);
   }, [wsRef]);
 
-  const handleCalculate = () => {
-    if (!wsRef.current) return;
-    setIsCalculating(true);
-    setSlipData(null);
+  const handleDeploy = () => {
+    const tx = winningTxs.find(t => t.tx_hash === selectedTxHash);
+    if (!tx || !wsRef.current) return;
+    
+    setIsDeploying(true);
+    setFrameData(null);
     wsRef.current.send(JSON.stringify({
-      action: 'CALCULATE_SLIPPAGE',
-      trade_size: tradeSize,
-      liquidity: liquidity,
-      volatility: volatility
+      action: 'DEPLOY_FARCASTER_FRAME',
+      tx_hash: tx.tx_hash,
+      pnl: tx.pnl,
+      asset: tx.asset,
+      network: tx.network
     }));
   };
 
   return (
-    <div className="slippage-container">
-      <div className="slippage-header">
-        <h2>🧠 DYNAMIC SLIPPAGE ML MODEL</h2>
-        <span>Neural-Net Driven Minimum Safe Slippage Execution</span>
+    <div className="farcaster-container">
+      <div className="farcaster-header">
+        <h2>🟣 FARCASTER / WARPCAST FRAME DEPLOYER</h2>
+        <span>Social Integration & Copy-Trade Broadcasting</span>
       </div>
 
-      <div className="slippage-inputs-container">
-        <div className="slip-input-group">
-          <label>Target Trade Size (USD)</label>
-          <div className="slip-val-display">${Number(tradeSize).toLocaleString()}</div>
-          <input type="range" min="1000" max="1000000" step="1000" value={tradeSize} onChange={(e) => setTradeSize(e.target.value)} />
-        </div>
-        <div className="slip-input-group">
-          <label>DEX Pool Liquidity (USD)</label>
-          <div className="slip-val-display">${Number(liquidity).toLocaleString()}</div>
-          <input type="range" min="50000" max="10000000" step="50000" value={liquidity} onChange={(e) => setLiquidity(e.target.value)} />
-        </div>
-        <div className="slip-input-group">
-          <label>Mempool Volatility Index (1-100)</label>
-          <div className="slip-val-display" style={{ color: volatility > 75 ? '#f85149' : volatility > 40 ? '#eab308' : '#3fb950' }}>{volatility}</div>
-          <input type="range" min="1" max="100" step="1" value={volatility} onChange={(e) => setVolatility(e.target.value)} />
+      <div className="farcaster-controls">
+        <label style={{ color: '#8b949e', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
+          Select Victory Hash to Broadcast
+        </label>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <select 
+            value={selectedTxHash} 
+            onChange={(e) => setSelectedTxHash(e.target.value)} 
+            className="farcaster-select"
+          >
+            <option value="">-- Choose a profitable transaction --</option>
+            {winningTxs.map((tx, idx) => (
+              <option key={idx} value={tx.tx_hash}>
+                [{tx.network}] +${tx.pnl.toFixed(2)} | {tx.tx_hash.substring(0, 15)}...
+              </option>
+            ))}
+          </select>
+          <button 
+            className="farcaster-btn pulse" 
+            onClick={handleDeploy} 
+            disabled={isDeploying || !selectedTxHash}
+          >
+            {isDeploying ? 'ASSEMBLING FRAME...' : 'GENERATE WARPCAST FRAME'}
+          </button>
         </div>
       </div>
 
-      <div className="slippage-action-bar">
-        <button className="slip-calc-btn pulse" onClick={handleCalculate} disabled={isCalculating}>
-          {isCalculating ? 'RUNNING INFERENCE...' : 'CALCULATE OPTIMAL SLIPPAGE'}
-        </button>
-      </div>
-
-      {slipData && (
-        <div className="slippage-results-grid">
-          <div className="slip-result-card main-slip">
-            <h4>Recommended Slippage</h4>
-            <div className="slip-hero-value" style={{ color: slipData.recommended_slippage > 5 ? '#f85149' : '#3fb950' }}>
-              {slipData.recommended_slippage}%
-            </div>
-            <span className="slip-sub-text">To guarantee execution against MEV bots</span>
-          </div>
+      {frameData && (
+        <div className="frame-preview-wrapper">
+          <h3 style={{ color: '#c9d1d9', marginBottom: '16px', borderBottom: '1px solid #30363d', paddingBottom: '8px' }}>
+            Interactive Frame Preview
+          </h3>
           
-          <div className="slip-result-side">
-            <div className="slip-stat-row">
-              <span>Base Mathematical Impact:</span>
-              <strong style={{ color: '#0ea5e9' }}>{slipData.base_impact}%</strong>
+          <div className="farcaster-frame-card">
+            <div className="frame-image-mock">
+              <span style={{ fontSize: '4rem' }}>🏆</span>
+              <h2 style={{ margin: '16px 0 0 0', color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{frameData.title}</h2>
+              <p style={{ color: '#eab308', fontWeight: 'bold' }}>Autonomous Execution Secured</p>
             </div>
-            <div className="slip-stat-row">
-              <span>Neural Confidence Score:</span>
-              <strong style={{ color: '#a371f7' }}>{slipData.confidence_score}%</strong>
+            
+            <div className="frame-buttons">
+              {frameData.buttons.map((btn, i) => (
+                <button key={i} className="frame-action-btn">{btn}</button>
+              ))}
             </div>
-            <div className="slip-stat-row">
-              <span>Historical Success Rate:</span>
-              <strong style={{ color: '#10b981' }}>{slipData.historical_success}%</strong>
+          </div>
+
+          <div className="frame-metadata">
+            <div style={{ marginBottom: '16px' }}>
+              <span style={{ color: '#8b949e', display: 'block', marginBottom: '8px' }}>Warpcast Compose URL</span>
+              <a href={frameData.warpcast_url} target="_blank" rel="noreferrer" style={{ color: '#8a63d2', wordBreak: 'break-all' }}>
+                {frameData.warpcast_url}
+              </a>
             </div>
-            <div className="slip-stat-row">
-              <span>MEV Bait Risk Classification:</span>
-              <strong style={{ color: slipData.risk_classification.includes('HIGH') || slipData.risk_classification.includes('CRITICAL') ? '#f85149' : '#eab308' }}>
-                {slipData.risk_classification}
-              </strong>
-            </div>
-            <div style={{ marginTop: '20px' }}>
-              <button className="export-btn" style={{ width: '100%', backgroundColor: '#21262d', border: '1px solid #30363d', padding: '12px' }}>
-                EXPORT TO OVERLORD FORGE
-              </button>
+            <div>
+              <span style={{ color: '#8b949e', display: 'block', marginBottom: '8px' }}>OpenGraph Meta Tags (HTML)</span>
+              <pre style={{ background: '#0d1117', padding: '16px', borderRadius: '6px', border: '1px solid #30363d', color: '#58a6ff', overflowX: 'auto' }}>
+                {frameData.meta_tags}
+              </pre>
             </div>
           </div>
         </div>
@@ -1028,6 +1535,7 @@ export default function AppWrapper() {
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
           if (data.msg_type === 'SLIPPAGE_RESULT') return;
+          if (data.msg_type === 'FARCASTER_FRAME_RESULT') return;
           if (data.msg_type === 'INDEXER_TELEMETRY') {
             setIndexerData(data.data);
             return;
@@ -1168,7 +1676,7 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v13.0.0.1</span>
+          <span>v14.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
@@ -1195,6 +1703,9 @@ export default function AppWrapper() {
           <button className={`nav-btn ${activeTab === 'AA_PROFILE' ? 'active' : ''}`} onClick={() => setActiveTab('AA_PROFILE')}>
             <span>🪪</span> 4337 PROFILER
           </button>
+          <button className={`nav-btn ${activeTab === 'FARCASTER' ? 'active' : ''}`} onClick={() => setActiveTab('FARCASTER')} style={{ color: '#c084fc' }}>
+            <span>🟣</span> FRAME DEPLOYER
+          </button>
           <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
             <span>🔮</span> THE ORACLE
           </button>
@@ -1218,6 +1729,7 @@ export default function AppWrapper() {
         {activeTab === 'SEQUENCER' && <SequencerTerminal sequencerAlerts={sequencerAlerts} wsRef={wsRef} activeNetwork={activeNetwork} />}
         {activeTab === 'MULTISIG' && <MultiSigRadar multiSigAlerts={multiSigAlerts} wsRef={wsRef} />}
         {activeTab === 'AA_PROFILE' && <AccountAbstractionTerminal wsRef={wsRef} />}
+        {activeTab === 'FARCASTER' && <FarcasterTerminal transactions={transactions} wsRef={wsRef} />}
         {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
       </main>
     </div>
