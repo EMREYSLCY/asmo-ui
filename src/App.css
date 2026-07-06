@@ -3324,3 +3324,143 @@ a:hover {
   border-radius: 8px;
   overflow: hidden;
 }
+
+.stress-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.stress-header {
+  border-bottom: 1px solid #f85149;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.stress-header h2 {
+  color: #f85149;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(248, 81, 73, 0.4);
+}
+
+.stress-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.stress-controls {
+  display: flex;
+  gap: 24px;
+  background: #0d1117;
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+  margin-bottom: 32px;
+  align-items: flex-end;
+}
+
+.stress-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.stress-input-group label {
+  color: #8b949e;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.stress-input-group input, .stress-input-group select {
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 1rem;
+  outline: none;
+}
+
+.stress-input-group input:focus, .stress-input-group select:focus {
+  border-color: #f85149;
+}
+
+.stress-run-btn {
+  background: #f85149;
+  color: #fff;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 6px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.stress-run-btn:hover:not(:disabled) {
+  background: #ff7b72;
+  box-shadow: 0 0 20px rgba(248, 81, 73, 0.4);
+}
+
+.stress-run-btn:disabled {
+  background: #30363d;
+  color: #8b949e;
+  cursor: not-allowed;
+  animation: none;
+}
+
+.stress-results {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+}
+
+.stress-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stress-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  padding: 24px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stress-card h4 {
+  margin: 0 0 16px 0;
+  color: #8b949e;
+  font-size: 0.95rem;
+}
+
+.stress-value {
+  font-size: 2rem;
+  font-weight: bold;
+  font-family: monospace;
+  margin-bottom: 8px;
+}
+
+.stress-sub {
+  color: #8b949e;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.stress-action-log {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 24px;
+  flex: 1;
+}

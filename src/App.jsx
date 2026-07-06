@@ -107,155 +107,105 @@ const renderLogicTree = (nodes) => {
   );
 };
 
-const ZkDeAnonymizerTerminal = ({ wsRef, zkAlerts }) => {
-  const [targetHash, setTargetHash] = useState('');
-  const [zkData, setZkData] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const graphContainerRef = useRef(null);
-  const [graphDim, setGraphDim] = useState({ width: 600, height: 400 });
-
-  useEffect(() => {
-    if (graphContainerRef.current) {
-      setGraphDim({ width: graphContainerRef.current.offsetWidth, height: 400 });
-    }
-  }, [zkData]);
+const BlackSwanTerminal = ({ wsRef }) => {
+  const [portfolioVal, setPortfolioVal] = useState(500000);
+  const [scenario, setScenario] = useState("ETH_CRASH_40");
+  const [testResult, setTestResult] = useState(null);
+  const [isTesting, setIsTesting] = useState(false);
 
   useEffect(() => {
     if (!wsRef.current) return;
     const ws = wsRef.current;
-    const handleZkMsg = (event) => {
+    const handleMsg = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.msg_type === 'ZK_HEURISTIC_RESULT') {
-          setZkData(data.data);
-          setIsAnalyzing(false);
+        if (data.msg_type === 'STRESS_TEST_RESULT') {
+          setTestResult(data.data);
+          setIsTesting(false);
         }
       } catch (e) {}
     };
-    ws.addEventListener('message', handleZkMsg);
-    return () => ws.removeEventListener('message', handleZkMsg);
+    ws.addEventListener('message', handleMsg);
+    return () => ws.removeEventListener('message', handleMsg);
   }, [wsRef]);
 
-  const handleDeAnonymize = () => {
-    if (!targetHash || !wsRef.current) return;
-    setIsAnalyzing(true);
-    setZkData(null);
+  const handleTest = () => {
+    if (!wsRef.current) return;
+    setIsTesting(true);
+    setTestResult(null);
     wsRef.current.send(JSON.stringify({
-      action: 'RUN_ZK_HEURISTICS',
-      target_hash: targetHash
+      action: 'RUN_STRESS_TEST',
+      portfolio_val: portfolioVal,
+      scenario: scenario
     }));
   };
 
   return (
-    <div className="zk-container">
-      <div className="zk-header">
-        <h2>🧩 ZK-HEURISTIC DE-ANONYMIZER</h2>
-        <span>Neural Pattern Matching for Privacy Protocol Unmasking</span>
+    <div className="stress-container">
+      <div className="stress-header">
+        <h2>📉 BLACK SWAN STRESS TESTER</h2>
+        <span>Enterprise Risk Simulation & Disaster Mitigation</span>
       </div>
 
-      <div className="zk-layout">
-        <div className="zk-live-feed">
-          <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px', marginBottom: '16px' }}>
-            Live Privacy Pool Interceptions
-          </h3>
-          <div className="zk-alerts-list">
-            {zkAlerts.length === 0 ? (
-              <div className="empty-state">Awaiting privacy protocol deposits...</div>
-            ) : (
-              zkAlerts.map((alert, i) => (
-                <div key={i} className="zk-alert-card" onClick={() => setTargetHash(alert.tx_hash)}>
-                  <div className="zk-protocol">{alert.protocol}</div>
-                  <div className="zk-hash">{alert.tx_hash.substring(0, 16)}...</div>
-                  <div className="zk-amount">${alert.amount_usd.toLocaleString()}</div>
-                  <div className="zk-status">{alert.time}</div>
-                </div>
-              ))
-            )}
-          </div>
+      <div className="stress-controls">
+        <div className="stress-input-group">
+          <label>Total Value Locked (USD Exposure)</label>
+          <input type="number" value={portfolioVal} onChange={(e) => setPortfolioVal(e.target.value)} disabled={isTesting} />
         </div>
+        <div className="stress-input-group">
+          <label>Disaster Scenario</label>
+          <select value={scenario} onChange={(e) => setScenario(e.target.value)} disabled={isTesting}>
+            <option value="ETH_CRASH_40">Ethereum Flash Crash (-40% in 1H)</option>
+            <option value="USDC_DEPEG">USDC De-Peg (Drops to $0.85)</option>
+            <option value="L2_RPC_DOWN">Base L2 Sequencer/RPC Outage</option>
+            <option value="FLASH_CRASH">Systemic Protocol Cascading Liquidations</option>
+          </select>
+        </div>
+        <button className="stress-run-btn pulse" onClick={handleTest} disabled={isTesting}>
+          {isTesting ? 'SIMULATING DISASTER...' : 'EXECUTE STRESS TEST'}
+        </button>
+      </div>
 
-        <div className="zk-main-panel">
-          <div className="zk-controls">
-            <input 
-              type="text" 
-              placeholder="Enter Mixer Hash or Suspect Wallet (0x...)" 
-              value={targetHash} 
-              onChange={e => setTargetHash(e.target.value)} 
-              disabled={isAnalyzing}
-            />
-            <button className="pulse" onClick={handleDeAnonymize} disabled={isAnalyzing || !targetHash}>
-              {isAnalyzing ? 'RUNNING NEURAL MATCHING...' : 'EXECUTE HEURISTIC TRACE'}
-            </button>
-          </div>
-
-          {zkData && (
-            <div className="zk-results">
-              <div className="zk-stats-grid">
-                <div className="zk-stat-box">
-                  <span>Primary Identity Confidence</span>
-                  <strong style={{ color: zkData.primary_confidence > 80 ? '#f85149' : '#eab308' }}>
-                    {zkData.primary_confidence}%
-                  </strong>
-                </div>
-                <div className="zk-stat-box">
-                  <span>ML Model Accuracy</span>
-                  <strong style={{ color: '#3fb950' }}>{zkData.model_accuracy}%</strong>
-                </div>
-                <div className="zk-stat-box">
-                  <span>Suspects Identified</span>
-                  <strong style={{ color: '#0ea5e9' }}>{zkData.suspects.length} Wallets</strong>
-                </div>
-              </div>
-
-              <div className="zk-graph-section" ref={graphContainerRef}>
-                <h3 style={{ margin: '0 0 16px 0', color: '#c9d1d9' }}>Entity Correlation Map</h3>
-                <div className="zk-graph-canvas" style={{ width: '100%', height: '400px', backgroundColor: '#010409', borderRadius: '8px', border: '1px solid #30363d', overflow: 'hidden' }}>
-                  {graphDim.width > 0 && (
-                    <ForceGraph2D
-                      width={graphDim.width}
-                      height={400}
-                      graphData={zkData.graph}
-                      nodeLabel="name"
-                      nodeColor="color"
-                      nodeVal="val"
-                      linkColor="color"
-                      linkWidth={2}
-                      linkDirectionalParticles={3}
-                      linkDirectionalParticleSpeed={0.008}
-                      backgroundColor="#010409"
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="zk-suspects-table">
-                <table className="accounting-table">
-                  <thead>
-                    <tr>
-                      <th>Suspect Identity Wallet</th>
-                      <th>Match Probability</th>
-                      <th>Gas Payment Fingerprint</th>
-                      <th>Time-Delta Correlation</th>
-                      <th>Known Cluster</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {zkData.suspects.map((sus, idx) => (
-                      <tr key={idx} style={{ backgroundColor: sus.probability > 80 ? 'rgba(248, 81, 73, 0.1)' : 'transparent' }}>
-                        <td style={{ fontFamily: 'monospace', color: sus.probability > 80 ? '#f85149' : '#58a6ff' }}>{formatAddress(sus.address)}</td>
-                        <td style={{ fontWeight: 'bold', color: sus.probability > 80 ? '#f85149' : '#eab308' }}>{sus.probability}%</td>
-                        <td style={{ color: '#3fb950', fontFamily: 'monospace' }}>{sus.gas_fingerprint}</td>
-                        <td style={{ color: '#0ea5e9' }}>{sus.time_delta}</td>
-                        <td style={{ color: '#a371f7' }}>{sus.cluster_assoc}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+      {testResult && (
+        <div className="stress-results">
+          <div className="stress-grid">
+            <div className="stress-card" style={{ borderColor: testResult.survival_rate > 90 ? '#3fb950' : testResult.survival_rate > 70 ? '#eab308' : '#f85149' }}>
+              <h4>Portfolio Survival Rate</h4>
+              <span className="stress-value" style={{ color: testResult.survival_rate > 90 ? '#3fb950' : testResult.survival_rate > 70 ? '#eab308' : '#f85149' }}>
+                {testResult.survival_rate}%
+              </span>
+              <span className="stress-sub">Post-Disaster Equilibrium</span>
             </div>
-          )}
+            <div className="stress-card">
+              <h4>Projected Drawdown (No Mitigation)</h4>
+              <span className="stress-value" style={{ color: '#f85149' }}>
+                -${testResult.projected_drawdown.toLocaleString(undefined, {maximumFractionDigits:0})}
+              </span>
+              <span className="stress-sub">Expected loss without A.S.M.O.</span>
+            </div>
+            <div className="stress-card">
+              <h4>Capital Protected by A.S.M.O.</h4>
+              <span className="stress-value" style={{ color: '#3fb950' }}>
+                +${testResult.asmo_recovery.toLocaleString(undefined, {maximumFractionDigits:0})}
+              </span>
+              <span className="stress-sub">Loss prevented via otonom hedging</span>
+            </div>
+            <div className="stress-card">
+              <h4>Final Settled Value</h4>
+              <span className="stress-value" style={{ color: '#c9d1d9' }}>
+                ${testResult.final_value.toLocaleString(undefined, {maximumFractionDigits:0})}
+              </span>
+              <span className="stress-sub">Secured capital in Cold Storage</span>
+            </div>
+          </div>
+          <div className="stress-action-log">
+            <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px', marginBottom: '16px' }}>Autonomous Mitigation Sequence Executed</h3>
+            <p style={{ color: '#0ea5e9', fontSize: '1.2rem', fontFamily: 'monospace', lineHeight: '1.6' }}>
+              &gt; {testResult.system_action}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -928,224 +878,6 @@ const Dashboard = ({
           </div>
         )}
       </div>
-
-      <div className="panel sentiment-panel" style={{ marginBottom: '24px', borderColor: '#8b5cf6', boxShadow: 'inset 0 0 20px rgba(139, 92, 246, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#8b5cf6' }}>🧠 Farcaster Sentiment Matrix</h2>
-          <span className="pulse-text" style={{ color: '#8b5cf6' }}>Cross-Referencing On-Chain Vol...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Network</th>
-                <th>Target Contract</th>
-                <th>Social Narrative</th>
-                <th>Mentions/Hr</th>
-                <th>Hype Score</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sentimentData.map((data, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(139, 92, 246, 0.05)' }}>
-                  <td style={{ color: '#8b949e' }}>{data.time}</td>
-                  <td>{renderNetworkBadge(data.network)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(data.asset)} className="entity-link">{formatAddress(data.asset)}</td>
-                  <td style={{ fontWeight: 'bold', color: '#d2a8ff' }}>{data.narrative}</td>
-                  <td>{data.mentions.toLocaleString()}</td>
-                  <td style={{ fontWeight: 'bold', color: data.hype_score > 90 ? '#f85149' : '#3fb950' }}>{data.hype_score}/100</td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: data.hype_score > 90 ? '#dc2626' : '#238636', color: '#fff' }}>
-                      {data.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel bridge-tsunami-panel" style={{ marginBottom: '24px', borderColor: '#0ea5e9', boxShadow: 'inset 0 0 20px rgba(14, 165, 233, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#0ea5e9' }}>🌉 Multi-Hop Bridge Vacuum</h2>
-          <span className="pulse-text" style={{ color: '#0ea5e9' }}>Monitoring Cross-Chain Portals...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Source Chain</th>
-                <th>Destination Chain</th>
-                <th>Asset</th>
-                <th>Volume (USD)</th>
-                <th>ETA</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bridgeTsunamis.map((tsunami, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(14, 165, 233, 0.1)' }}>
-                  <td style={{ color: '#8b949e' }}>{tsunami.time}</td>
-                  <td style={{ color: '#c9d1d9', fontWeight: 'bold' }}>{tsunami.source}</td>
-                  <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{tsunami.destination}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{tsunami.asset}</td>
-                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>${tsunami.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td style={{ color: '#f85149', fontWeight: 'bold' }}>~{tsunami.eta_seconds}s</td>
-                  <td>
-                    <span className="badge pulse" style={{ backgroundColor: '#0ea5e9', color: '#000' }}>
-                      {tsunami.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#64748b', boxShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.15)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#9ca3af' }}>🌪️ Dark Pool Forensics</h2>
-          <span className="pulse-text" style={{ color: '#9ca3af' }}>Tracing Shadow OTC...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Detection Time</th>
-                <th>Network</th>
-                <th>Suspect Hash</th>
-                <th>Source Entity</th>
-                <th>Wash Protocol</th>
-                <th>Est. Laundered (USD)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {darkPoolAlerts.map((alert, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(100, 116, 139, 0.1)' }}>
-                  <td style={{ color: '#8b949e' }}>{alert.time}</td>
-                  <td>{renderNetworkBadge(alert.network)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{alert.tx_hash.substring(0, 15)}...</td>
-                  <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(alert.from_addr)} className="entity-link">{formatAddress(alert.from_addr)}</td>
-                  <td style={{ color: '#f85149', fontWeight: 'bold' }}>{alert.protocol}</td>
-                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>${alert.usd_value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#a371f7', boxShadow: 'inset 0 0 20px rgba(163, 113, 247, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#a371f7' }}>🚀 Zero-Block Sniper</h2>
-          <span className="pulse-text" style={{ color: '#a371f7' }}>Scanning Factory Contracts...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Network</th>
-                <th>Target Token</th>
-                <th>Pool Pair</th>
-                <th>Dev/Creator</th>
-                <th>Security Report</th>
-                <th>System Verdict</th>
-              </tr>
-            </thead>
-            <tbody>
-              {snipeTargets.map((target, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(163, 113, 247, 0.05)' }}>
-                  <td style={{ color: '#8b949e' }}>{target.time}</td>
-                  <td>{renderNetworkBadge(target.network)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(target.token0)} className="entity-link">{formatAddress(target.token0)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#c9d1d9' }} onClick={() => setSelectedEntity(target.pair)} className="entity-link">{formatAddress(target.pair)}</td>
-                  <td style={{ fontFamily: 'monospace', color: '#8b949e' }} onClick={() => setSelectedEntity(target.creator)} className="entity-link">{formatAddress(target.creator)}</td>
-                  <td>{renderSecurityBadge(target.score, target.label)}</td>
-                  <td style={{ fontWeight: 'bold', color: target.score >= 80 ? '#3fb950' : target.score >= 50 ? '#eab308' : '#f85149' }}>{target.verdict}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#ef4444', boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#ef4444' }}>🩸 DeFi Liquidation Kill-Zone</h2>
-          <span className="pulse-text" style={{ color: '#ef4444' }}>Tracking Vulnerable Collateral...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Target Entity</th>
-                <th>Locked Collateral</th>
-                <th>Active Debt</th>
-                <th>Health Factor</th>
-                <th>Status</th>
-                <th>Est. Liq. Reward</th>
-              </tr>
-            </thead>
-            <tbody>
-              {killZone.map((kz, i) => (
-                <tr key={i} style={{ backgroundColor: kz.hf < 1.05 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.1)' }}>
-                  <td style={{ fontFamily: 'monospace', color: '#58a6ff' }} onClick={() => setSelectedEntity(kz.address)} className="entity-link">{formatAddress(kz.address)}</td>
-                  <td>${kz.collateral.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td style={{ color: '#f85149' }}>${kz.debt.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  <td style={{ fontWeight: 'bold', color: kz.hf < 1.05 ? '#f85149' : '#eab308' }}>{kz.hf}</td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: kz.hf < 1.05 ? '#dc2626' : '#ca8a04', color: '#fff' }}>
-                      {kz.hf < 1.05 ? 'CRITICAL' : 'AT RISK'}
-                    </span>
-                  </td>
-                  <td style={{ color: '#3fb950', fontWeight: 'bold' }}>${kz.est_liq_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: '24px', borderColor: '#ca8a04', boxShadow: 'inset 0 0 20px rgba(202, 138, 4, 0.05)' }}>
-        <div className="panel-header">
-          <h2 style={{ color: '#eab308' }}>🕷️ Sybil Hunter</h2>
-          <span className="pulse-text" style={{ color: '#eab308' }}>Detecting Wash Trading...</span>
-        </div>
-        <div className="table-container">
-          <table className="accounting-table">
-            <thead>
-              <tr>
-                <th>Sybil Cluster ID</th>
-                <th>Connected Entities</th>
-                <th>Network Dominance (PnL)</th>
-                <th>Risk Profile</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sybilClusters.map((cluster, idx) => (
-                <tr key={idx} style={{ backgroundColor: 'rgba(202, 138, 4, 0.05)' }}>
-                  <td style={{ color: '#eab308', fontWeight: 'bold' }}>{cluster.name}</td>
-                  <td style={{ color: '#c9d1d9' }}>{cluster.wallets.length} Wallets Linked</td>
-                  <td style={{ color: cluster.total_pnl >= 0 ? '#3fb950' : '#f85149', fontWeight: 'bold' }}>
-                    {cluster.total_pnl >= 0 ? '+' : '-'}${Math.abs(cluster.total_pnl).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: cluster.wallets.length > 5 ? '#dc2626' : '#ea580c', color: '#fff' }}>
-                      {cluster.wallets.length > 5 ? 'HIGH RISK (SYBIL)' : 'SUSPICIOUS RING'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </>
   );
 };
@@ -1177,10 +909,6 @@ export default function AppWrapper() {
   const [autoEjectAlerts, setAutoEjectAlerts] = useState([]);
   const [vestingDumps, setVestingDumps] = useState([]);
   const [gasWars, setGasWars] = useState([]);
-  const [sequencerAlerts, setSequencerAlerts] = useState([]);
-  const [multiSigAlerts, setMultiSigAlerts] = useState([]);
-  const [indexerData, setIndexerData] = useState(null);
-  const [zkAlerts, setZkAlerts] = useState([]);
   const [overlordState, setOverlordState] = useState({ active: false, max_spend: 50000, min_profit: 500, enclave_secured: false, signer_provider: 'NONE' });
   const [enclaveState, setEnclaveState] = useState({ status: 'UNLOCKED', provider: 'NONE', key_id: 'N/A', fips_compliant: false });
   
@@ -1214,125 +942,18 @@ export default function AppWrapper() {
         ws.onerror = () => setIsConnected(false);
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          if (data.msg_type === 'SLIPPAGE_RESULT') return;
-          if (data.msg_type === 'FARCASTER_FRAME_RESULT') return;
-          if (data.msg_type === 'ZK_HEURISTIC_RESULT') return;
-          if (data.msg_type === 'ZK_MIXER_ALERT') {
-            setZkAlerts(prev => [data.data, ...prev].slice(0, 10));
-            return;
+          if (data.msg_type === 'TRANSACTION') {
+             setTransactions((prev) => {
+               const existingIndex = prev.findIndex((t) => t.tx_hash === data.tx_hash);
+               const newData = { time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: data.status || 'CONFIRMED', ...data };
+               if (existingIndex !== -1) {
+                 const updated = [...prev];
+                 updated[existingIndex] = { ...updated[existingIndex], ...newData };
+                 return updated;
+               }
+               return [newData, ...prev].slice(0, 150);
+             });
           }
-          if (data.msg_type === 'INDEXER_TELEMETRY') {
-            setIndexerData(data.data);
-            return;
-          }
-          if (data.msg_type === 'ENCLAVE_STATUS') {
-            setEnclaveState(data.data);
-            return;
-          }
-          if (data.msg_type === 'SEQUENCER_ALERT') {
-            setSequencerAlerts(prev => [data.data, ...prev].slice(0, 50));
-            return;
-          }
-          if (data.msg_type === 'MULTISIG_ALERT') {
-            setMultiSigAlerts(prev => [data.data, ...prev].slice(0, 20));
-            return;
-          }
-          if (data.msg_type === 'OVERLORD_STATUS') {
-            setOverlordState(data.data.state || data.data);
-            return;
-          }
-          if (data.msg_type === 'GAS_WAR_ALERT') {
-            setGasWars(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            return;
-          }
-          if (data.msg_type === 'LEADERBOARD_UPDATE') {
-            setLeaderboard({ wallets: data.wallets, agents: data.agents });
-            return;
-          }
-          if (data.msg_type === 'CABAL_RESULT') {
-            setCabalData(data.data);
-            setIsScanningCabal(false);
-            return;
-          }
-          if (data.msg_type === 'VESTING_DUMP_ALERT') {
-            setVestingDumps(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            return;
-          }
-          if (data.msg_type === 'AUTO_EJECT_ALERT') {
-            setAutoEjectAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            return;
-          }
-          if (data.msg_type === 'SHADOW_RELAY_ALERT') {
-            setShadowRelayAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            return;
-          }
-          if (data.msg_type === 'INCOMING_BRIDGE_TSUNAMI') {
-            setBridgeTsunamis(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 4));
-            return;
-          }
-          if (data.msg_type === 'DECOMPILE_RESULT') {
-            setDecompileData(data.data);
-            setIsDecompiling(false);
-            return;
-          }
-          if (data.msg_type === 'SHADOW_TRADE') {
-            setShadowLogs(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 10));
-            setTransactions(prev => [{ time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: 'CONFIRMED', ...data }, ...prev].slice(0, 150));
-            return;
-          }
-          if (data.msg_type === 'SOCIAL_SENTIMENT') {
-            setSentimentData(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            return;
-          }
-          if (data.msg_type === 'DARK_POOL_ALERT') {
-            setDarkPoolAlerts(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            return;
-          }
-          if (data.msg_type === 'ZERO_BLOCK_SNIPER') {
-            setSnipeTargets(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            return;
-          }
-          if (data.msg_type === 'KILL_ZONE_UPDATE') {
-            setKillZone(data.data);
-            return;
-          }
-          if (data.msg_type === 'SYBIL_HUNTER_UPDATE') {
-            setSybilClusters(data.data);
-            return;
-          }
-          if (data.msg_type === 'ARBITRAGE_RADAR') {
-            setArbitrageRoutes(prev => [{ time: new Date().toLocaleTimeString(), ...data }, ...prev].slice(0, 5));
-            return;
-          }
-          if (data.msg_type === 'MEMPOOL_SIMULATION') {
-            setMempoolSim(prev => ({ ...prev, [data.network]: { volume: data.total_volume, impact: data.expected_impact, txs: data.high_risk_txs } }));
-            return;
-          }
-          if (data.msg_type === 'BACKUP_READY') {
-            const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `ASMO_Disaster_Recovery_${new Date().getTime()}.json`;
-            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
-            return;
-          }
-          if (data.msg_type === 'AUDIT_RESULT') {
-            setAuditData(data.data);
-            setIsAuditing(false);
-            return;
-          }
-          setTransactions((prev) => {
-            if(data.msg_type !== 'TRANSACTION') return prev;
-            const existingIndex = prev.findIndex((t) => t.tx_hash === data.tx_hash);
-            const newData = { time: new Date().toLocaleTimeString(), project: 'A.S.M.O.', status: data.status || 'CONFIRMED', ...data };
-            if (existingIndex !== -1) {
-              const updated = [...prev];
-              updated[existingIndex] = { ...updated[existingIndex], ...newData };
-              return updated;
-            }
-            return [newData, ...prev].slice(0, 150);
-          });
         };
         ws.onclose = () => setIsConnected(false);
         wsRef.current = ws;
@@ -1353,7 +974,7 @@ export default function AppWrapper() {
     decompileInput, setDecompileInput, isDecompiling, setIsDecompiling, decompileData, setDecompileData, cabalInput, setCabalInput, isScanningCabal, setIsScanningCabal, cabalData, setCabalData,
     mempoolSim, setMempoolSim, arbitrageRoutes, setArbitrageRoutes, flashSimulator, setFlashSimulator, atomicSimulator, setAtomicSimulator, wsRef,
     handleOverlordToggle: () => {}, handleBackup: () => {}, handleRestore: () => {}, handleAudit: () => {}, handleDecompile: () => {}, executeAutoEject: () => {}, executeShortDump: () => {}, executeFlashloan: () => {}, executeAtomicArb: () => {}, toggleShadow: () => {}, exportToCSV: () => {},
-    displayMempool: mempoolSim.BASE, projectAnalysis: [], networkData: {nodes:[], links:[]}, chartData: {pie:[], bar:[]}, entityData: null, fileInputRef: null, containerRef: null, cabalRef: null, PIE_COLORS
+    displayMempool: mempoolSim.BASE, projectAnalysis: [], networkData: {nodes:[], links:[]}, chartData: {pie:[], bar:[]}, entityData: null, fileInputRef: null, containerRef: null, exportToCSV: () => {}, graphDimensions: {width: 800, height: 400}
   };
 
   return (
@@ -1361,38 +982,14 @@ export default function AppWrapper() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v15.0.0.1</span>
+          <span>v16.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
             <span>📊</span> GLOBAL MATRIX
           </button>
-          <button className={`nav-btn ${activeTab === 'INDEXER' ? 'active' : ''}`} onClick={() => setActiveTab('INDEXER')}>
-            <span>🗄️</span> LOCAL INDEXER
-          </button>
-          <button className={`nav-btn ${activeTab === 'ENCLAVE' ? 'active' : ''}`} onClick={() => setActiveTab('ENCLAVE')} style={{ color: enclaveState.status === 'SECURED' ? '#10b981' : ''}}>
-            <span>{enclaveState.status === 'SECURED' ? '🔐' : '🔓'}</span> KMS ENCLAVE
-          </button>
-          <button className={`nav-btn ${activeTab === 'SLIPPAGE_AI' ? 'active' : ''}`} onClick={() => setActiveTab('SLIPPAGE_AI')}>
-            <span>🧠</span> ML SLIPPAGE AI
-          </button>
-          <button className={`nav-btn ${activeTab === 'SIMULATOR' ? 'active' : ''}`} onClick={() => setActiveTab('SIMULATOR')}>
-            <span>🎰</span> BRIBE SIMULATOR
-          </button>
-          <button className={`nav-btn ${activeTab === 'SEQUENCER' ? 'active' : ''}`} onClick={() => setActiveTab('SEQUENCER')}>
-            <span>🛰️</span> L2 SEQUENCER
-          </button>
-          <button className={`nav-btn ${activeTab === 'MULTISIG' ? 'active' : ''}`} onClick={() => setActiveTab('MULTISIG')}>
-            <span>🔐</span> MULTI-SIG RADAR
-          </button>
-          <button className={`nav-btn ${activeTab === 'AA_PROFILE' ? 'active' : ''}`} onClick={() => setActiveTab('AA_PROFILE')}>
-            <span>🪪</span> 4337 PROFILER
-          </button>
-          <button className={`nav-btn ${activeTab === 'ZK_HEURISTICS' ? 'active' : ''}`} onClick={() => setActiveTab('ZK_HEURISTICS')}>
-            <span>🧩</span> ZK DE-ANONYMIZER
-          </button>
-          <button className={`nav-btn ${activeTab === 'ORACLE' ? 'active' : ''}`} onClick={() => setActiveTab('ORACLE')}>
-            <span>🔮</span> THE ORACLE
+          <button className={`nav-btn ${activeTab === 'STRESS_TEST' ? 'active' : ''}`} onClick={() => setActiveTab('STRESS_TEST')}>
+            <span>📉</span> STRESS TESTER
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -1407,15 +1004,7 @@ export default function AppWrapper() {
         <div style={{ display: activeTab === 'DASHBOARD' ? 'block' : 'none', height: '100%' }}>
           <Dashboard {...dashboardProps} />
         </div>
-        {activeTab === 'INDEXER' && <div />}
-        {activeTab === 'ENCLAVE' && <div />}
-        {activeTab === 'SLIPPAGE_AI' && <div />}
-        {activeTab === 'SIMULATOR' && <div />}
-        {activeTab === 'SEQUENCER' && <div />}
-        {activeTab === 'MULTISIG' && <div />}
-        {activeTab === 'AA_PROFILE' && <div />}
-        {activeTab === 'ZK_HEURISTICS' && <ZkDeAnonymizerTerminal wsRef={wsRef} zkAlerts={zkAlerts} />}
-        {activeTab === 'ORACLE' && <OracleMachine wsRef={wsRef} />}
+        {activeTab === 'STRESS_TEST' && <BlackSwanTerminal wsRef={wsRef} />}
       </main>
     </div>
   );
