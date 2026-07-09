@@ -3574,3 +3574,166 @@ a:hover {
   color: #8b949e;
   cursor: not-allowed;
 }
+
+.ethical-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #010409;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.ethical-header {
+  border-bottom: 1px solid #0ea5e9;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.ethical-header h2 {
+  color: #0ea5e9;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+}
+
+.ethical-header span {
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.ethical-layout {
+  display: flex;
+  flex: 1;
+  gap: 24px;
+  overflow: hidden;
+}
+
+.ethical-live-feed {
+  width: 350px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ethical-alerts-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ethical-alert-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-left-width: 4px;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.ethical-main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.ethical-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ethical-controls input {
+  flex: 1;
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 16px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 1rem;
+  outline: none;
+}
+
+.ethical-controls input:focus {
+  border-color: #0ea5e9;
+}
+
+.ethical-controls button {
+  background: #0ea5e9;
+  color: #000;
+  border: none;
+  padding: 0 32px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ethical-controls button:hover:not(:disabled) {
+  background: #38bdf8;
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+}
+
+.ethical-results {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ethical-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.ethical-stat-box {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.ethical-stat-box span {
+  color: #8b949e;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.ethical-stat-box strong {
+  font-size: 1.8rem;
+  font-family: monospace;
+}
+
+.ethical-narrative-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  padding: 32px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.narrative-header {
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.narrative-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #c9d1d9;
+  font-family: monospace;
+  text-shadow: 0 0 10px rgba(255,255,255,0.1);
+}
+
