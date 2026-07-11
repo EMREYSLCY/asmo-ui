@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
 import ForceGraph3D from 'react-force-graph-3d';
 import ForceGraph2D from 'react-force-graph-2d';
 import Tree from 'react-d3-tree';
@@ -55,32 +55,40 @@ const renderTypeBadge = (type) => {
   }
 };
 
+const Sparkline = ({ data, color }) => {
+  if (!data || data.length === 0) return null;
+  const chartData = data.map((val, i) => ({ i, val }));
+  return (
+    <div className="sparkline-container">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData}>
+          <Line 
+            type="monotone" 
+            dataKey="val" 
+            stroke={color} 
+            strokeWidth={2} 
+            dot={false} 
+            isAnimationActive={true} 
+            animationDuration={800} 
+            animationEasing="ease-in-out" 
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+const AnimatedNumber = ({ value, prefix = "", suffix = "", isPositive }) => {
+  return (
+    <span className={`animated-number ${isPositive ? 'positive' : 'negative'}`}>
+      {prefix}{Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{suffix}
+    </span>
+  );
+};
+
 const renderPnL = (pnl) => {
   if (!pnl || pnl === 0) return <span className="pnl-neutral">---</span>;
-  if (pnl > 0) return <span className="pnl-positive">+ ${pnl.toFixed(2)}</span>;
-  return <span className="pnl-negative">- ${Math.abs(pnl).toFixed(2)}</span>;
-};
-
-const renderAgentBadge = (label, winRate) => {
-  if (!label) return null;
-  if (winRate > 60) return <span className="agent-alpha">🌟 Alpha Agent (WR: {winRate}%)</span>;
-  if (winRate > 0) return <span className="agent-beta">🤖 Beta Agent (WR: {winRate}%)</span>;
-  return <span className="entity-tag">{label}</span>;
-};
-
-const renderHealthFactor = (hf) => {
-  if (!hf || hf >= 90) return <span className="sec-safe">HF: N/A</span>;
-  if (hf === 0) return <span className="sec-danger" style={{ animation: 'pulse-danger 0.5s infinite' }}>💀 LIQUIDATED</span>;
-  if (hf < 1.1) return <span className="sec-danger" style={{ animation: 'pulse-danger 1s infinite' }}>⚠️ LIQ RISK ({hf})</span>;
-  if (hf < 1.5) return <span className="sec-warn">HF: {hf} (Warn)</span>;
-  return <span className="sec-safe">HF: {hf}</span>;
-};
-
-const renderSecurityBadge = (score, label) => {
-  if (!label) return <span className="sec-safe">✅ VERIFIED</span>;
-  if (score < 25) return <span className="sec-danger">{label}</span>;
-  if (score < 50) return <span className="sec-warn">{label}</span>;
-  return <span className="sec-safe">Check {label}</span>;
+  return <AnimatedNumber value={pnl} prefix={pnl > 0 ? "+ $" : "- $"} isPositive={pnl > 0} />;
 };
 
 const renderTwapBadge = (twap, trend) => {
@@ -163,6 +171,7 @@ const Dashboard = ({
                     <th>Action Protocol</th>
                     <th>Asset</th>
                     <th>Metrics Matrix</th>
+                    <th>Trend</th>
                     <th>Realized Yield</th>
                   </tr>
                 </thead>
@@ -173,6 +182,9 @@ const Dashboard = ({
                       <td>{renderTypeBadge(tx.type)}</td>
                       <td>{tx.asset}</td>
                       <td>{renderTwapBadge(tx.twap, tx.twap_trend)}</td>
+                      <td>
+                        {tx.sparkline && <Sparkline data={tx.sparkline} color={tx.pnl >= 0 ? '#10b981' : '#f85149'} />}
+                      </td>
                       <td>{renderPnL(tx.pnl)}</td>
                     </tr>
                   ))}
@@ -199,6 +211,7 @@ const Dashboard = ({
                     <tr>
                       <th>Rank</th>
                       <th>Entity Wallet</th>
+                      <th>Performance</th>
                       <th>Aggregated P&L</th>
                     </tr>
                   </thead>
@@ -207,7 +220,10 @@ const Dashboard = ({
                       <tr key={i}>
                         <td>#{i + 1}</td>
                         <td>{formatAddress(w.addr)}</td>
-                        <td style={{ color: '#3fb950', fontWeight: 'bold' }}>+${w.pnl.toFixed(2)}</td>
+                        <td>
+                          {w.sparkline && <Sparkline data={w.sparkline} color="#10b981" />}
+                        </td>
+                        <td><AnimatedNumber value={w.pnl} prefix="+$" isPositive={true} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -243,7 +259,7 @@ const Dashboard = ({
                       <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{route.asset}</td>
                       <td>{route.route}</td>
                       <td style={{ color: '#10b981' }}>+{route.spread}%</td>
-                      <td style={{ color: '#3fb950' }}>${route.est_profit.toFixed(2)}</td>
+                      <td><AnimatedNumber value={route.est_profit} prefix="$" isPositive={true} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -256,84 +272,6 @@ const Dashboard = ({
   );
 };
 
-const EthicalSentimentTerminal = ({ wsRef, ethicalAlerts }) => {
-  const [targetAsset, setTargetAsset] = useState('');
-  const [analysisData, setAnalysisData] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  useEffect(() => {
-    if (!wsRef.current) return;
-    const ws = wsRef.current;
-    const handleMsg = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.msg_type === 'ETHICAL_ANALYSIS_RESULT') {
-          setAnalysisData(data.data);
-          setIsAnalyzing(false);
-        }
-      } catch (e) {}
-    };
-    ws.addEventListener('message', handleMsg);
-    return () => ws.removeEventListener('message', handleMsg);
-  }, [wsRef]);
-
-  const handleAnalysis = () => {
-    if (!targetAsset || !wsRef.current) return;
-    setIsAnalyzing(true);
-    setAnalysisData(null);
-    wsRef.current.send(JSON.stringify({
-      action: 'RUN_ETHICAL_SENTIMENT',
-      target_asset: targetAsset
-    }));
-  };
-
-  return (
-    <div className="ethical-container">
-      <div className="ethical-header">
-        <h2>🧠 ETHICAL SENTIMENT & NARRATIVE TRACKER</h2>
-        <span>Protecting Liquidity from Organized Pump & Dumps</span>
-      </div>
-      <div className="ethical-layout">
-        <div className="ethical-live-feed">
-          <h3 style={{ color: '#8b949e', borderBottom: '1px solid #30363d', paddingBottom: '8px', margin: '0 0 16px 0' }}>Live Ecosystem Warnings</h3>
-          <div className="ethical-alerts-list">
-            {ethicalAlerts.map((alert, i) => (
-              <div key={i} className="ethical-alert-card" style={{ borderLeftColor: alert.bot_activity_ratio > 65 ? '#f85149' : '#3fb950' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontFamily: 'monospace', color: '#58a6ff' }}>{formatAddress(alert.asset)}</span>
-                </div>
-                <div style={{ fontWeight: 'bold' }}>{alert.manipulation_risk}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="ethical-main-panel">
-          <div className="ethical-controls">
-            <input type="text" placeholder="Enter Target Asset Contract (0x...)" value={targetAsset} onChange={e => setTargetAsset(e.target.value)} disabled={isAnalyzing} />
-            <button className="pulse" onClick={handleAnalysis} disabled={isAnalyzing || !targetAsset}>
-              {isAnalyzing ? 'SCANNING SOCIAL GRAPHS...' : 'AUDIT PROJECT NARRATIVE'}
-            </button>
-          </div>
-          {analysisData && (
-            <div className="ethical-results">
-              <div className="ethical-stats-grid">
-                <div className="ethical-stat-box" style={{ borderColor: analysisData.color }}>
-                  <span>Risk Level</span>
-                  <strong style={{ color: analysisData.color }}>{analysisData.risk_classification}</strong>
-                </div>
-                <div className="ethical-stat-box">
-                  <span>Bot Concentration</span>
-                  <strong>{analysisData.bot_ratio}%</strong>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export default function AppWrapper() {
   const [activeTab, setActiveTab] = useState('DASHBOARD');
   const [transactions, setTransactions] = useState([]);
@@ -341,7 +279,6 @@ export default function AppWrapper() {
   const [isConnected, setIsConnected] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
-  const [ethicalAlerts, setEthicalAlerts] = useState([]);
   const [arbitrageRoutes, setArbitrageRoutes] = useState([]);
   const wsRef = useRef(null);
 
@@ -354,10 +291,6 @@ export default function AppWrapper() {
         ws.onerror = () => setIsConnected(false);
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          if (data.msg_type === 'ETHICAL_SENTIMENT_ALERT') {
-            setEthicalAlerts(prev => [data.data, ...prev].slice(0, 10));
-            return;
-          }
           if (data.msg_type === 'ARBITRAGE_RADAR') {
             setArbitrageRoutes(prev => [data, ...prev].slice(0, 5));
             return;
@@ -387,19 +320,24 @@ export default function AppWrapper() {
     return () => { if (wsRef.current) wsRef.current.close(); };
   }, []);
 
+  const dashboardProps = { 
+    transactions, setTransactions, leaderboard, setLeaderboard, activeNetwork: "ALL", setActiveNetwork: () => {},
+    graphDimensions: {width: 800, height: 400}, setGraphDimensions: () => {}, searchTerm, setSearchTerm,
+    filterType, setFilterType, selectedTx: null, setSelectedTx: () => {}, selectedEntity: null, setSelectedEntity: () => {},
+    executeFlashloan: () => {}, executeAtomicArb: () => {}, exportToCSV: () => {},
+    displayMempool: { volume: 0, impact: 0, txs: [] }, projectAnalysis: [], networkData: {nodes:[], links:[]}, chartData: {pie:[], bar:[]}, entityData: null
+  };
+
   return (
     <div className="os-layout">
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>A.S.M.O.</h1>
-          <span>v19.0.0.1</span>
+          <span>v20.0.0.1</span>
         </div>
         <nav className="sidebar-nav">
           <button className={`nav-btn ${activeTab === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveTab('DASHBOARD')}>
             <span>📊</span> GLOBAL MATRIX
-          </button>
-          <button className={`nav-btn ${activeTab === 'ETHICAL_AI' ? 'active' : ''}`} onClick={() => setActiveTab('ETHICAL_AI')}>
-            <span>🧠</span> ETHICAL AI
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -416,7 +354,6 @@ export default function AppWrapper() {
             setSearchTerm={setSearchTerm} arbitrageRoutes={arbitrageRoutes} wsRef={wsRef}
           />
         )}
-        {activeTab === 'ETHICAL_AI' && <EthicalSentimentTerminal wsRef={wsRef} ethicalAlerts={ethicalAlerts} />}
       </main>
     </div>
   );
